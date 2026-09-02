@@ -599,6 +599,200 @@ function NodeInspector({ nodeId }: { nodeId: string }) {
   );
 }
 
+// ---- section / group ------------------------------------------------------
+
+const SWATCHES = ["#3B82F6", "#E7157B", "#F0B34E", "#7AA116", "#8C4FFF", "#00A4A6", "#F0796A", "#9AA6B7"];
+
+function SectionInspector({ sectionId }: { sectionId: string }) {
+  const section = useStore((s) => s.sections.find((x) => x.id === sectionId));
+  const sections = useStore((s) => s.sections);
+  const nodes = useStore((s) => s.nodes);
+  const selectedIds = useStore((s) => s.selectedIds);
+  const renameSection = useStore((s) => s.renameSection);
+  const setSectionColor = useStore((s) => s.setSectionColor);
+  const setSectionStyle = useStore((s) => s.setSectionStyle);
+  const setSectionNodes = useStore((s) => s.setSectionNodes);
+  const setSectionBounds = useStore((s) => s.setSectionBounds);
+  const setSectionParent = useStore((s) => s.setSectionParent);
+  const removeSection = useStore((s) => s.removeSection);
+  const ungroup = useStore((s) => s.ungroup);
+  const select = useStore((s) => s.select);
+  if (!section) return null;
+  const isGroup = section.kind === "group";
+  const members = nodes.filter((n) => section.nodeIds.includes(n.id));
+  const addable = selectedIds.filter((id) => nodes.some((n) => n.id === id) && !section.nodeIds.includes(id));
+  const style = section.style ?? {};
+  const dash = style.dash ?? "dashed";
+  const width = style.width ?? 1.4;
+  const fill = style.fill ?? true;
+  // possible parents: any other section that is not a descendant of this one
+  const descendants = new Set<string>();
+  const walk = (id: string) => {
+    for (const c of sections.filter((x) => x.parentId === id)) {
+      descendants.add(c.id);
+      walk(c.id);
+    }
+  };
+  walk(section.id);
+  const parents = sections.filter((x) => x.id !== section.id && !descendants.has(x.id));
+
+  return (
+    <div className="flex h-full flex-col">
+      <header className="px-3.5 pb-3 pt-3.5">
+        <div className="lab">{isGroup ? "Group" : "Section"}</div>
+        <input
+          className="mt-0.5 w-full bg-transparent text-[14px] font-semibold outline-none"
+          value={section.name}
+          onChange={(e) => renameSection(section.id, e.target.value)}
+          aria-label="Name"
+        />
+      </header>
+
+      <Section id="section-appearance" title="Appearance">
+        <Row label="Colour">
+          <div className="flex flex-wrap items-center gap-1">
+            {SWATCHES.map((c) => (
+              <button
+                key={c}
+                aria-label={c}
+                className="h-4 w-4 rounded-[4px]"
+                style={{ background: c, outline: section.color.toLowerCase() === c.toLowerCase() ? "2px solid var(--ink)" : undefined, outlineOffset: 1 }}
+                onClick={() => setSectionColor(section.id, c)}
+              />
+            ))}
+            <input
+              type="color"
+              value={section.color}
+              onChange={(e) => setSectionColor(section.id, e.target.value)}
+              className="h-5 w-6 cursor-pointer rounded border-0 bg-transparent p-0"
+              aria-label="Custom colour"
+            />
+          </div>
+        </Row>
+        {isGroup ? null : (
+          <>
+            <Row label="Border">
+              <div className="flex gap-1">
+                {(["solid", "dashed", "dotted"] as const).map((d) => (
+                  <button
+                    key={d}
+                    aria-pressed={dash === d}
+                    data-tip={d}
+                    className="grid h-6 flex-1 place-items-center rounded-md"
+                    style={{ background: dash === d ? "var(--accent-bg)" : "var(--panel-2)", border: "1px solid var(--line)", color: dash === d ? "var(--accent-ink)" : "var(--ink-2)" }}
+                    onClick={() => setSectionStyle(section.id, { dash: d === "dashed" ? undefined : d })}
+                  >
+                    <svg width="26" height="8" viewBox="0 0 26 8" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+                      <path d="M1 4h24" strokeDasharray={d === "dashed" ? "6 4" : d === "dotted" ? "1.5 4" : undefined} />
+                    </svg>
+                  </button>
+                ))}
+              </div>
+            </Row>
+            <Row label="Width">
+              <div className="flex items-center gap-2">
+                <input type="range" min={1} max={4} step={0.5} className="w-full" style={{ accentColor: "var(--accent)" }} value={width} onChange={(e) => setSectionStyle(section.id, { width: Number(e.target.value) === 1.4 ? undefined : Number(e.target.value) })} aria-label="Border width" />
+                <span className="mono w-8 text-right text-[11px]" style={{ color: "var(--ink-2)" }}>{width.toFixed(1)}</span>
+              </div>
+            </Row>
+            <Row label="Fill">
+              <label className="flex items-center gap-1.5 text-[11px]" style={{ color: "var(--ink-3)" }}>
+                <input type="checkbox" checked={fill} onChange={(e) => setSectionStyle(section.id, { fill: e.target.checked ? undefined : false })} />
+                tint the frame
+              </label>
+            </Row>
+          </>
+        )}
+      </Section>
+
+      <Section id="section-members" title="Members" aside={String(members.length)}>
+        {members.length === 0 ? (
+          <p className="text-[11px]" style={{ color: "var(--ink-4)" }}>
+            Empty — select resources on the canvas and add them here.
+          </p>
+        ) : null}
+        {members.map((n) => (
+          <div key={n.id} className="group flex items-center gap-2 text-[11.5px]">
+            <svg width="14" height="14" className="flex-none">
+              <use href={`#${getService(n.service)?.icon}`} width="14" height="14" />
+            </svg>
+            <button className="truncate text-left hover:underline" style={{ color: "var(--ink-2)" }} onClick={() => select(n.id)}>
+              {n.name}
+            </button>
+            <button
+              className="ml-auto text-[11px] text-ink-4 opacity-0 hover:text-bad group-hover:opacity-100"
+              title="Remove from this section"
+              onClick={() => setSectionNodes(section.id, section.nodeIds.filter((id) => id !== n.id))}
+            >
+              ×
+            </button>
+          </div>
+        ))}
+        {addable.length ? (
+          <button
+            className="rounded border px-2 py-1 text-[11px] hover:bg-panel-2"
+            style={{ borderColor: "var(--line)", color: "var(--accent-ink)" }}
+            onClick={() => setSectionNodes(section.id, [...section.nodeIds, ...addable])}
+          >
+            Add the {addable.length} selected resource{addable.length === 1 ? "" : "s"}
+          </button>
+        ) : null}
+        <Row label="Inside">
+          <select className="oh-field" value={section.parentId ?? ""} onChange={(e) => setSectionParent(section.id, e.target.value || undefined)}>
+            <option value="">— top level —</option>
+            {parents.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </Row>
+      </Section>
+
+      {isGroup ? null : (
+        <Section id="section-frame" title="Frame" aside={section.bounds ? "pinned" : "derived"}>
+          {section.bounds ? (
+            <>
+              <Pair
+                a={{ label: "X", value: section.bounds.x, onChange: (x) => setSectionBounds(section.id, { ...section.bounds!, x }) }}
+                b={{ label: "Y", value: section.bounds.y, onChange: (y) => setSectionBounds(section.id, { ...section.bounds!, y }) }}
+              />
+              <Pair
+                a={{ label: "W", value: section.bounds.w, onChange: (w) => setSectionBounds(section.id, { ...section.bounds!, w: Math.max(120, w) }) }}
+                b={{ label: "H", value: section.bounds.h, onChange: (h) => setSectionBounds(section.id, { ...section.bounds!, h: Math.max(80, h) }) }}
+              />
+              <button className="rounded border px-2 py-1 text-[11px] hover:bg-panel-2" style={{ borderColor: "var(--line)" }} onClick={() => setSectionBounds(section.id, undefined)} disabled={!members.length}>
+                Fit to members
+              </button>
+            </>
+          ) : (
+            <p className="text-[11px]" style={{ color: "var(--ink-4)" }}>
+              Wraps its members — drag the corner grip on the canvas to pin a size.
+            </p>
+          )}
+        </Section>
+      )}
+
+      <div className="mt-auto flex gap-2 p-3.5">
+        {isGroup ? (
+          <button className="flex-1 rounded border border-line px-3 py-1.5 text-[12px] hover:bg-panel-2" style={{ color: "var(--ink-2)" }} onClick={() => ungroup(section.id)}>
+            Ungroup · ⇧⌘G
+          </button>
+        ) : null}
+        <button
+          className="flex-1 rounded border border-line px-3 py-1.5 text-[12px] text-bad hover:bg-panel-2"
+          onClick={() => {
+            removeSection(section.id);
+            select(null);
+          }}
+        >
+          Remove {isGroup ? "group" : "section"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ---- root ----------------------------------------------------------------
 
 export function Inspector() {
@@ -606,13 +800,15 @@ export function Inspector() {
   const selectedEdgeId = useStore((s) => s.selectedEdgeId);
   const isNode = useStore((s) => s.nodes.some((n) => n.id === selectedId));
   const isContainer = useStore((s) => s.containers.some((c) => c.id === selectedId));
+  const isSection = useStore((s) => s.sections.some((x) => x.id === selectedId));
 
   if (isNode && selectedId) return <NodeInspector nodeId={selectedId} />;
   if (isContainer && selectedId) return <ContainerInspector containerId={selectedId} />;
+  if (isSection && selectedId) return <SectionInspector sectionId={selectedId} />;
   if (selectedEdgeId) return <EdgeInspector edgeId={selectedEdgeId} />;
   return (
     <p className="p-4 text-[11.5px]" style={{ color: "var(--ink-3)" }}>
-      Select a resource, a container frame or an edge on the canvas.
+      Select a resource, a frame, a section or an edge on the canvas.
     </p>
   );
 }

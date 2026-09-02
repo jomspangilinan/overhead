@@ -132,7 +132,7 @@ function ModeInternals({ nodeId, cardMode }: { nodeId: string; cardMode: boolean
   return null;
 }
 
-export const AwsNode = memo(function AwsNode({ data }: NodeProps<AwsNodeType>) {
+export const AwsNode = memo(function AwsNode({ data, selected }: NodeProps<AwsNodeType>) {
   const node = useStore((s) => s.nodes.find((n) => n.id === data.nodeId));
   const renameNode = useStore((s) => s.renameNode);
   const [editing, setEditing] = useState(false);
@@ -167,6 +167,7 @@ export const AwsNode = memo(function AwsNode({ data }: NodeProps<AwsNodeType>) {
 
   const ringColor =
     worst === "critical" ? "var(--bad)" : worst === "warn" ? "var(--warn)" : null;
+  const selectRing = selected ? "0 0 0 2px var(--accent), 0 0 0 5px color-mix(in srgb, var(--accent) 25%, transparent)" : null;
 
   const cardSettings = def.cardLines
     .map((key) => {
@@ -193,7 +194,8 @@ export const AwsNode = memo(function AwsNode({ data }: NodeProps<AwsNodeType>) {
             top: (NODE_H - 76) / 2,
             width: 200,
             height: 76,
-            borderColor: "var(--line)",
+            borderColor: selected ? "var(--accent)" : "var(--line)",
+            boxShadow: selectRing ?? undefined,
           }}
         >
           {ringColor ? (
@@ -265,7 +267,9 @@ export const AwsNode = memo(function AwsNode({ data }: NodeProps<AwsNodeType>) {
             style={{
               marginTop: (NODE_H - ICON - 22) / 2 - 4,
               padding: 4,
-              boxShadow: ringColor ? `0 0 0 2.5px ${ringColor}` : undefined,
+              boxShadow: selectRing ?? (ringColor ? `0 0 0 2.5px ${ringColor}` : undefined),
+              outline: selected && ringColor ? `2.5px solid ${ringColor}` : undefined,
+              outlineOffset: 6,
             }}
           >
             <svg width={ICON} height={ICON} style={{ display: "block" }}>

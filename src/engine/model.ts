@@ -87,14 +87,27 @@ export function arrowModeOf(e: Pick<ArchEdge, "kind" | "style">): ArrowMode {
 }
 
 /** Yours: free-form, orthogonal to containment, never validated.
- *  nodeIds is the single source of truth for membership. */
+ *  nodeIds is the single source of truth for membership.
+ *  kind `section` draws a labelled frame on the canvas; kind `group`
+ *  (⌘G) is a folder in the Layers tree that moves together and draws
+ *  nothing. Both nest under a parent section via `parentId` (tree only). */
 export interface Section {
   id: string;
   name: string;
   color: string;
+  kind?: "section" | "group";
+  parentId?: string;
   bounds?: { x: number; y: number; w: number; h: number };
   nodeIds: string[];
   collapsed: boolean;
+  style?: SectionStyle;
+}
+
+/** Section appearance — absent = dashed 1.4px with a faint fill. */
+export interface SectionStyle {
+  dash?: EdgeDash;
+  width?: number;
+  fill?: boolean;
 }
 
 export interface Traffic {

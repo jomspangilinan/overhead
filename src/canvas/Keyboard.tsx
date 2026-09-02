@@ -2,7 +2,7 @@
 
 // Every key the toolbar prints is bound here, and nothing is printed that
 // isn't. Single letters pick tools; ⇧G grid; ⌘Z/⇧⌘Z undo/redo; / focuses
-// search; Delete removes the selection; Escape backs out.
+// search; Delete removes the selection; ⌘G groups, ⇧⌘G ungroups; Escape backs out.
 
 import { useEffect } from "react";
 import { useStore } from "@/store/useStore";
@@ -26,6 +26,16 @@ export function Keyboard() {
         else undo();
         return;
       }
+      if (mod && e.key.toLowerCase() === "g") {
+        e.preventDefault();
+        if (e.shiftKey) {
+          const sel = s.sections.find((x) => x.id === s.selectedId && x.kind === "group");
+          if (sel) s.ungroup(sel.id);
+        } else if (s.selectedIds.length) {
+          s.addGroup(s.selectedIds);
+        }
+        return;
+      }
       if (mod) return;
 
       if (e.key === "Delete" || e.key === "Backspace") {
@@ -39,6 +49,7 @@ export function Keyboard() {
         } else if (s.selectedId) {
           e.preventDefault();
           if (s.containers.some((c) => c.id === s.selectedId)) s.removeContainer(s.selectedId);
+          else if (s.sections.some((x) => x.id === s.selectedId)) s.removeSection(s.selectedId);
           else s.removeNode(s.selectedId);
           s.select(null);
         }

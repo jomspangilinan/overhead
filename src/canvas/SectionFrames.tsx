@@ -117,10 +117,14 @@ export function SectionFrames() {
   return (
     <ViewportPortal>
       {sections.map((s) => {
+        if (s.kind === "group") return null;
         const box = boxes.get(s.id);
         if (!box) return null;
         const w = box.r - box.l;
         const selected = selectedId === s.id;
+        const dash = s.style?.dash ?? "dashed";
+        const bw = s.style?.width ?? 1.4;
+        const fill = s.style?.fill ?? true;
         return (
           <div key={s.id}>
             <div
@@ -130,9 +134,9 @@ export function SectionFrames() {
                 top: box.t,
                 width: w,
                 height: box.b - box.t,
-                border: `${selected ? 1.8 : 1.4}px dashed ${selected ? "var(--accent)" : s.color}`,
+                border: `${selected ? Math.max(1.8, bw) : bw}px ${dash} ${selected ? "var(--accent)" : s.color}`,
                 borderRadius: 12,
-                background: `color-mix(in srgb, ${s.color} 5%, transparent)`,
+                background: fill ? `color-mix(in srgb, ${s.color} 5%, transparent)` : "transparent",
                 boxShadow: selected ? "0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent)" : undefined,
                 pointerEvents: "none",
               }}

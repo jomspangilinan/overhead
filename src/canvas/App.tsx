@@ -25,7 +25,7 @@ import { Dock } from "./chrome/Dock";
 import { TopBar } from "./chrome/TopBar";
 import { BottomBar } from "./chrome/BottomBar";
 import { LayerSwitch, ZoomPill } from "./chrome/Floats";
-import { StructurePanel } from "./chrome/StructurePanel";
+import { LayersPanel } from "./chrome/LayersPanel";
 import apiBackend from "../../samples/api-backend.json";
 import mediaPipeline from "../../samples/media-pipeline.json";
 import eventDriven from "../../samples/event-driven.json";
@@ -72,7 +72,7 @@ function LeftDock() {
   return (
     <div className="oh-left flex min-h-0">
       <Dock side="left" width={248} collapsed={!open} onToggle={() => setOpen(!open)} title="Layers" count={count}>
-        <StructurePanel />
+        <LayersPanel />
       </Dock>
     </div>
   );

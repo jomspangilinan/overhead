@@ -851,6 +851,7 @@ export function coreTools(): ToolSpec[] {
           sections: useStore.getState().sections.map((x) => ({
             id: x.id,
             name: x.name,
+            kind: x.kind ?? "section",
             color: x.color,
             members: x.nodeIds,
           })),

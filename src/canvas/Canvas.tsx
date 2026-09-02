@@ -62,6 +62,9 @@ export function Canvas() {
   const setPendingConnection = useStore((s) => s.setPendingConnection);
   const setPalette = useStore((s) => s.setPalette);
   const setLabelEditing = useStore((s) => s.setLabelEditing);
+  const selectedId = useStore((s) => s.selectedId);
+  const selectedIds = useStore((s) => s.selectedIds);
+  const setSelectedIds = useStore((s) => s.setSelectedIds);
   const wrapper = useRef<HTMLDivElement>(null);
   const [marquee, setMarquee] = useState(false);
 
@@ -118,6 +121,7 @@ export function Canvas() {
             y: n.position.y - NODE_H / 2 + (carried ? frameDrag.dy : 0),
           },
           data: { nodeId: n.id },
+          selected: n.id === selectedId || selectedIds.includes(n.id),
           className: litIds?.has(n.id) ? "lit" : undefined,
           // The hit-box is constant by design (nodeMetrics). Passing it as
           // `measured` keeps React Flow's drag maths initialised even though we
@@ -146,7 +150,7 @@ export function Canvas() {
       });
     }
     return visible;
-  }, [nodes, collapsedByNode, litIds, frameDrag, frameDragMembers]);
+  }, [nodes, collapsedByNode, litIds, frameDrag, frameDragMembers, selectedId, selectedIds]);
 
   const rfEdges: Edge[] = useMemo(() => {
     // Shapes as currently drawn (carried frame offsets included) so the
@@ -315,11 +319,16 @@ export function Canvas() {
     [setDragging],
   );
   const onNodeDragStop = useCallback(
-    (_e: unknown, n: Node) => {
+    (_e: unknown, n: Node, dragged?: Node[]) => {
       const cx = n.position.x + NODE_W / 2;
       const cy = n.position.y + NODE_H / 2;
-      moveNode(n.id, cx, cy);
+      for (const d of dragged ?? [n]) {
+        if (d.id.startsWith("container:")) continue;
+        moveNode(d.id, d.position.x + NODE_W / 2, d.position.y + NODE_H / 2);
+      }
       setDragging(null);
+      // re-parenting applies to a lone drag; a multi-drag keeps its frames
+      if (dragged && dragged.length > 1) return;
       if (n.id.startsWith("container:")) return;
       const st = useStore.getState();
       const node = st.nodes.find((x) => x.id === n.id);
@@ -362,9 +371,26 @@ export function Canvas() {
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         onNodeDragStart={onNodeDragStart}
-        onNodeDrag={(_e, n) =>
-          moveNode(n.id, n.position.x + NODE_W / 2, n.position.y + NODE_H / 2)
-        }
+        onNodeDrag={(_e, _n, dragged) => {
+          for (const n of dragged) {
+            if (n.id.startsWith("container:")) continue;
+            moveNode(n.id, n.position.x + NODE_W / 2, n.position.y + NODE_H / 2);
+          }
+        }}
+        // Controlled nodes: only selection changes are applied (marquee,
+        // shift-click); positions come through onNodeDrag, dimensions are
+        // constant. Keeps a quick click a select and a held drag a move.
+        onNodesChange={(changes) => {
+          const sel = changes.filter((c) => c.type === "select");
+          if (!sel.length) return;
+          const next = new Set(useStore.getState().selectedIds);
+          for (const c of sel) {
+            if (c.type !== "select") continue;
+            if (c.selected) next.add(c.id);
+            else next.delete(c.id);
+          }
+          setSelectedIds([...next].filter((id) => !id.startsWith("container:")));
+        }}
         onNodeDragStop={onNodeDragStop}
         onDragOver={(e) => {
           if (e.dataTransfer.types.includes("application/overhead-service")) {
@@ -373,7 +399,18 @@ export function Canvas() {
           }
         }}
         onDrop={onDrop}
-        onNodeClick={(_e, n) => {
+        multiSelectionKeyCode={["Meta", "Shift"]}
+        onNodeClick={(e, n) => {
+          // ⇧ / ⌘ click adds to the selection (React Flow has already
+          // applied its own select change through onNodesChange)
+          if ((e.shiftKey || e.metaKey || e.ctrlKey) && !n.id.startsWith("container:")) {
+            const st = useStore.getState();
+            const ids = new Set(st.selectedIds);
+            if (st.selectedId && st.nodes.some((x) => x.id === st.selectedId)) ids.add(st.selectedId);
+            ids.add(n.id);
+            useStore.setState({ selectedId: n.id, selectedEdgeId: null, selectedIds: [...ids] });
+            return;
+          }
           if (tool === "trace" && !n.id.startsWith("container:")) {
             const st = useStore.getState();
             const visited = new Set<string>([n.id]);

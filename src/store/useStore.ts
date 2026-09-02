@@ -8,6 +8,7 @@ import type {
   ArchEdge,
   EdgeStyle,
   Side,
+  SectionStyle,
   Container,
   Section,
   ArchNode,
@@ -26,6 +27,7 @@ import {
   type PlacementError,
 } from "@/engine/containers";
 import { migrateSnapshot } from "@/engine/migrate";
+import { sectionMembersDeep } from "@/engine/layers";
 import { defaultSettings } from "@/engine/defineService";
 import { getService } from "@/engine/services";
 import {
@@ -216,6 +218,16 @@ export interface OverheadState {
   removeSection: (id: string) => void;
   moveSection: (id: string, dx: number, dy: number) => void;
   setSectionBounds: (id: string, bounds: Section["bounds"] | undefined) => void;
+  setSectionColor: (id: string, color: string) => void;
+  setSectionStyle: (id: string, patch: Partial<SectionStyle>) => void;
+  setSectionParent: (id: string, parentId: string | undefined) => void;
+  /** ⌘G: the selected nodes become a group (a frameless section). */
+  addGroup: (nodeIds: string[], name?: string) => string | null;
+  ungroup: (id: string) => void;
+  /** Multi-selection on the canvas (marquee, shift-click, a selected
+   *  section's members). `selectedId` stays the primary selection. */
+  selectedIds: string[];
+  setSelectedIds: (ids: string[]) => void;
   openScenario: (name: string) => void;
   commitScenario: () => void;
   discardScenario: () => void;
@@ -430,7 +442,19 @@ export const useStore = create<OverheadState>((set, get) => ({
 
   setCardsForced: (on) => set({ cardsForced: on }),
   setZoom: (zoom) => set({ zoom }),
-  select: (id) => set({ selectedId: id, selectedWaypoint: null, ...(id ? { selectedEdgeId: null } : {}) }),
+  select: (id) =>
+    set((s) => {
+      const section = id ? s.sections.find((x) => x.id === id) : undefined;
+      return {
+        selectedId: id,
+        selectedWaypoint: null,
+        ...(id ? { selectedEdgeId: null } : {}),
+        // selecting a section selects its members, so a drag carries them
+        ...(section ? { selectedIds: sectionMembersDeep(s.sections, section.id) } : id ? { selectedIds: [id] } : { selectedIds: [] }),
+      };
+    }),
+  selectedIds: [],
+  setSelectedIds: (ids) => set({ selectedIds: ids }),
   selectEdge: (id) => set({ selectedEdgeId: id, selectedWaypoint: null, ...(id ? { selectedId: null } : {}) }),
   selectedWaypoint: null,
   setSelectedWaypoint: (i) => set({ selectedWaypoint: i }),
@@ -589,11 +613,67 @@ export const useStore = create<OverheadState>((set, get) => ({
     })),
 
   removeSection: (id) =>
-    set((s) => ({ sections: s.sections.filter((x) => x.id !== id) })),
+    set((s) => ({
+      sections: s.sections.filter((x) => x.id !== id).map((x) => (x.parentId === id ? { ...x, parentId: undefined } : x)),
+      selectedId: s.selectedId === id ? null : s.selectedId,
+    })),
 
   setSectionBounds: (id, bounds) =>
     set((s) => ({
       sections: s.sections.map((x) => (x.id === id ? { ...x, bounds } : x)),
+    })),
+
+  setSectionColor: (id, color) =>
+    set((s) => ({ sections: s.sections.map((x) => (x.id === id ? { ...x, color } : x)) })),
+
+  setSectionStyle: (id, patch) =>
+    set((s) => ({
+      sections: s.sections.map((x) => {
+        if (x.id !== id) return x;
+        const next: SectionStyle = { ...(x.style ?? {}), ...patch };
+        for (const k of Object.keys(next) as (keyof SectionStyle)[]) if (next[k] === undefined) delete next[k];
+        const { style: _drop, ...rest } = x;
+        void _drop;
+        return Object.keys(next).length ? { ...rest, style: next } : rest;
+      }),
+    })),
+
+  setSectionParent: (id, parentId) =>
+    set((s) => ({
+      sections: s.sections.map((x) => {
+        if (x.id !== id) return x;
+        const { parentId: _drop, ...rest } = x;
+        void _drop;
+        return parentId && parentId !== id ? { ...rest, parentId } : rest;
+      }),
+    })),
+
+  addGroup: (nodeIds, name) => {
+    const ids = nodeIds.filter((id) => get().nodes.some((n) => n.id === id));
+    if (!ids.length) return null;
+    const id = newId("group");
+    set((s) => ({
+      sections: [
+        ...s.sections,
+        {
+          id,
+          name: name ?? `Group ${s.sections.filter((x) => x.kind === "group").length + 1}`,
+          color: SECTION_COLORS[s.sections.length % SECTION_COLORS.length],
+          kind: "group",
+          nodeIds: ids,
+          collapsed: false,
+        },
+      ],
+      selectedId: id,
+      selectedIds: ids,
+    }));
+    return id;
+  },
+
+  ungroup: (id) =>
+    set((s) => ({
+      sections: s.sections.filter((x) => x.id !== id).map((x) => (x.parentId === id ? { ...x, parentId: undefined } : x)),
+      selectedId: s.selectedId === id ? null : s.selectedId,
     })),
 
   /** One action so undo captures the frame and its members as a single step. */
