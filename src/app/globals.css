@@ -411,10 +411,21 @@ body {
   opacity: 1;
   visibility: visible;
 }
-/* A collapsed frame's card is a landmark, not a resource: hover isolation
-   never dims it, and its expand control is always legible. */
-.overhead-canvas.hovering .react-flow__node.oh-frame-card {
-  opacity: 1;
+/* A collapsed frame's card takes part in hover isolation like any node:
+   hovering it lights it (Canvas gives it `.lit` through litKeys, which maps
+   a hidden member onto the card that stands in for it), and its border goes
+   to the accent so it reads as the active object rather than the frame
+   around it. */
+.oh-card-body {
+  border-color: var(--frame-color);
+}
+.react-flow__node.oh-frame-card:hover .oh-card-body {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.react-flow__node.oh-frame-card.selected .oh-card-body {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
 }
 .oh-card-expand {
   opacity: 0.7;

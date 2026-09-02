@@ -287,7 +287,13 @@ carrying its members, `az` dissolves upward, `subnet` → `subnetpub`, `node.gro
 6. **Layers:** `request` · `events` · `data` · `security` · `cost` · `sections`. Default on: request, events,
    data, sections.
 7. **Volume on edges.** Stroke width follows `volumePerMonth` on a log scale (1.2 → 3.5 px).
-8. **Hover isolates.** A node's edges brighten, the rest dims to 16%.
+8. **Hover isolates.** A node's edges brighten, the rest dims to 16%. It works on the graph **as drawn**:
+   `hoverSeeds` turns a hovered collapsed-frame card into every member hidden inside it (so its edges
+   light), and `litKeys` maps the lit model ids onto what is rendered (a hidden member → the card that
+   stands in for it). Without that the card you were pointing at was the one thing that dimmed, and the
+   frame around it looked active instead. The card's border goes to the accent on hover and while
+   selected, which needs the frame colour to ride on the wrapper as `--frame-color`: an inline
+   `border-color` beats every stylesheet rule.
 9. **Trace, don't number.** `trace_request` (or the T tool + a click) lights the path from a node.
 10. **Settings never sit on the diagram.** The Inspector shows the schema form; the card shows the three that
     decide price.

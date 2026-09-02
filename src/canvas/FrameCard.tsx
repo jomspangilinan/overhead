@@ -17,7 +17,7 @@ export const CARD_H = 84;
 export type FrameCardData = { frameKind: "container" | "section"; frameId: string };
 export type FrameCardType = Node<FrameCardData, "frame">;
 
-export const FrameCard = memo(function FrameCard({ data, selected }: NodeProps<FrameCardType>) {
+export const FrameCard = memo(function FrameCard({ data }: NodeProps<FrameCardType>) {
   const { frameKind, frameId } = data;
   const container = useStore((s) => (frameKind === "container" ? s.containers.find((c) => c.id === frameId) : undefined));
   const section = useStore((s) => (frameKind === "section" ? s.sections.find((x) => x.id === frameId) : undefined));
@@ -53,18 +53,17 @@ export const FrameCard = memo(function FrameCard({ data, selected }: NodeProps<F
   const expand = () => (container ? setContainerCollapsed(container.id, false) : setSectionCollapsed(section!.id, false));
 
   return (
-    <div className="overhead-node relative" style={{ width: CARD_W, height: CARD_H }}>
+    // the frame's own colour rides on the wrapper as a variable, so the
+    // hover and selected rules in globals.css can override the border
+    // (an inline border-color would beat any stylesheet rule)
+    <div className="overhead-node relative" style={{ width: CARD_W, height: CARD_H, ["--frame-color" as string]: color }}>
       <Handle id="left" type="target" position={Position.Left} style={{ top: CARD_H / 2 }} />
       <Handle id="top" type="target" position={Position.Top} style={{ left: CARD_W / 2 }} />
       <Handle id="right" type="source" position={Position.Right} style={{ top: CARD_H / 2 }} />
       <Handle id="bottom" type="source" position={Position.Bottom} style={{ left: CARD_W / 2 }} />
       <div
-        className="absolute inset-0 cursor-pointer rounded-[10px]"
-        style={{
-          background: "var(--panel)",
-          border: `1.6px ${container ? "solid" : "dashed"} ${selected ? "var(--accent)" : color}`,
-          boxShadow: selected ? "0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent)" : undefined,
-        }}
+        className="oh-card-body absolute inset-0 cursor-pointer rounded-[10px]"
+        style={{ background: "var(--panel)", borderWidth: 1.6, borderStyle: container ? "solid" : "dashed" }}
         onDoubleClick={expand}
         title={`${kindLabel} · collapsed · click to select · double-click to expand`}
       >

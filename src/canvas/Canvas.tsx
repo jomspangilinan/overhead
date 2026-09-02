@@ -116,17 +116,6 @@ export function Canvas() {
     notify(members.length ? `Section ${count} · ${members.length} resource${members.length === 1 ? "" : "s"}` : `Section ${count} added · drag resources in`);
   };
 
-  const litIds = useMemo(() => {
-    if (traceIds?.length) return new Set(traceIds);
-    if (!hoveredId) return null;
-    const lit = new Set<string>([hoveredId]);
-    for (const e of edges) {
-      if (e.from === hoveredId) lit.add(e.to);
-      if (e.to === hoveredId) lit.add(e.from);
-    }
-    return lit;
-  }, [hoveredId, edges, traceIds]);
-
   const containers = useStore((s) => s.containers);
   const frameDrag = useStore((s) => s.frameDrag);
   const setDragging = useStore((s) => s.setDragging);
@@ -153,6 +142,40 @@ export function Canvas() {
     return map;
   }, [containers, nodes, sections]);
 
+  // Hover isolation works on the graph *as drawn*: hovering a collapsed
+  // frame's card stands in for every member inside it, so its edges light
+  // and it never dims itself · `litIds` is in model ids, `litKeys` the
+  // same set mapped onto what is actually rendered (a member's card).
+  /** What the pointer is on, in model ids: a resource, or every member of
+   *  a collapsed frame's card. */
+  const hoverSeeds = useMemo(() => {
+    if (!hoveredId) return null;
+    if (!isFrameCard(hoveredId)) return new Set([hoveredId]);
+    const out = new Set<string>();
+    for (const [nodeId, host] of collapsedByNode) if (host === hoveredId) out.add(nodeId);
+    return out;
+  }, [hoveredId, collapsedByNode]);
+
+  const litIds = useMemo(() => {
+    if (traceIds?.length) return new Set(traceIds);
+    if (!hoverSeeds) return null;
+    const seeds = hoverSeeds;
+    const lit = new Set<string>(seeds);
+    for (const e of edges) {
+      if (seeds.has(e.from)) lit.add(e.to);
+      if (seeds.has(e.to)) lit.add(e.from);
+    }
+    return lit;
+  }, [hoverSeeds, edges, traceIds]);
+
+  const litKeys = useMemo(() => {
+    if (!litIds) return null;
+    const out = new Set<string>();
+    for (const id of litIds) out.add(collapsedByNode.get(id) ?? id);
+    if (hoveredId && isFrameCard(hoveredId)) out.add(hoveredId);
+    return out;
+  }, [litIds, collapsedByNode, hoveredId]);
+
   // A container frame mid-drag carries its members visually; the store
   // moves them once, on release, so undo sees a single step.
   const frameDragMembers = useMemo(
@@ -174,7 +197,7 @@ export function Canvas() {
           },
           data: { nodeId: n.id },
           selected: n.id === selectedId || selectedIds.includes(n.id),
-          className: litIds?.has(n.id) ? "lit" : undefined,
+          className: litKeys?.has(n.id) ? "lit" : undefined,
           // The hit-box is constant by design (nodeMetrics). Passing it as
           // `measured` keeps React Flow's drag maths initialised even though we
           // never apply its dimension changes (controlled nodes, no
@@ -204,7 +227,7 @@ export function Canvas() {
         position: { x: centre.x - CARD_W / 2, y: centre.y - CARD_H / 2 },
         data: { frameKind: kind, frameId: id },
         selected: selectedId === id,
-        className: "oh-frame-card",
+        className: `oh-frame-card${litKeys?.has(key) ? " lit" : ""}`,
         draggable: false,
         width: CARD_W,
         height: CARD_H,
@@ -220,7 +243,7 @@ export function Canvas() {
       card(`section:${s.id}`, "section", s.id, s.bounds);
     }
     return visible;
-  }, [nodes, containers, sections, collapsedByNode, litIds, frameDrag, frameDragMembers, selectedId, selectedIds]);
+  }, [nodes, containers, sections, collapsedByNode, litKeys, frameDrag, frameDragMembers, selectedId, selectedIds]);
 
   const rfEdges: Edge[] = useMemo(() => {
     // Shapes as currently drawn (carried frame offsets included) so the
@@ -308,7 +331,7 @@ export function Canvas() {
           litIds &&
           (traceIds?.length
             ? litIds.has(e.from) && litIds.has(e.to)
-            : e.from === hoveredId || e.to === hoveredId)
+            : !!hoverSeeds && (hoverSeeds.has(e.from) || hoverSeeds.has(e.to)))
             ? "lit"
             : undefined,
         markerEnd: arrow === "end" || arrow === "both" ? marker : undefined,
@@ -316,7 +339,7 @@ export function Canvas() {
       });
     }
     return out;
-  }, [edges, layers, litIds, hoveredId, traceIds, collapsedByNode, selectedEdgeId, rfNodes, nodes, cardMode]);
+  }, [edges, layers, litIds, hoverSeeds, traceIds, collapsedByNode, selectedEdgeId, rfNodes, nodes, cardMode]);
 
   const onMove = useCallback(
     (_evt: unknown, viewport: { zoom: number }) => setZoom(viewport.zoom),
