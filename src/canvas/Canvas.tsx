@@ -223,7 +223,7 @@ export function Canvas() {
 
   return (
     <div
-      className={`overhead-canvas h-full w-full ${hoveredId || traceIds?.length ? "hovering" : ""} ${cardMode ? "cards" : ""}`}
+      className={`overhead-canvas h-full w-full ${hoveredId || traceIds?.length ? "hovering" : ""} ${cardMode ? "cards" : ""} ${tool === "connect" ? "connecting" : ""}`}
     >
       <ReactFlow
         nodes={rfNodes}
@@ -243,7 +243,25 @@ export function Canvas() {
           }
         }}
         onDrop={onDrop}
-        onNodeClick={(_e, n) => select(n.id)}
+        onNodeClick={(_e, n) => {
+          if (tool === "trace" && !n.id.startsWith("container:")) {
+            const st = useStore.getState();
+            const visited = new Set<string>([n.id]);
+            const queue = [n.id];
+            while (queue.length) {
+              const cur = queue.shift()!;
+              for (const e of st.edges) {
+                if (e.from === cur && !visited.has(e.to)) {
+                  visited.add(e.to);
+                  queue.push(e.to);
+                }
+              }
+            }
+            st.setTrace([...visited]);
+            return;
+          }
+          select(n.id);
+        }}
         onEdgeClick={(e, edge) => {
           e.stopPropagation();
           selectEdge(edge.id);

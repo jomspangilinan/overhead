@@ -1,11 +1,11 @@
 "use client";
 
-// The 52px tool rail. Icons with a keyboard hint — never a row of labelled
-// pill buttons. Active state is --accent-bg plus a tick that bleeds out the
-// rail's left edge.
+// The 52px tool rail. Every button here does something: the additive tools
+// switch the left dock to the matching tab, connect/trace arm a canvas mode,
+// and the printed key is a real binding (see Keyboard.tsx).
 
 import { useStore, type Tool } from "@/store/useStore";
-import { undo } from "@/store/history";
+import { undo, redo } from "@/store/history";
 import { Icon } from "../Icon";
 
 function RailButton({
@@ -27,7 +27,7 @@ function RailButton({
       aria-label={title}
       aria-pressed={active}
       onClick={onClick}
-      className="relative grid h-9 w-9 place-items-center rounded-[10px] transition-colors"
+      className="relative grid h-9 w-9 place-items-center rounded-[10px] transition-colors hover:bg-[var(--hover)]"
       style={{
         background: active ? "var(--accent-bg)" : undefined,
         color: active ? "var(--accent-ink)" : "var(--ink-3)",
@@ -37,13 +37,7 @@ function RailButton({
         <span
           aria-hidden
           className="absolute rounded-sm"
-          style={{
-            left: -8,
-            top: 9,
-            width: 2.5,
-            height: 18,
-            background: "var(--accent)",
-          }}
+          style={{ left: -8, top: 9, width: 2.5, height: 18, background: "var(--accent)" }}
         />
       ) : null}
       <Icon name={icon} size={17} />
@@ -60,88 +54,45 @@ function RailButton({
   );
 }
 
-const Sep = () => (
-  <div className="my-[5px] h-px w-5" style={{ background: "var(--line)" }} />
-);
+const Sep = () => <div className="my-[5px] h-px w-5" style={{ background: "var(--line)" }} />;
+
+/** Pick a tool from the rail; picking the active one drops back to select. */
+export function pickTool(t: Tool) {
+  const s = useStore.getState();
+  const next = s.tool === t ? "select" : t;
+  s.setTool(next);
+  if (next === "add" || next === "container") s.setLeftTab("add");
+  if (next === "section") s.setLeftTab("structure");
+}
 
 export function Rail() {
   const tool = useStore((s) => s.tool);
-  const setTool = useStore((s) => s.setTool);
   const gridOn = useStore((s) => s.gridOn);
   const setGridOn = useStore((s) => s.setGridOn);
-
-  const pick = (t: Tool) => () => setTool(tool === t ? "select" : t);
+  const cardsForced = useStore((s) => s.cardsForced);
+  const setCardsForced = useStore((s) => s.setCardsForced);
+  const applyAutoLayout = useStore((s) => s.applyAutoLayout);
 
   return (
     <nav
-      className="fixed z-[8] flex w-[52px] flex-col items-center gap-[3px] rounded-[15px] py-2"
-      style={{
-        left: 16,
-        top: 16,
-        bottom: 16,
-        background: "var(--panel)",
-        border: "1px solid var(--line)",
-      }}
+      className="flex h-full w-[52px] flex-col items-center gap-[3px] py-2"
+      style={{ background: "var(--panel)", borderRight: "1px solid var(--line)" }}
     >
-      <RailButton
-        icon="select"
-        hint="V"
-        title="Select · V"
-        active={tool === "select"}
-        onClick={() => setTool("select")}
-      />
-      <RailButton
-        icon="pan"
-        hint="H"
-        title="Pan · H"
-        active={tool === "pan"}
-        onClick={() => setTool("pan")}
-      />
+      <RailButton icon="select" hint="V" title="Select · V" active={tool === "select"} onClick={() => pickTool("select")} />
+      <RailButton icon="pan" hint="H" title="Pan · H" active={tool === "pan"} onClick={() => pickTool("pan")} />
       <Sep />
-      <RailButton
-        icon="plus"
-        hint="A"
-        title="Add service · A"
-        active={tool === "add"}
-        onClick={pick("add")}
-      />
-      <RailButton
-        icon="connect"
-        hint="C"
-        title="Connect · C"
-        active={tool === "connect"}
-        onClick={pick("connect")}
-      />
-      <RailButton
-        icon="container"
-        hint="B"
-        title="Container — cloud, region, VPC, subnet · B"
-        active={tool === "container"}
-        onClick={pick("container")}
-      />
-      <RailButton
-        icon="section"
-        hint="S"
-        title="Section — your own grouping · S"
-        active={tool === "section"}
-        onClick={pick("section")}
-      />
+      <RailButton icon="plus" hint="A" title="Add a service · A" active={tool === "add"} onClick={() => pickTool("add")} />
+      <RailButton icon="connect" hint="C" title="Connect — handles stay visible · C" active={tool === "connect"} onClick={() => pickTool("connect")} />
+      <RailButton icon="container" hint="B" title="Add a container · B" active={tool === "container"} onClick={() => pickTool("container")} />
+      <RailButton icon="section" hint="S" title="Sections · S" active={tool === "section"} onClick={() => pickTool("section")} />
       <Sep />
-      <RailButton
-        icon="trace"
-        hint="T"
-        title="Trace a request · T"
-        active={tool === "trace"}
-        onClick={pick("trace")}
-      />
+      <RailButton icon="trace" hint="T" title="Trace a request — then click a node · T" active={tool === "trace"} onClick={() => pickTool("trace")} />
+      <RailButton icon="layout" hint="L" title="Auto-layout by role · L" onClick={applyAutoLayout} />
+      <RailButton icon="cards" hint="K" title="Card view · K" active={cardsForced} onClick={() => setCardsForced(!cardsForced)} />
       <div className="flex-1" />
-      <RailButton
-        icon="grid"
-        title="Grid · ⇧G"
-        active={gridOn}
-        onClick={() => setGridOn(!gridOn)}
-      />
-      <RailButton icon="undo" title="Undo · ⌘Z" onClick={() => undo()} />
+      <RailButton icon="grid" hint="⇧G" title="Grid · ⇧G" active={gridOn} onClick={() => setGridOn(!gridOn)} />
+      <RailButton icon="undo" hint="⌘Z" title="Undo · ⌘Z" onClick={() => undo()} />
+      <RailButton icon="redo" hint="⇧⌘Z" title="Redo · ⇧⌘Z" onClick={() => redo()} />
     </nav>
   );
 }

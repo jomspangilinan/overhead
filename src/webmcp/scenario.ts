@@ -124,6 +124,20 @@ export async function registerScenarioTools(
   }
 }
 
+/** UI-side open: forks the state and registers the four scenario tools,
+ *  exactly as the open_scenario tool does, so the strip count ticks. */
+export async function openScenarioFromUi(name: string): Promise<void> {
+  const s = useStore.getState();
+  if (s.scenario) return;
+  s.openScenario(name);
+  const { getModelContext } = await import("./register");
+  const mc = typeof document !== "undefined" ? getModelContext() : undefined;
+  if (!mc) return;
+  const { coreTools } = await import("./tools");
+  const writeMap = new Map(coreTools().filter((t) => !t.readOnly).map((t) => [t.name, t]));
+  await registerScenarioTools(mc, writeMap);
+}
+
 /** UI-side close (banner buttons) keeps the tool lifecycle in sync. */
 export function closeScenarioFromUi(kind: "commit" | "discard"): void {
   const s = useStore.getState();

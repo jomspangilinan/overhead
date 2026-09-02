@@ -14,6 +14,7 @@ import {
 import { monthlyTotal } from "@/engine/cost";
 import { toMoney } from "@/engine/model";
 import { Icon } from "../Icon";
+import { openScenarioFromUi } from "@/webmcp/scenario";
 
 export function TopBar() {
   const nodes = useStore((s) => s.nodes);
@@ -23,6 +24,8 @@ export function TopBar() {
   const setRegion = useStore((s) => s.setRegion);
   const scenario = useStore((s) => s.scenario);
   const setExportPanel = useStore((s) => s.setExportPanel);
+  const drawingName = useStore((s) => s.drawingName);
+  const setDrawingName = useStore((s) => s.setDrawingName);
 
   const total = useMemo(() => {
     try {
@@ -38,15 +41,26 @@ export function TopBar() {
 
   return (
     <header
-      className="fixed z-[7] flex items-center gap-3"
-      style={{ left: 80, right: 16, top: 16, height: 38 }}
+      className="flex h-full items-center gap-3 px-4"
+      style={{ background: "var(--panel)", borderBottom: "1px solid var(--line)" }}
     >
       <span className="text-[15px] font-bold tracking-[-0.025em]">Overhead</span>
       <span className="flex items-center gap-[7px] text-[12.5px] text-ink-2">
         <span style={{ color: "#3A4454" }}>/</span>
-        <b className="font-medium" style={{ color: "var(--ink-15)" }}>
-          {scenario ? scenario.name : "untitled"}
-        </b>
+        <input
+          value={drawingName}
+          onChange={(e) => setDrawingName(e.target.value)}
+          onBlur={(e) => setDrawingName(e.target.value)}
+          title="Drawing name — click to rename"
+          aria-label="Drawing name"
+          className="min-w-[60px] bg-transparent font-medium outline-none focus:underline"
+          style={{ color: "var(--ink-15)", width: `${Math.max(6, drawingName.length + 1)}ch` }}
+        />
+        {scenario ? (
+          <span className="rounded-md px-1.5 py-0.5 text-[10.5px]" style={{ background: "var(--accent-bg)", color: "var(--accent-ink)" }}>
+            scenario · {scenario.name}
+          </span>
+        ) : null}
       </span>
 
       <label
@@ -96,8 +110,13 @@ export function TopBar() {
         title={
           scenario
             ? `Scenario "${scenario.name}" is open — commit or discard it on the canvas`
-            : "Ask your agent to open a scenario"
+            : "Fork the design into a what-if scenario"
         }
+        onClick={() => {
+          if (scenario) return;
+          const name = window.prompt("Scenario name", "what-if");
+          if (name) void openScenarioFromUi(name.trim() || "what-if");
+        }}
       >
         <Icon name="scenario" size={14} />
         {scenario ? scenario.name : "Scenario"}

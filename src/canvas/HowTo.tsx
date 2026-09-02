@@ -19,28 +19,29 @@ export function HowTo() {
     }
   }, []);
 
-  if (!show && !empty) return null;
+  if (!show) return null;
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 z-[4] flex justify-center px-4"
-      style={{ top: 66, left: 344, right: 352 }}>
+    <div className="pointer-events-none absolute inset-x-0 top-3 z-[4] flex justify-center px-4">
       <div className="glass pointer-events-auto flex max-w-2xl items-start gap-3 rounded-[12px] px-4 py-3">
         <div className="text-[13px] leading-relaxed text-ink-2">
           {empty ? (
             <>
-              <strong className="text-ink">Empty canvas.</strong> Drag a service
-              from the left rail — or open this page in the ChatGPT desktop app
-              and describe what to build.
+              <strong className="text-ink">Empty canvas.</strong> Pick a template
+              or add a service from the left panel, drop a Cost Explorer CSV to
+              price what you already run — or open this page in the ChatGPT
+              desktop app and describe what to build.
             </>
           ) : (
             <>
               <strong className="text-ink">Bring your agent:</strong> open this
               page in the ChatGPT desktop app and describe an architecture — it
-              builds, prices and audits it live. Its tools: bottom right.
+              builds, prices and audits it live. Drop a Cost Explorer CSV anywhere
+              to price what you already run. Its tools: bottom bar.
             </>
           )}
         </div>
-        {!empty ? (
+        {(
           <button
             className="rounded border border-line px-1.5 text-[12px] text-ink-3 hover:bg-panel-2"
             aria-label="Dismiss"
@@ -53,7 +54,7 @@ export function HowTo() {
           >
             ✕
           </button>
-        ) : null}
+        )}
       </div>
     </div>
   );

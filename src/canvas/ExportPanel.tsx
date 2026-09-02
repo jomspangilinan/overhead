@@ -43,10 +43,11 @@ async function captureCanvas(kind: "svg" | "png") {
 export function ExportPanel() {
   const panel = useStore((s) => s.exportPanel);
   const setExportPanel = useStore((s) => s.setExportPanel);
+  const drawingName = useStore((s) => s.drawingName);
   const content = useStore((s) => {
     if (!s.exportPanel || s.exportPanel === "svg") return "";
     try {
-      return exportAs(s.exportPanel, snapshotOf(s), pricingOf(s));
+      return exportAs(s.exportPanel, snapshotOf(s), pricingOf(s), s.drawingName);
     } catch (err) {
       return `// export failed: ${err instanceof Error ? err.message : err}`;
     }
@@ -58,7 +59,7 @@ export function ExportPanel() {
   if (!panel) return null;
 
   return (
-    <div className="absolute inset-y-0 right-0 z-50 flex w-[420px] max-w-full flex-col border-l border-line bg-panel shadow-xl">
+    <div className="absolute inset-0 z-50 flex flex-col" style={{ background: "var(--panel)" }}>
       <div className="flex items-center gap-1.5 border-b border-line px-3 py-2">
         <span
           className="mr-1 text-[12px] font-semibold uppercase tracking-wider text-ink-3"
@@ -69,16 +70,18 @@ export function ExportPanel() {
         {tabs.map((f) => (
           <button
             key={f}
-            className={`rounded px-2 py-0.5 text-[11.5px] ${
-              panel === f ? "bg-accent text-white" : "border border-line hover:bg-panel-2"
-            }`}
+            className="rounded-md px-2 py-0.5 text-[11.5px]"
+            style={{
+              background: panel === f ? "var(--accent-bg)" : undefined,
+              color: panel === f ? "var(--ink-15)" : "var(--ink-3)",
+            }}
             onClick={() => setExportPanel(f)}
           >
             {f}
           </button>
         ))}
         <button
-          className="ml-auto rounded border border-line px-2 py-0.5 text-[12px] hover:bg-panel-2"
+          className="ml-auto grid h-6 w-6 place-items-center rounded-[7px] text-ink-3 hover:bg-[var(--hover-2)] hover:text-ink-2"
           onClick={() => setExportPanel(null)}
           aria-label="Close export panel"
         >
@@ -93,13 +96,13 @@ export function ExportPanel() {
           </p>
           <div className="flex gap-2">
             <button
-              className="rounded border border-line px-3 py-1.5 hover:bg-panel-2"
+              className="rounded-lg px-3 py-1.5 text-[12px] font-medium hover:bg-[var(--hover)]" style={{ border: "1px solid var(--line-2)", color: "var(--ink-15)" }}
               onClick={() => captureCanvas("svg")}
             >
               Download SVG
             </button>
             <button
-              className="rounded border border-line px-3 py-1.5 hover:bg-panel-2"
+              className="rounded-lg px-3 py-1.5 text-[12px] font-medium hover:bg-[var(--hover)]" style={{ border: "1px solid var(--line-2)", color: "var(--ink-15)" }}
               onClick={() => captureCanvas("png")}
             >
               Download PNG
@@ -116,13 +119,13 @@ export function ExportPanel() {
           />
           <div className="flex gap-2 border-t border-line p-3">
             <button
-              className="rounded bg-accent px-3 py-1.5 text-[12.5px] font-semibold text-white"
-              onClick={() => download(`overhead.${EXT[panel]}`, content)}
+              className="rounded-lg px-3 py-1.5 text-[12px] font-medium text-white" style={{ background: "var(--accent)" }}
+              onClick={() => download(`${drawingName}.${EXT[panel]}`, content)}
             >
               Download .{EXT[panel]}
             </button>
             <button
-              className="rounded border border-line px-3 py-1.5 text-[12.5px] hover:bg-panel-2"
+              className="rounded-lg px-3 py-1.5 text-[12px] font-medium hover:bg-[var(--hover)]" style={{ border: "1px solid var(--line-2)", color: "var(--ink-15)" }}
               onClick={async () => {
                 await navigator.clipboard.writeText(content);
                 setCopied(true);

@@ -4,7 +4,7 @@
 // the name beneath (default), or the 200×76 card housing the icon when
 // zoomed ≥125% / Cards / Cost. Constant 200×100 hit-box keeps edges stable.
 
-import { memo, useEffect } from "react";
+import { memo, useEffect, useState } from "react";
 import {
   Handle,
   Position,
@@ -62,6 +62,8 @@ function ModeInternals({ nodeId, cardMode }: { nodeId: string; cardMode: boolean
 
 export const AwsNode = memo(function AwsNode({ data }: NodeProps<AwsNodeType>) {
   const node = useStore((s) => s.nodes.find((n) => n.id === data.nodeId));
+  const renameNode = useStore((s) => s.renameNode);
+  const [editing, setEditing] = useState(false);
   const cardMode = useStore(cardModeOf);
   const costOn = useStore((s) => s.layers.cost);
   const securityOn = useStore((s) => s.layers.security);
@@ -148,8 +150,25 @@ export const AwsNode = memo(function AwsNode({ data }: NodeProps<AwsNodeType>) {
             >
               {def.term}
             </div>
-            <div className="truncate text-[12.5px] font-medium leading-4">
-              {node.name}
+            <div
+              className="truncate text-[12.5px] font-medium leading-4"
+              title="Double-click to rename"
+              onDoubleClick={(e) => { e.stopPropagation(); setEditing(true); }}
+            >
+              {editing ? (
+                <input
+                  autoFocus
+                  defaultValue={node.name}
+                  className="nodrag w-full bg-panel-2 px-1 outline-none"
+                  style={{ border: "1px solid var(--accent)" }}
+                  onBlur={(e) => { renameNode(node.id, e.target.value); setEditing(false); }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                    if (e.key === "Escape") setEditing(false);
+                  }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                />
+              ) : node.name}
             </div>
             <div
               className="truncate text-[9.5px] opacity-70"
@@ -191,9 +210,28 @@ export const AwsNode = memo(function AwsNode({ data }: NodeProps<AwsNodeType>) {
               <use href={`#${def.icon}`} width={ICON} height={ICON} />
             </svg>
           </div>
-          <div className="mt-1 max-w-[190px] truncate text-center text-[12px] font-medium">
-            {node.name}
-          </div>
+          {editing ? (
+            <input
+              autoFocus
+              defaultValue={node.name}
+              className="nodrag w-[150px] rounded bg-panel-2 px-1 text-center text-[12px] font-medium outline-none"
+              style={{ border: "1px solid var(--accent)" }}
+              onBlur={(e) => { renameNode(node.id, e.target.value); setEditing(false); }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                if (e.key === "Escape") setEditing(false);
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+            />
+          ) : (
+            <div
+              className="mt-1 max-w-[190px] truncate text-center text-[12px] font-medium"
+              title="Double-click to rename"
+              onDoubleClick={(e) => { e.stopPropagation(); setEditing(true); }}
+            >
+              {node.name}
+            </div>
+          )}
           {securityOn && SEC_BADGE[node.service] ? (
             <div
               className="rounded border px-1 py-px text-[8.5px] font-semibold"

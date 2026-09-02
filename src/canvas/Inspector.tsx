@@ -90,10 +90,60 @@ function Field({
   );
 }
 
+function EdgeInspector({ edgeId }: { edgeId: string }) {
+  const edge = useStore((s) => s.edges.find((e) => e.id === edgeId));
+  const nodes = useStore((s) => s.nodes);
+  const setEdge = useStore((s) => s.setEdge);
+  const removeEdge = useStore((s) => s.removeEdge);
+  const selectEdge = useStore((s) => s.selectEdge);
+  if (!edge) return null;
+  const name = (id: string) => nodes.find((n) => n.id === id)?.name ?? id;
+  const field = "w-full rounded border border-line bg-panel-2 px-2 py-1 text-[12.5px]";
+  return (
+    <div className="flex flex-col gap-3 p-3.5">
+      <header>
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-ink-3" style={{ fontFamily: "var(--font-archivo)" }}>
+          Edge
+        </div>
+        <h2 className="text-[13px] font-semibold">
+          {name(edge.from)} → {name(edge.to)}
+        </h2>
+      </header>
+      <label className="block">
+        <span className="mb-1 block text-[11px] font-medium text-ink-3">Kind</span>
+        <select className={field} value={edge.kind} onChange={(e) => setEdge(edge.id, { kind: e.target.value as typeof edge.kind })}>
+          <option value="sync">sync — request/response (solid, arrow)</option>
+          <option value="async">async — queue/event (dashed, arrow)</option>
+          <option value="data">data — storage flow (dotted, no arrow)</option>
+        </select>
+      </label>
+      <label className="block">
+        <span className="mb-1 block text-[11px] font-medium text-ink-3">Volume / month</span>
+        <input type="number" min={0} className={field} style={{ fontFamily: "var(--font-mono-jb)" }}
+          value={edge.volumePerMonth ?? ""} placeholder="drives line weight"
+          onChange={(e) => setEdge(edge.id, { volumePerMonth: e.target.value === "" ? undefined : Number(e.target.value) })} />
+      </label>
+      <label className="block">
+        <span className="mb-1 block text-[11px] font-medium text-ink-3">Label</span>
+        <input className={field} value={edge.label ?? ""} placeholder="optional"
+          onChange={(e) => setEdge(edge.id, { label: e.target.value || undefined })} />
+      </label>
+      <button
+        className="mt-auto rounded border border-line px-3 py-1.5 text-[12px] text-bad hover:bg-panel-2"
+        onClick={() => { removeEdge(edge.id); selectEdge(null); }}
+      >
+        Remove edge
+      </button>
+    </div>
+  );
+}
+
 export function Inspector() {
   const selectedId = useStore((s) => s.selectedId);
+  const selectedEdgeId = useStore((s) => s.selectedEdgeId);
   const node = useStore((s) => s.nodes.find((n) => n.id === selectedId));
   const removeNode = useStore((s) => s.removeNode);
+  const renameNode = useStore((s) => s.renameNode);
   const select = useStore((s) => s.select);
   const edges = useStore((s) => s.edges);
   const traffic = useStore((s) => s.traffic);
@@ -121,10 +171,11 @@ export function Inspector() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [node, edges, traffic, region]);
 
+  if (!node && selectedEdgeId) return <EdgeInspector edgeId={selectedEdgeId} />;
   if (!node) {
     return (
       <p className="p-4 text-[11.5px] text-ink-3">
-        Select a resource on the canvas.
+        Select a resource or an edge on the canvas.
       </p>
     );
   }
@@ -141,7 +192,13 @@ export function Inspector() {
           {def.term}
         </div>
         <div className="flex items-baseline justify-between">
-          <h2 className="text-[15px] font-semibold">{node.name}</h2>
+          <input
+            className="min-w-0 flex-1 bg-transparent text-[15px] font-semibold outline-none focus:underline"
+            value={node.name}
+            title="Rename"
+            aria-label="Resource name"
+            onChange={(e) => renameNode(node.id, e.target.value)}
+          />
           {cost ? (
             <span
               className="text-[13px] font-semibold"

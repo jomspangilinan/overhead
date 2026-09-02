@@ -65,6 +65,15 @@ const PATHS: Record<string, JSX.Element> = {
     </>
   ),
   scenario: <path d="M8.6 1.6 3.4 9.4h3.8l-.5 5 5.4-8.2H8.3z" />,
+  chevronLeft: <path d="M10 3.5 5.5 8l4.5 4.5" />,
+  chevronRight: <path d="M6 3.5 10.5 8 6 12.5" />,
+  redo: (
+    <>
+      <path d="M10.2 4.4 12.8 7l-2.6 2.6" />
+      <path d="M12.8 7H6.6a3.4 3.4 0 0 0 0 6.8H8" />
+    </>
+  ),
+
   // zoom
   fit: <path d="M5.6 2H2v3.6M10.4 2H14v3.6M5.6 14H2v-3.6M10.4 14H14v-3.6" />,
   // actions

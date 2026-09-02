@@ -1,9 +1,10 @@
 "use client";
 
-// The shell: a stage that bleeds edge to edge, an inset React Flow surface,
-// and floating chrome over both. Nothing reserves space from the canvas.
+// The shell: a docked grid — rail · left dock · canvas · right dock — with a
+// top bar and a bottom bar. Panels reserve space; only two small pills float
+// over the canvas.
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ReactFlowProvider } from "@xyflow/react";
 import type { StateSnapshot } from "@/engine/model";
 import { autoLayout } from "@/engine/layout";
@@ -11,17 +12,18 @@ import { useStore } from "@/store/useStore";
 import { Sprite } from "./Sprite";
 import { Canvas } from "./Canvas";
 import { Inspector } from "./Inspector";
-import { Palette } from "./Palette";
+import { Palette, PaletteSearch } from "./Palette";
+import { Templates } from "./Templates";
 import { ScenarioBanner } from "./ScenarioBanner";
 import { ExportPanel } from "./ExportPanel";
 import { BillDrop } from "./BillDrop";
 import { Keyboard } from "./Keyboard";
 import { HowTo } from "./HowTo";
 import { Rail } from "./chrome/Rail";
-import { Panel } from "./chrome/Panel";
+import { Dock } from "./chrome/Dock";
 import { TopBar } from "./chrome/TopBar";
+import { BottomBar } from "./chrome/BottomBar";
 import { LayerSwitch, ZoomPill } from "./chrome/Floats";
-import { TitleBlock } from "./chrome/TitleBlock";
 import { StructurePanel } from "./chrome/StructurePanel";
 import apiBackend from "../../samples/api-backend.json";
 import mediaPipeline from "../../samples/media-pipeline.json";
@@ -48,6 +50,8 @@ function Autosave() {
             containers: s.containers,
             sections: s.sections,
             traffic: s.traffic,
+            drawingName: s.drawingName,
+            gridOn: s.gridOn,
           }),
         );
       } catch {
@@ -59,10 +63,55 @@ function Autosave() {
   return null;
 }
 
-/** The radial stage behind everything; the grid itself lives inside React
- *  Flow so it pans and zooms with the drawing. */
-function Stage() {
-  return <div className="oh-stage" />;
+function LeftDock() {
+  const open = useStore((s) => s.leftDock);
+  const setOpen = useStore((s) => s.setLeftDock);
+  const tab = useStore((s) => s.leftTab);
+  const setTab = useStore((s) => s.setLeftTab);
+  const [query, setQuery] = useState("");
+
+  return (
+    <div className="oh-left flex min-h-0">
+      <Dock
+        side="left"
+        width={248}
+        collapsed={!open}
+        onToggle={() => setOpen(!open)}
+        title={tab === "structure" ? "Structure" : tab === "add" ? "Add" : "Templates"}
+        tabs={[
+          { id: "structure", label: "Structure" },
+          { id: "add", label: "Add" },
+          { id: "templates", label: "Templates" },
+        ]}
+        activeTab={tab}
+        onTab={(id) => setTab(id as typeof tab)}
+        sticky={tab === "add" ? <PaletteSearch value={query} onChange={setQuery} /> : null}
+      >
+        {tab === "structure" ? <StructurePanel /> : null}
+        {tab === "add" ? <Palette query={query} /> : null}
+        {tab === "templates" ? <Templates samples={SAMPLES} /> : null}
+      </Dock>
+    </div>
+  );
+}
+
+function RightDock() {
+  const open = useStore((s) => s.rightDock);
+  const setOpen = useStore((s) => s.setRightDock);
+  return (
+    <div className="oh-right relative flex min-h-0">
+      <Dock
+        side="right"
+        width={300}
+        collapsed={!open}
+        onToggle={() => setOpen(!open)}
+        title="Inspector"
+      >
+        <Inspector />
+      </Dock>
+      {open ? <ExportPanel /> : null}
+    </div>
+  );
 }
 
 export function App() {
@@ -77,9 +126,14 @@ export function App() {
       const saved =
         localStorage.getItem(AUTOSAVE_KEY) ?? localStorage.getItem(LEGACY_KEY);
       if (saved) {
-        const snap = JSON.parse(saved) as StateSnapshot;
+        const snap = JSON.parse(saved) as StateSnapshot & {
+          drawingName?: string;
+          gridOn?: boolean;
+        };
         if (Array.isArray(snap.nodes) && snap.nodes.length > 0) {
           loadSnapshot(snap);
+          if (snap.drawingName) useStore.getState().setDrawingName(snap.drawingName);
+          if (snap.gridOn === false) useStore.getState().setGridOn(false);
           restored = true;
         }
       }
@@ -89,6 +143,7 @@ export function App() {
     if (!restored) {
       const snap = SAMPLES["event-driven"];
       loadSnapshot({ ...snap, nodes: snap.nodes.map((n) => ({ ...n })) });
+      useStore.getState().setDrawingName("event-driven");
       const positions = autoLayout(useStore.getState().nodes);
       for (const [id, p] of Object.entries(positions)) {
         useStore.getState().moveNode(id, p.x, p.y);
@@ -98,41 +153,28 @@ export function App() {
 
   return (
     <ReactFlowProvider>
-      <Stage />
-
-      <div className="oh-viewport">
-        <Canvas />
-        <ScenarioBanner />
-        <BillDrop />
+      <div className="oh-shell">
+        <div className="oh-rail">
+          <Rail />
+        </div>
+        <div className="oh-top">
+          <TopBar />
+        </div>
+        <LeftDock />
+        <div className="oh-main">
+          <div className="oh-stage" />
+          <Canvas />
+          <ScenarioBanner />
+          <BillDrop />
+          <HowTo />
+          <LayerSwitch />
+          <ZoomPill />
+        </div>
+        <RightDock />
+        <div className="oh-bottom">
+          <BottomBar />
+        </div>
       </div>
-
-      <Rail />
-      <TopBar />
-
-      <StructurePanel />
-
-      <Panel
-        id="add"
-        title="Add"
-        defaults={{ left: 80, top: 552, width: 238, height: 300 }}
-      >
-        <Palette />
-      </Panel>
-
-      <Panel
-        id="inspector"
-        title="Inspector"
-        defaults={{ right: 16, top: 66, width: 320, height: 640 }}
-      >
-        <Inspector />
-      </Panel>
-
-      <LayerSwitch />
-      <ZoomPill />
-      <TitleBlock />
-
-      <ExportPanel />
-      <HowTo />
       <Sprite />
       <Autosave />
       <Keyboard />

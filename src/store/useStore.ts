@@ -44,6 +44,14 @@ export type Layer =
   | "cost"
   | "sections";
 
+export type LeftTab = "structure" | "add" | "templates";
+export type WebmcpOutcome =
+  | "checking"
+  | "registered"
+  | "no-model-context"
+  | "in-iframe"
+  | "error";
+
 /** The rail's active tool. */
 export type Tool =
   | "select"
@@ -92,6 +100,24 @@ export interface OverheadState {
   setTool: (tool: Tool) => void;
   gridOn: boolean;
   setGridOn: (on: boolean) => void;
+  // shell
+  leftDock: boolean;
+  rightDock: boolean;
+  leftTab: LeftTab;
+  setLeftDock: (open: boolean) => void;
+  setRightDock: (open: boolean) => void;
+  setLeftTab: (tab: LeftTab) => void;
+  drawingName: string;
+  setDrawingName: (name: string) => void;
+  /** Published by WebMCPProvider (mounted at the root) for the agent strip. */
+  webmcpOutcome: WebmcpOutcome;
+  setWebmcpOutcome: (o: WebmcpOutcome) => void;
+  renameNode: (id: string, name: string) => void;
+  renameContainer: (id: string, name: string, cidr?: string) => void;
+  setEdge: (
+    id: string,
+    patch: { kind?: EdgeKind; volumePerMonth?: number; label?: string },
+  ) => void;
   removeNode: (id: string) => void;
   moveNode: (id: string, x: number, y: number) => void;
   setNodeSetting: (id: string, key: string, value: unknown) => void;
@@ -203,6 +229,36 @@ export const useStore = create<OverheadState>((set, get) => ({
   setTool: (tool) => set({ tool }),
   gridOn: true,
   setGridOn: (on) => set({ gridOn: on }),
+
+  leftDock: true,
+  rightDock: true,
+  leftTab: "structure",
+  setLeftDock: (open) => set({ leftDock: open }),
+  setRightDock: (open) => set({ rightDock: open }),
+  setLeftTab: (tab) => set({ leftTab: tab, leftDock: true }),
+  drawingName: "untitled",
+  setDrawingName: (name) => set({ drawingName: name.trim() || "untitled" }),
+  webmcpOutcome: "checking",
+  setWebmcpOutcome: (o) => set({ webmcpOutcome: o }),
+
+  renameNode: (id, name) =>
+    set((s) => ({
+      nodes: s.nodes.map((n) => (n.id === id ? { ...n, name: name.trim() || n.name } : n)),
+    })),
+
+  renameContainer: (id, name, cidr) =>
+    set((s) => ({
+      containers: s.containers.map((c) =>
+        c.id === id
+          ? { ...c, name: name.trim() || c.name, ...(cidr !== undefined ? { cidr: cidr || undefined } : {}) }
+          : c,
+      ),
+    })),
+
+  setEdge: (id, patch) =>
+    set((s) => ({
+      edges: s.edges.map((e) => (e.id === id ? { ...e, ...patch } : e)),
+    })),
 
   removeNode: (id) =>
     set((s) => ({
@@ -350,7 +406,8 @@ export const useStore = create<OverheadState>((set, get) => ({
           name,
           color: color ?? SECTION_COLORS[s.sections.length % SECTION_COLORS.length],
           nodeIds: nodeIds ?? [],
-          bounds,
+          // a member-less section must still be visible and draggable
+          bounds: bounds ?? (nodeIds?.length ? undefined : { x: 40, y: 40, w: 280, h: 160 }),
           collapsed: false,
         },
       ],

@@ -395,6 +395,22 @@ export function coreTools(): ToolSpec[] {
       },
     },
     {
+      name: "rename_node",
+      description: "Rename a resource. The name shows on the diagram and in every export.",
+      inputSchema: {
+        type: "object",
+        properties: { id: { type: "string" }, name: { type: "string" } },
+        required: ["id", "name"],
+        additionalProperties: false,
+      },
+      execute: ({ id, name }) => {
+        const node = nodeOr(id);
+        if (!node) return noNode(id);
+        useStore.getState().renameNode(node.id, String(name));
+        return text({ id: node.id, name: useStore.getState().nodes.find((n) => n.id === node.id)?.name });
+      },
+    },
+    {
       name: "set_traffic",
       description:
         "Set the canvas-wide traffic assumption. Nodes without explicit volume settings derive from it. Returns the recalculated total.",
@@ -927,7 +943,7 @@ export function coreTools(): ToolSpec[] {
           return errorResult("no_such_format", `Unknown format.`, {
             formats: [...EXPORT_FORMATS, "svg"],
           });
-        const content = exportAs(format as ExportFormat, snapshotOf(s), pricingOf(s));
+        const content = exportAs(format as ExportFormat, snapshotOf(s), pricingOf(s), s.drawingName);
         s.setExportPanel(format as ExportFormat);
         const chunks = chunkCount(content);
         return text({
@@ -956,7 +972,7 @@ export function coreTools(): ToolSpec[] {
         if (!EXPORT_FORMATS.includes(format as ExportFormat))
           return errorResult("no_such_format", `Unknown format.`, { formats: EXPORT_FORMATS });
         const s = useStore.getState();
-        const content = exportAs(format as ExportFormat, snapshotOf(s), pricingOf(s));
+        const content = exportAs(format as ExportFormat, snapshotOf(s), pricingOf(s), s.drawingName);
         const total = chunkCount(content);
         const i = Number(index);
         if (!Number.isInteger(i) || i < 0 || i >= total)

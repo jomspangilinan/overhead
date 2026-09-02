@@ -5,7 +5,7 @@
 // the user has stored them — so an agent-built architecture looks right with
 // no extra tool arguments.
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { ViewportPortal } from "@xyflow/react";
 import { useStore, pricingOf, snapshotOf } from "@/store/useStore";
 import {
@@ -38,6 +38,8 @@ export function ContainerFrames() {
   const traffic = useStore((s) => s.traffic);
   const region = useStore((s) => s.region);
   const setContainerCollapsed = useStore((s) => s.setContainerCollapsed);
+  const renameContainer = useStore((s) => s.renameContainer);
+  const [editing, setEditing] = useState<string | null>(null);
 
   const stats = useMemo(() => {
     try {
@@ -161,16 +163,34 @@ export function ContainerFrames() {
             >
               {meta.label}
             </div>
-            <div
-              className="pointer-events-none absolute select-none whitespace-nowrap text-[11.5px] font-medium"
-              style={{
-                left: box.l + (meta.icon ? 37 : 12),
-                top: box.t + 19,
-                color: "var(--ink-15)",
-              }}
-            >
-              {c.cidr ? `${c.name} · ${c.cidr}` : c.name}
-            </div>
+            {editing === c.id ? (
+              <input
+                autoFocus
+                defaultValue={c.cidr ? `${c.name} · ${c.cidr}` : c.name}
+                className="nodrag absolute rounded bg-panel-2 px-1 text-[11.5px] font-medium outline-none"
+                style={{ left: box.l + (meta.icon ? 37 : 12), top: box.t + 17, width: 220, border: "1px solid var(--accent)", color: "var(--ink-15)" }}
+                title="name · cidr"
+                onBlur={(e) => {
+                  const [name, cidr] = e.target.value.split("·").map((x) => x.trim());
+                  renameContainer(c.id, name ?? c.name, cidr ?? "");
+                  setEditing(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                  if (e.key === "Escape") setEditing(null);
+                }}
+                onPointerDown={(e) => e.stopPropagation()}
+              />
+            ) : (
+              <div
+                className="absolute cursor-text select-none whitespace-nowrap text-[11.5px] font-medium"
+                style={{ left: box.l + (meta.icon ? 37 : 12), top: box.t + 19, color: "var(--ink-15)" }}
+                title="Double-click to rename (name · cidr)"
+                onDoubleClick={(e) => { e.stopPropagation(); setEditing(c.id); }}
+              >
+                {c.cidr ? `${c.name} · ${c.cidr}` : c.name}
+              </div>
+            )}
             {costOn && stat ? (
               <div
                 className="pointer-events-none absolute select-none whitespace-nowrap text-[10px] font-semibold"

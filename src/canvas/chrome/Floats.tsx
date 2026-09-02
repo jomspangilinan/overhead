@@ -16,7 +16,7 @@ function Shell({
 }) {
   return (
     <div
-      className="glass fixed z-[7] flex items-center gap-0.5 rounded-xl p-1"
+      className="glass absolute z-[7] flex items-center gap-0.5 rounded-xl p-1"
       style={style}
     >
       {children}
@@ -68,7 +68,7 @@ export function LayerSwitch() {
   const layers = useStore((s) => s.layers);
   const setLayer = useStore((s) => s.setLayer);
   return (
-    <Shell style={{ left: 344, bottom: 60 }}>
+    <Shell style={{ left: 14, bottom: 14 }}>
       {SWITCHES.map(({ layer, label }) => (
         <FloatButton
           key={layer}
@@ -105,7 +105,7 @@ export function ZoomPill() {
     });
 
   return (
-    <Shell style={{ right: 352, bottom: 60 }}>
+    <Shell style={{ right: 14, bottom: 14 }}>
       <FloatButton square title="Zoom out" onClick={() => applyZoom(zoom - 0.15)}>
         <Icon name="minus" size={15} />
       </FloatButton>

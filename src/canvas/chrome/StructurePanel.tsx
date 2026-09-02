@@ -7,7 +7,6 @@ import { useMemo } from "react";
 import { useStore, pricingOf, snapshotOf } from "@/store/useStore";
 import { KIND_META, containerStats, type Container } from "@/engine/containers";
 import { getService } from "@/engine/services";
-import { Panel } from "./Panel";
 
 interface Row {
   id: string;
@@ -31,6 +30,8 @@ export function StructurePanel() {
   const select = useStore((s) => s.select);
   const setContainerCollapsed = useStore((s) => s.setContainerCollapsed);
   const addSection = useStore((s) => s.addSection);
+  const removeSection = useStore((s) => s.removeSection);
+  const removeContainer = useStore((s) => s.removeContainer);
 
   const stats = useMemo(() => {
     try {
@@ -114,17 +115,12 @@ export function StructurePanel() {
   );
 
   return (
-    <Panel
-      id="structure"
-      title="Structure"
-      count={`${nodes.length} resources`}
-      defaults={{ left: 80, top: 66, width: 238, height: 472 }}
-    >
-      <Header>Structure</Header>
+    <div>
+      <Header>Structure · {nodes.length} resources</Header>
       {rows.map((r) => (
         <div
           key={`${r.kind}:${r.id}`}
-          className="flex cursor-pointer items-center gap-[7px] py-1 pr-2.5 text-[11.5px] hover:bg-[var(--hover)]"
+          className="group flex cursor-pointer items-center gap-[7px] py-1 pr-2.5 text-[11.5px] hover:bg-[var(--hover)]"
           style={{
             paddingLeft: 8 + r.depth * 13,
             background: selectedId === r.id ? "var(--accent-bg)" : undefined,
@@ -157,12 +153,21 @@ export function StructurePanel() {
             </span>
           ) : null}
           {r.kind === "container" ? (
-            <span
-              className="pl-[5px] text-[11px]"
-              style={{ fontFamily: "var(--font-mono-jb)", color: "var(--ink-4)" }}
-            >
-              {r.collapsed ? "⤢" : "⤡"}
-            </span>
+            <>
+              <span
+                className="pl-[5px] text-[11px]"
+                style={{ fontFamily: "var(--font-mono-jb)", color: "var(--ink-4)" }}
+              >
+                {r.collapsed ? "⤢" : "⤡"}
+              </span>
+              <button
+                className="ml-1 hidden text-[11px] text-ink-4 hover:text-bad group-hover:block"
+                title="Remove container — contents move up a level"
+                onClick={(e) => { e.stopPropagation(); removeContainer(r.id); }}
+              >
+                ×
+              </button>
+            </>
           ) : null}
         </div>
       ))}
@@ -186,7 +191,9 @@ export function StructurePanel() {
         sections.map((s) => (
           <div
             key={s.id}
-            className="flex cursor-pointer items-center gap-[7px] py-1 pl-2 pr-2.5 text-[11.5px] hover:bg-[var(--hover)]"
+            className="group flex cursor-pointer items-center gap-[7px] py-1 pl-2 pr-2.5 text-[11.5px] hover:bg-[var(--hover)]"
+            title={s.nodeIds.length ? "Click to select its first member" : "Empty — drag its chip on the canvas"}
+            onClick={() => { if (s.nodeIds[0]) select(s.nodeIds[0]); }}
           >
             <span
               className="mx-1 h-2 w-2 flex-none rounded-sm"
@@ -201,10 +208,17 @@ export function StructurePanel() {
             >
               {s.nodeIds.length}
             </span>
+            <button
+              className="hidden text-[11px] text-ink-4 hover:text-bad group-hover:block"
+              title="Remove section"
+              onClick={(e) => { e.stopPropagation(); removeSection(s.id); }}
+            >
+              ×
+            </button>
           </div>
         ))
       )}
-    </Panel>
+    </div>
   );
 }
 

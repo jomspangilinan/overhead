@@ -1,30 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { registerAllTools, type RegisterOutcome } from "./register";
-import { ToolPanel } from "./panel";
+// Mounted once at the root layout — tools must register after hydration in
+// the top-level document. It renders nothing; the agent strip in the shell
+// reads the outcome from the store.
 
-type Status = "checking" | RegisterOutcome | "error";
+import { useEffect } from "react";
+import { registerAllTools } from "./register";
+import { useStore } from "@/store/useStore";
 
 let registeredOnce = false;
 
-/**
- * Mounted once at the root layout. Registers every tool after hydration,
- * in the top-level document, via the imperative API only.
- */
 export function WebMCPProvider() {
-  const [status, setStatus] = useState<Status>("checking");
+  const setOutcome = useStore((s) => s.setWebmcpOutcome);
 
   useEffect(() => {
     if (registeredOnce) return;
     registeredOnce = true;
     registerAllTools()
-      .then(setStatus)
+      .then(setOutcome)
       .catch((err) => {
         console.error("WebMCP registration failed:", err);
-        setStatus("error");
+        setOutcome("error");
       });
-  }, []);
+  }, [setOutcome]);
 
-  return <ToolPanel outcome={status} />;
+  return null;
 }
