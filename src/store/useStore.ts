@@ -37,7 +37,8 @@ import {
   contentBoxes,
   frameBoxes,
   placeNewFrame,
-  translateContainer,
+  translateFrame,
+  sectionContentBox,
   type Bounds,
 } from "@/engine/frames";
 import { NODE_W, NODE_H } from "@/canvas/nodeMetrics";
@@ -579,7 +580,7 @@ export const useStore = create<OverheadState>((set, get) => ({
   moveContainer: (containerId, dx, dy) =>
     set((s) =>
       s.containers.some((c) => c.id === containerId)
-        ? translateContainer({ nodes: s.nodes, containers: s.containers }, containerId, dx, dy)
+        ? translateFrame({ nodes: s.nodes, containers: s.containers, sections: s.sections }, { kind: "container", id: containerId }, dx, dy)
         : {},
     ),
 
@@ -650,7 +651,11 @@ export const useStore = create<OverheadState>((set, get) => ({
 
   setSectionBounds: (id, bounds) =>
     set((s) => ({
-      sections: s.sections.map((x) => (x.id === id ? { ...x, bounds } : x)),
+      sections: s.sections.map((x) => {
+        if (x.id !== id) return x;
+        const floor = sectionContentBox(s.nodes, x, { nodeW: NODE_W, nodeH: NODE_H });
+        return { ...x, bounds: bounds ? clampBounds(bounds, floor) : undefined };
+      }),
     })),
 
   setSectionColor: (id, color) =>
@@ -706,25 +711,14 @@ export const useStore = create<OverheadState>((set, get) => ({
       selectedId: s.selectedId === id ? null : s.selectedId,
     })),
 
-  /** One action so undo captures the frame and its members as a single step. */
+  /** One action so undo captures the frame, its members (through nested
+   *  sections) and every section riding along as a single step. */
   moveSection: (id, dx, dy) =>
-    set((s) => {
-      const section = s.sections.find((x) => x.id === id);
-      if (!section) return {};
-      const members = new Set(section.nodeIds);
-      return {
-        sections: s.sections.map((x) =>
-          x.id === id && x.bounds
-            ? { ...x, bounds: { ...x.bounds, x: x.bounds.x + dx, y: x.bounds.y + dy } }
-            : x,
-        ),
-        nodes: s.nodes.map((n) =>
-          members.has(n.id)
-            ? { ...n, position: { x: n.position.x + dx, y: n.position.y + dy } }
-            : n,
-        ),
-      };
-    }),
+    set((s) =>
+      s.sections.some((x) => x.id === id)
+        ? translateFrame({ nodes: s.nodes, containers: s.containers, sections: s.sections }, { kind: "section", id }, dx, dy)
+        : {},
+    ),
 
   // While a scenario is open, the live state IS the fork; base is frozen.
   openScenario: (name) => {

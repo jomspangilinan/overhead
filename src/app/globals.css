@@ -260,9 +260,8 @@ body {
 .oh-frame-name,
 .oh-frame-grip,
 .oh-collapse,
-.oh-section-chip,
-.oh-section-grip,
 .oh-frame-move,
+.oh-frame-gear,
 .oh-frame-input {
   pointer-events: auto;
 }
@@ -274,23 +273,22 @@ body {
 .oh-frame-head:active {
   cursor: grabbing;
 }
-.oh-frame-grip,
-.oh-section-grip {
+.oh-frame-grip {
   opacity: 0;
   transition: opacity 0.12s;
   cursor: nwse-resize;
 }
 .overhead-canvas:hover .oh-frame-grip,
-.overhead-canvas:hover .oh-section-grip,
-.oh-frame-grip:hover,
-.oh-section-grip:hover {
+.oh-frame-grip:hover {
   opacity: 0.85;
 }
-.oh-section-chip {
-  cursor: grab;
+.oh-frame-gear {
+  opacity: 0.55;
+  transition: opacity 0.12s;
+  cursor: pointer;
 }
-.oh-section-chip:active {
-  cursor: grabbing;
+.oh-frame-gear:hover {
+  opacity: 1;
 }
 
 /* Edge waypoint handles: visible when the edge is selected */
@@ -379,15 +377,13 @@ body {
   opacity: 0.16;
 }
 
-/* Gears appear on hover: node card, section chip */
-.overhead-node .gear,
-.oh-section-gear {
+/* The node card's gear appears on hover or selection */
+.overhead-node .gear {
   opacity: 0;
   transition: opacity 0.12s;
 }
 .overhead-node:hover .gear,
-.react-flow__node.selected .overhead-node .gear,
-.oh-section-chip:hover .oh-section-gear {
+.react-flow__node.selected .overhead-node .gear {
   opacity: 0.9;
 }
 .overhead-node .gear:hover {

@@ -26,7 +26,7 @@ import {
   outermostCollapsedAncestor,
   validateNodePlacement,
 } from "@/engine/containers";
-import { frameBoxes, hitContainer } from "@/engine/frames";
+import { frameBoxes, hitContainer, movedNodeIds } from "@/engine/frames";
 
 const nodeTypes: NodeTypes = { aws: AwsNode, container: ContainerCard };
 const edgeTypes: EdgeTypes = { typed: TypedEdge };
@@ -147,14 +147,10 @@ export function Canvas() {
   // A container frame mid-drag carries its members visually; the store
   // moves them once, on release, so undo sees a single step.
   const sections = useStore((s) => s.sections);
-  const frameDragMembers = useMemo(() => {
-    if (!frameDrag) return null;
-    if (frameDrag.kind === "section") {
-      return new Set(sections.find((x) => x.id === frameDrag.id)?.nodeIds ?? []);
-    }
-    const ids = new Set([frameDrag.id, ...descendantIds(containers, frameDrag.id)]);
-    return new Set(nodes.filter((n) => n.container && ids.has(n.container)).map((n) => n.id));
-  }, [frameDrag, containers, nodes, sections]);
+  const frameDragMembers = useMemo(
+    () => (frameDrag ? movedNodeIds({ nodes, containers, sections }, frameDrag) : null),
+    [frameDrag, containers, nodes, sections],
+  );
 
   const rfNodes: Node[] = useMemo(() => {
     const visible: Node[] = nodes

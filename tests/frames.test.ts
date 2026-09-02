@@ -119,6 +119,39 @@ describe("translateContainer", () => {
   });
 });
 
+describe("translateFrame: sections ride along", () => {
+  it("a section wholly inside a moved container moves its stored bounds; a spanning one stays", async () => {
+    const { translateFrame } = await import("../src/engine/frames");
+    const containers: Container[] = [{ id: "c", kind: "cloud", name: "c", collapsed: false, bounds: { x: 0, y: 0, w: 900, h: 700 } }];
+    const nodes = [node("a", 100, 100, "c"), node("b", 200, 100, "c"), node("z", 2000, 0)];
+    const sections = [
+      { id: "inside", name: "in", color: "#000", nodeIds: ["a", "b"], collapsed: false, bounds: { x: 50, y: 50, w: 300, h: 200 } },
+      { id: "spans", name: "sp", color: "#000", nodeIds: ["a", "z"], collapsed: false, bounds: { x: 0, y: 0, w: 2100, h: 200 } },
+      { id: "empty", name: "e", color: "#000", nodeIds: [], collapsed: false, bounds: { x: 10, y: 10, w: 100, h: 100 } },
+    ];
+    const res = translateFrame({ nodes, containers, sections }, { kind: "container", id: "c" }, 30, 20);
+    expect(res.sections.find((s) => s.id === "inside")!.bounds).toEqual({ x: 80, y: 70, w: 300, h: 200 });
+    expect(res.sections.find((s) => s.id === "spans")!.bounds).toEqual({ x: 0, y: 0, w: 2100, h: 200 });
+    expect(res.sections.find((s) => s.id === "empty")!.bounds).toEqual({ x: 10, y: 10, w: 100, h: 100 });
+  });
+
+  it("moving a section carries nested sections' members and bounds, not siblings", async () => {
+    const { translateFrame, movedNodeIds } = await import("../src/engine/frames");
+    const nodes = [node("a", 0, 0), node("b", 100, 0), node("c", 500, 0)];
+    const sections = [
+      { id: "p", name: "p", color: "#000", nodeIds: ["a"], collapsed: false, bounds: { x: 0, y: 0, w: 300, h: 200 } },
+      { id: "child", name: "ch", color: "#000", parentId: "p", nodeIds: ["b"], collapsed: false, bounds: { x: 60, y: 60, w: 100, h: 80 } },
+      { id: "sib", name: "s", color: "#000", nodeIds: ["c"], collapsed: false, bounds: { x: 400, y: 0, w: 200, h: 100 } },
+    ];
+    expect([...movedNodeIds({ nodes, containers: [], sections }, { kind: "section", id: "p" })].sort()).toEqual(["a", "b"]);
+    const res = translateFrame({ nodes, containers: [], sections }, { kind: "section", id: "p" }, 10, 5);
+    expect(res.nodes.find((n) => n.id === "b")!.position).toEqual({ x: 110, y: 5 });
+    expect(res.nodes.find((n) => n.id === "c")!.position).toEqual({ x: 500, y: 0 });
+    expect(res.sections.find((s) => s.id === "child")!.bounds).toEqual({ x: 70, y: 65, w: 100, h: 80 });
+    expect(res.sections.find((s) => s.id === "sib")!.bounds).toEqual({ x: 400, y: 0, w: 200, h: 100 });
+  });
+});
+
 describe("clampBounds", () => {
   it("never lets a frame shrink under its content floor", () => {
     const floor = { l: 100, t: 100, r: 500, b: 400 };
