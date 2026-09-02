@@ -37,27 +37,53 @@ export interface ArchNode {
   position: { x: number; y: number };
 }
 
-/** Per-edge appearance overrides. The kind still decides the default
- *  encoding (solid / dashed / dotted, arrowhead or not); these only pin what
- *  a user changed by hand. Absent = follow the kind. */
+export type EdgeDash = "solid" | "dashed" | "dotted";
+export type ArrowMode = "none" | "end" | "start" | "both";
+export type EdgeShape = "curve" | "straight" | "step";
+/** Which side of a node an edge leaves or enters; `auto` picks by geometry. */
+export type Side = "auto" | "left" | "right" | "top" | "bottom";
+
+/** Per-edge appearance — purely visual, and separate from `kind`. The kind
+ *  decides the default look (solid / dashed / dotted, arrow unless data);
+ *  these pin what a user changed by hand. Absent = follow the kind.
+ *  Nothing here is ever read for semantics: findings, layers, exports and
+ *  the agent's tools look at `kind` only. */
 export interface EdgeStyle {
   /** Stroke width in px; absent = follow volumePerMonth. */
   width?: number;
-  dash?: "solid" | "dashed" | "dotted";
-  arrow?: boolean;
+  dash?: EdgeDash;
+  arrow?: ArrowMode;
+  /** Curve (default), straight polyline, or axis-aligned steps. */
+  shape?: EdgeShape;
 }
 
 export interface ArchEdge {
   id: string;
   from: string;
   to: string;
+  /** Semantic: what the connection is. sync = request/response,
+   *  async = queue/event, data = storage flow. */
   kind: EdgeKind;
   volumePerMonth?: number;
   label?: string;
   style?: EdgeStyle;
-  /** A point the curve passes through, stored once the user drags it;
-   *  absent = the floating default routing. */
-  route?: { x: number; y: number };
+  /** Bend points the path passes through, in order, stored once the user
+   *  drags them; absent = the floating default routing. */
+  waypoints?: { x: number; y: number }[];
+  /** Pinned exit / entry sides; absent or `auto` = picked by geometry. */
+  anchors?: { from?: Side; to?: Side };
+}
+
+/** The kind's default dash — the semantic encoding. */
+export function dashForKind(kind: EdgeKind): EdgeDash {
+  return kind === "async" ? "dashed" : kind === "data" ? "dotted" : "solid";
+}
+/** What the edge is drawn with: the pinned style, else the kind's default. */
+export function dashOf(e: Pick<ArchEdge, "kind" | "style">): EdgeDash {
+  return e.style?.dash ?? dashForKind(e.kind);
+}
+export function arrowModeOf(e: Pick<ArchEdge, "kind" | "style">): ArrowMode {
+  return e.style?.arrow ?? (e.kind === "data" ? "none" : "end");
 }
 
 /** Yours: free-form, orthogonal to containment, never validated.

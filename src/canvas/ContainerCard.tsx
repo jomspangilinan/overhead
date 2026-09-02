@@ -42,8 +42,10 @@ export const ContainerCard = memo(function ContainerCard({
 
   return (
     <div className="overhead-node relative" style={{ width: CARD_W, height: CARD_H }}>
-      <Handle type="target" position={Position.Left} style={{ top: CARD_H / 2 }} />
-      <Handle type="source" position={Position.Right} style={{ top: CARD_H / 2 }} />
+      <Handle id="left" type="target" position={Position.Left} style={{ top: CARD_H / 2 }} />
+      <Handle id="top" type="target" position={Position.Top} style={{ left: CARD_W / 2 }} />
+      <Handle id="right" type="source" position={Position.Right} style={{ top: CARD_H / 2 }} />
+      <Handle id="bottom" type="source" position={Position.Bottom} style={{ left: CARD_W / 2 }} />
       <div
         className="absolute inset-0 cursor-pointer rounded-[10px]"
         style={{ background: "var(--panel)", border: `1.6px solid ${meta.color}` }}

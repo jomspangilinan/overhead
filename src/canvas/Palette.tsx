@@ -29,6 +29,7 @@ function Caption({ children }: { children: React.ReactNode }) {
 export function closePalette() {
   const s = useStore.getState();
   s.setPalette(false);
+  s.setPendingConnection(null);
   if (s.tool === "add" || s.tool === "container") s.setTool("select");
 }
 
@@ -43,8 +44,27 @@ export function PaletteFloat() {
   const selectedId = useStore((s) => s.selectedId);
   const nodes = useStore((s) => s.nodes);
   const containers = useStore((s) => s.containers);
+  const pending = useStore((s) => s.pendingConnection);
+  const addEdge = useStore((s) => s.addEdge);
   const [query, setQuery] = useState("");
   const ref = useRef<HTMLDivElement>(null);
+  const fromNode = pending ? nodes.find((n) => n.id === pending.fromNodeId) : undefined;
+
+  // Add a service: beside the pending source and connected to it, else
+  // inside the selected region/cloud.
+  const place = (serviceId: string) => {
+    const name = `${serviceId}-${count + 1}`;
+    if (pending && fromNode) {
+      const id = addNode(serviceId, name, undefined, fromNode.container, pending.at);
+      addEdge(pending.fromNodeId, id, "sync", undefined, { anchors: { from: pending.side } });
+      select(id);
+      notify(`${name} connected from ${fromNode.name}`);
+      closePalette();
+      return;
+    }
+    const selectedC = containers.find((c) => c.id === selectedId);
+    select(addNode(serviceId, name, undefined, selectedC && (selectedC.kind === "region" || selectedC.kind === "cloud") ? selectedC.id : undefined));
+  };
 
   // click outside closes; the toolbar's own buttons toggle it themselves
   useEffect(() => {
@@ -90,7 +110,16 @@ export function PaletteFloat() {
   }, [nodes, containers, selectedId]);
 
   if (!open) return null;
-  const containersFirst = tool === "container";
+  const containersFirst = tool === "container" && !pending;
+  // Anchored at the pad / drop point when connecting, clamped to the canvas;
+  // above the toolbar otherwise.
+  const host = ref.current?.parentElement;
+  const anchored: React.CSSProperties = pending
+    ? {
+        left: Math.max(8, Math.min((host?.clientWidth ?? 1200) - 300, pending.screen.x + 12)),
+        top: Math.max(8, Math.min((host?.clientHeight ?? 800) - 420, pending.screen.y - 20)),
+      }
+    : { left: "50%", bottom: 64, transform: "translateX(-50%)" };
 
   const serviceGrid = (
     <>
@@ -110,11 +139,7 @@ export function PaletteFloat() {
             e.dataTransfer.effectAllowed = "copy";
           }}
           className="flex cursor-grab flex-col items-center gap-1 rounded-[9px] px-1 py-2 hover:bg-[var(--hover)] active:cursor-grabbing"
-          onClick={() => {
-            const selectedC = containers.find((c) => c.id === selectedId);
-            const id = addNode(def.id, `${def.id}-${count + 1}`, undefined, selectedC && (selectedC.kind === "region" || selectedC.kind === "cloud") ? selectedC.id : undefined);
-            select(id);
-          }}
+          onClick={() => place(def.id)}
         >
           <svg width="26" height="26">
             <use href={`#${def.icon}`} width="26" height="26" />
@@ -177,10 +202,16 @@ export function PaletteFloat() {
     <div
       ref={ref}
       className="glass absolute z-[8] flex max-h-[calc(100%-90px)] w-[292px] flex-col rounded-xl"
-      style={{ left: "50%", bottom: 64, transform: "translateX(-50%)" }}
+      style={anchored}
       role="dialog"
-      aria-label="Add"
+      aria-label={pending ? "Connect from" : "Add"}
     >
+      {pending && fromNode ? (
+        <div className="mx-2.5 mt-2.5 flex items-center gap-2 rounded-lg px-2 py-1 text-[11px]" style={{ background: "var(--accent-bg)", color: "var(--accent-ink)" }}>
+          <Icon name="connect" size={12} />
+          Connect from <b>{fromNode.name}</b> · {pending.side}
+        </div>
+      ) : null}
       <label
         className="mx-2.5 mt-2.5 flex items-center gap-2 rounded-lg px-[9px] py-1.5 text-[11.5px]"
         style={{ background: "var(--panel-2)", border: "1px solid var(--line)", color: "var(--ink-4)" }}
@@ -195,9 +226,7 @@ export function PaletteFloat() {
           style={{ color: "var(--ink-2)" }}
           onKeyDown={(e) => {
             if (e.key === "Escape") closePalette();
-            if (e.key === "Enter" && services[0]) {
-              select(addNode(services[0].id, `${services[0].id}-${count + 1}`));
-            }
+            if (e.key === "Enter" && services[0]) place(services[0].id);
           }}
         />
         <kbd className="rounded px-1 text-[9px]" style={{ fontFamily: "var(--font-mono-jb)", border: "1px solid var(--line-2)" }}>
@@ -206,7 +235,7 @@ export function PaletteFloat() {
       </label>
       <div className="grid min-h-0 grid-cols-4 gap-0.5 overflow-auto px-2 pb-2.5">
         {containersFirst ? containerList : serviceGrid}
-        {containersFirst ? serviceGrid : containerList}
+        {pending ? null : containersFirst ? serviceGrid : containerList}
       </div>
     </div>
   );

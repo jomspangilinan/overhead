@@ -6,7 +6,7 @@ const card = (x: number, y: number) => shapeOf({ x, y }, 200, 100, true);
 
 function points(d: string): number[][] {
   return d
-    .replace(/[MC]/g, " ")
+    .replace(/[MCLQ]/g, " ")
     .trim()
     .split(/\s+/)
     .map((p) => p.split(",").map(Number));
@@ -41,21 +41,53 @@ describe("edge geometry", () => {
     expect(p1[0]).toBeGreaterThanOrEqual(p2[0]); // no wiggle
   });
 
-  it("same column brackets out the requested side", () => {
-    const right = edgeGeometry(icon(0, 0), icon(0, 150), { outwardK: 1 });
+  it("a target below leaves the bottom and enters the top", () => {
+    const geo = edgeGeometry(icon(0, 0), icon(0, 150));
+    expect(geo.caseKind).toBe("down");
+    expect(geo.fromSide).toBe("bottom");
+    expect(geo.toSide).toBe("top");
+    const [p0, p1, , p3] = points(geo.d);
+    expect(p0).toEqual([100, 39 + 34]); // bottom of the source icon
+    expect(p3).toEqual([100, 150 + 39 - 34]); // top of the target icon
+    expect(p1[0]).toBe(p0[0]); // first control straight down: enters square
+  });
+
+  it("a target above leaves the top and enters the bottom", () => {
+    const geo = edgeGeometry(icon(0, 200), icon(0, 0));
+    expect(geo.caseKind).toBe("up");
+    expect(geo.fromSide).toBe("top");
+    expect(geo.toSide).toBe("bottom");
+  });
+
+  it("near-vertical pairs go vertical instead of hooking round the side", () => {
+    // 60px horizontal, 200px vertical: no horizontal clearance, plenty vertical
+    const geo = edgeGeometry(icon(0, 0), icon(60, 200));
+    expect(geo.caseKind).toBe("down");
+  });
+
+  it("overlapping shapes bracket out the requested side", () => {
+    const right = edgeGeometry(icon(0, 0), icon(20, 20), { outwardK: 1 });
     expect(right.caseKind).toBe("bracket");
     const [p0r, p1r] = points(right.d);
     expect(p1r[0]).toBeGreaterThan(p0r[0]);
-
-    const left = edgeGeometry(icon(0, 0), icon(0, 150), { outwardK: -1 });
+    const left = edgeGeometry(icon(0, 0), icon(20, 20), { outwardK: -1 });
     const [p0l, p1l] = points(left.d);
     expect(p1l[0]).toBeLessThan(p0l[0]);
   });
 
-  it("near-vertical pairs bracket instead of hooking", () => {
-    // 60px horizontal, 200px vertical: forward gap (−8) < tolerance
-    const geo = edgeGeometry(icon(0, 0), icon(60, 200));
-    expect(geo.caseKind).toBe("bracket");
+  it("pinned anchors override the picked side for that end only", () => {
+    const geo = edgeGeometry(icon(0, 0), icon(260, 0), { from: "top" });
+    expect(geo.fromSide).toBe("top");
+    expect(geo.toSide).toBe("left");
+    expect(geo.caseKind).toBe("pinned");
+    expect(geo.p0).toEqual({ x: 100, y: 39 - 34 });
+  });
+
+  it("card mode picks sides from the card box, not the icon rim", () => {
+    const geo = edgeGeometry(card(0, 0), card(0, 140));
+    expect(geo.caseKind).toBe("down");
+    expect(geo.p0).toEqual({ x: 100, y: 50 + 38 });
+    expect(geo.p3).toEqual({ x: 100, y: 140 + 50 - 38 });
   });
 
   it("coincident nodes still produce a drawable path", () => {
@@ -84,21 +116,55 @@ describe("edge fan", () => {
   });
 });
 
-describe("routed edges", () => {
-  it("exposes the anchors and bends a quadratic through the pinned point", async () => {
-    const { routedPath } = await import("../src/canvas/edgeGeometry");
-    const geo = edgeGeometry(icon(0, 0), icon(260, 0));
-    expect(geo.p0).toEqual({ x: 134, y: 39 });
-    expect(geo.p3).toEqual({ x: 326, y: 39 });
-    const through = { x: 230, y: 140 };
-    const r = routedPath(geo.p0, geo.p3, through);
-    const m = r.d.match(/^M([\d.-]+),([\d.-]+) Q([\d.-]+),([\d.-]+) ([\d.-]+),([\d.-]+)$/)!;
-    const [p0x, p0y, cx, cy, p3x, p3y] = m.slice(1).map(Number);
-    expect([p0x, p0y]).toEqual([134, 39]);
-    expect([p3x, p3y]).toEqual([326, 39]);
-    // quadratic at t=0.5 = 0.25·p0 + 0.5·c + 0.25·p3 — must land on `through`
-    expect(0.25 * p0x + 0.5 * cx + 0.25 * p3x).toBeCloseTo(through.x);
-    expect(0.25 * p0y + 0.5 * cy + 0.25 * p3y).toBeCloseTo(through.y);
-    expect(r.label.y).toBeLessThan(through.y);
+describe("fan on vertical sides", () => {
+  it("offsets run along the side — x on top/bottom anchors", async () => {
+    const geo = edgeGeometry(icon(0, 0), icon(0, 150), { sourceOffset: 14, targetOffset: -14 });
+    expect(geo.p0).toEqual({ x: 114, y: 73 });
+    expect(geo.p3).toEqual({ x: 86, y: 155 });
+  });
+});
+
+describe("waypoints and shapes", () => {
+  it("a curve through waypoints passes through every point, entering square", async () => {
+    const { buildEdge } = await import("../src/canvas/edgeGeometry");
+    const wp = [{ x: 200, y: 140 }];
+    const geo = buildEdge(icon(0, 0), icon(260, 0), { waypoints: wp });
+    expect(geo.points).toEqual([geo.p0, wp[0], geo.p3]);
+    const segs = geo.d.split(" C");
+    expect(segs).toHaveLength(3); // M + two cubic segments
+    const firstEnd = segs[1].split(" ")[2].split(",").map(Number);
+    expect(firstEnd).toEqual([200, 140]);
+    const c1 = segs[1].split(" ")[0].split(",").map(Number);
+    expect(c1[1]).toBe(geo.p0.y); // leaves along the right-side normal
+    expect(geo.mids).toHaveLength(2);
+  });
+
+  it("straight shape is a polyline through the waypoints", async () => {
+    const { buildEdge } = await import("../src/canvas/edgeGeometry");
+    const geo = buildEdge(icon(0, 0), icon(260, 0), { shape: "straight", waypoints: [{ x: 200, y: 140 }] });
+    expect(geo.d).toBe("M134,39 L200,140 L326,39");
+    expect(geo.mids).toHaveLength(2);
+  });
+
+  it("step shape is axis-aligned everywhere", async () => {
+    const { buildEdge } = await import("../src/canvas/edgeGeometry");
+    const geo = buildEdge(icon(0, 0), icon(260, 120), { shape: "step" });
+    const pts = points(geo.d);
+    for (let i = 1; i < pts.length; i++) {
+      const sameX = pts[i][0] === pts[i - 1][0];
+      const sameY = pts[i][1] === pts[i - 1][1];
+      expect(sameX || sameY).toBe(true);
+    }
+    expect(pts[0]).toEqual([134, 39]);
+    expect(pts[pts.length - 1]).toEqual([326, 159]);
+  });
+
+  it("a self-loop leaves the right and returns to the top", async () => {
+    const { loopPath } = await import("../src/canvas/edgeGeometry");
+    const geo = loopPath(icon(0, 0));
+    expect(Number.isFinite(geo.p0.x)).toBe(true);
+    expect(geo.p0.x).toBe(134);
+    expect(geo.p3.y).toBe(39 - 34);
+    expect(geo.mids).toHaveLength(1);
   });
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ReactFlow,
   Background,
@@ -14,7 +14,8 @@ import {
   type EdgeTypes,
 } from "@xyflow/react";
 import { useStore, cardModeOf, type Layer } from "@/store/useStore";
-import type { EdgeKind } from "@/engine/model";
+import { arrowModeOf, type EdgeKind, type Side } from "@/engine/model";
+import { pickSides, shapeAt, type Side4 } from "./edgeGeometry";
 import { AwsNode, NODE_W, NODE_H } from "./AwsNode";
 import { ContainerCard, CARD_W, CARD_H } from "./ContainerCard";
 import { TypedEdge } from "./TypedEdge";
@@ -29,6 +30,9 @@ import { frameBoxes, hitContainer } from "@/engine/frames";
 
 const nodeTypes: NodeTypes = { aws: AwsNode, container: ContainerCard };
 const edgeTypes: EdgeTypes = { typed: TypedEdge };
+
+const sideOf = (handle: string | null | undefined): Exclude<Side, "auto"> | undefined =>
+  handle === "left" || handle === "right" || handle === "top" || handle === "bottom" ? handle : undefined;
 
 const KIND_LAYER: Record<EdgeKind, Layer> = {
   sync: "request",
@@ -53,6 +57,13 @@ export function Canvas() {
   const selectedEdgeId = useStore((s) => s.selectedEdgeId);
   const selectEdge = useStore((s) => s.selectEdge);
   const storeAddEdge = useStore((s) => s.addEdge);
+  const connecting = useStore((s) => s.connecting);
+  const setConnecting = useStore((s) => s.setConnecting);
+  const setPendingConnection = useStore((s) => s.setPendingConnection);
+  const setPalette = useStore((s) => s.setPalette);
+  const setLabelEditing = useStore((s) => s.setLabelEditing);
+  const wrapper = useRef<HTMLDivElement>(null);
+  const [marquee, setMarquee] = useState(false);
 
   const litIds = useMemo(() => {
     if (traceIds?.length) return new Set(traceIds);
@@ -138,6 +149,15 @@ export function Canvas() {
   }, [nodes, collapsedByNode, litIds, frameDrag, frameDragMembers]);
 
   const rfEdges: Edge[] = useMemo(() => {
+    // Shapes as currently drawn (carried frame offsets included) so the
+    // sides are picked from the same geometry the edge component sees.
+    const shapes = new Map<string, ReturnType<typeof shapeAt>>();
+    for (const n of rfNodes) {
+      const w = n.width ?? NODE_W;
+      const h = n.height ?? NODE_H;
+      shapes.set(n.id, shapeAt({ x: n.position.x + w / 2, y: n.position.y + h / 2 }, w, h, cardMode || n.type === "container"));
+    }
+    const graphCx = nodes.length ? nodes.reduce((a, n) => a + n.position.x, 0) / nodes.length : 0;
     const seen = new Set<string>();
     // First pass: resolve endpoints (collapsed hosts) and drop duplicates.
     const resolved: { e: (typeof edges)[number]; from: string; to: string; rerouted: boolean }[] = [];
@@ -148,8 +168,9 @@ export function Canvas() {
       const to = collapsedByNode.has(e.to)
         ? `container:${collapsedByNode.get(e.to)}`
         : e.to;
-      if (from === to) continue;
       const rerouted = from !== e.from || to !== e.to;
+      // a genuine self-loop draws; a loop created by collapsing is dropped
+      if (from === to && rerouted) continue;
       const key = `${from}>${to}`;
       if (rerouted) {
         if (seen.has(key)) continue;
@@ -159,24 +180,43 @@ export function Canvas() {
     }
     // Fan slots: which of the edges leaving `from` / entering `to` is this one.
     // Hidden layers are excluded so a toggle doesn't leave gaps in the fan.
+    // Sides are picked here, once per edge, so the fan is keyed per side.
+    const sidesOf = new Map<string, { from: Side4; to: Side4; caseKind: ReturnType<typeof pickSides>["caseKind"] }>();
+    for (const { e, from, to, rerouted } of resolved) {
+      const s = shapes.get(from);
+      const t = shapes.get(to);
+      if (!s || !t) continue;
+      const outwardK = (s.cx + t.cx) / 2 >= graphCx ? (1 as const) : (-1 as const);
+      sidesOf.set(e.id, pickSides(s, t, { from: rerouted ? undefined : e.anchors?.from, to: rerouted ? undefined : e.anchors?.to, outwardK }));
+    }
     const outs = new Map<string, string[]>();
     const ins = new Map<string, string[]>();
     for (const { e, from, to } of resolved) {
       if (!layers[KIND_LAYER[e.kind]]) continue;
-      outs.set(from, [...(outs.get(from) ?? []), e.id]);
-      ins.set(to, [...(ins.get(to) ?? []), e.id]);
+      const sd = sidesOf.get(e.id);
+      const ko = `${from}:${sd?.from ?? "right"}`;
+      const ki = `${to}:${sd?.to ?? "left"}`;
+      outs.set(ko, [...(outs.get(ko) ?? []), e.id]);
+      ins.set(ki, [...(ins.get(ki) ?? []), e.id]);
     }
     const out: Edge[] = [];
     for (const { e, from, to, rerouted } of resolved) {
-      const sList = outs.get(from) ?? [e.id];
-      const tList = ins.get(to) ?? [e.id];
+      const sd = sidesOf.get(e.id);
+      const sList = outs.get(`${from}:${sd?.from ?? "right"}`) ?? [e.id];
+      const tList = ins.get(`${to}:${sd?.to ?? "left"}`) ?? [e.id];
       const fan = {
         sIdx: Math.max(0, sList.indexOf(e.id)),
         sCount: sList.length,
         tIdx: Math.max(0, tList.indexOf(e.id)),
         tCount: tList.length,
       };
-      const arrow = e.style?.arrow ?? e.kind !== "data";
+      const arrow = arrowModeOf(e);
+      const marker = {
+        type: MarkerType.ArrowClosed,
+        width: 14,
+        height: 14,
+        color: e.id === selectedEdgeId ? "var(--accent)" : "var(--edge)",
+      };
       out.push({
         id: e.id,
         type: "typed",
@@ -189,7 +229,9 @@ export function Canvas() {
           volumePerMonth: rerouted ? undefined : e.volumePerMonth,
           label: rerouted ? undefined : e.label,
           style: e.style,
-          route: rerouted ? undefined : e.route,
+          waypoints: rerouted ? undefined : e.waypoints,
+          anchors: rerouted ? undefined : e.anchors,
+          sides: sd,
           fan,
         },
         className:
@@ -199,18 +241,12 @@ export function Canvas() {
             : e.from === hoveredId || e.to === hoveredId)
             ? "lit"
             : undefined,
-        markerEnd: arrow
-          ? {
-              type: MarkerType.ArrowClosed,
-              width: 14,
-              height: 14,
-              color: e.id === selectedEdgeId ? "var(--accent)" : "var(--edge)",
-            }
-          : undefined,
+        markerEnd: arrow === "end" || arrow === "both" ? marker : undefined,
+        markerStart: arrow === "start" || arrow === "both" ? { ...marker, orient: "auto-start-reverse" } : undefined,
       });
     }
     return out;
-  }, [edges, layers, litIds, hoveredId, traceIds, collapsedByNode, selectedEdgeId]);
+  }, [edges, layers, litIds, hoveredId, traceIds, collapsedByNode, selectedEdgeId, rfNodes, nodes, cardMode]);
 
   const onMove = useCallback(
     (_evt: unknown, viewport: { zoom: number }) => setZoom(viewport.zoom),
@@ -317,7 +353,8 @@ export function Canvas() {
 
   return (
     <div
-      className={`overhead-canvas ${hoveredId || traceIds?.length ? "hovering" : ""} ${cardMode ? "cards" : ""} ${tool === "connect" ? "connecting" : ""}`}
+      ref={wrapper}
+      className={`overhead-canvas ${hoveredId || traceIds?.length ? "hovering" : ""} ${cardMode ? "cards" : ""} ${tool === "connect" || connecting ? "connecting" : ""} ${marquee ? "marquee" : ""}`}
     >
       <ReactFlow
         nodes={rfNodes}
@@ -365,12 +402,33 @@ export function Canvas() {
           useStore.getState().setTrace(null);
         }}
         onConnect={(c) => {
-          if (c.source && c.target) storeAddEdge(c.source, c.target, "sync");
+          if (!c.source || !c.target) return;
+          const from = sideOf(c.sourceHandle);
+          const to = sideOf(c.targetHandle);
+          storeAddEdge(c.source, c.target, "sync", undefined, from || to ? { anchors: { ...(from ? { from } : {}), ...(to ? { to } : {}) } } : undefined);
+        }}
+        onConnectStart={() => setConnecting(true)}
+        onConnectEnd={(evt, state) => {
+          setConnecting(false);
+          if (state.isValid || !state.fromNode || state.fromNode.id.startsWith("container:")) return;
+          const client = "clientX" in evt ? { x: evt.clientX, y: evt.clientY } : { x: evt.changedTouches[0].clientX, y: evt.changedTouches[0].clientY };
+          const rect = wrapper.current?.getBoundingClientRect();
+          setPendingConnection({
+            fromNodeId: state.fromNode.id,
+            side: sideOf(state.fromHandle?.id ?? null) ?? "right",
+            at: screenToFlowPosition(client),
+            screen: { x: client.x - (rect?.left ?? 0), y: client.y - (rect?.top ?? 0) },
+          });
+          setPalette(true);
+        }}
+        onEdgeDoubleClick={(e, edge) => {
+          e.stopPropagation();
+          selectEdge(edge.id);
+          setLabelEditing(edge.id);
         }}
         isValidConnection={(c) =>
           !!c.source &&
           !!c.target &&
-          c.source !== c.target &&
           !c.source.startsWith("container:") &&
           !c.target.startsWith("container:") &&
           !useStore
@@ -390,6 +448,9 @@ export function Canvas() {
         zoomOnScroll={false}
         panOnDrag={tool === "pan"}
         selectionOnDrag={tool === "select"}
+        onSelectionStart={() => setMarquee(true)}
+        onSelectionEnd={() => setMarquee(false)}
+        nodeDragThreshold={4}
         nodesDraggable={tool !== "pan"}
         zoomOnPinch
         panOnScroll

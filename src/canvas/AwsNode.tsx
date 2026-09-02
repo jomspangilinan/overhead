@@ -17,6 +17,7 @@ import { getService } from "@/engine/services";
 import { nodeCost } from "@/engine/cost";
 import { findingsForNode } from "@/engine/findings";
 import { toMoney, type Severity } from "@/engine/model";
+import type { Side4 } from "./edgeGeometry";
 
 import { NODE_W, NODE_H, ICON } from "./nodeMetrics";
 export { NODE_W, NODE_H, ICON };
@@ -49,6 +50,77 @@ function settingText(value: unknown, unit?: string): string {
     return unit ? `${s} ${unit}` : s;
   }
   return String(value);
+}
+
+/** Four connection handles (one per side) and, on hover, a "+" pad outside
+ *  each: click a pad to add a connected node on that side; drag a handle
+ *  to connect to another node, or drop it on empty canvas to add one there.
+ *  Icon-mode handles sit at the 56px icon's rim (centre y≈39), not the
+ *  200px hit-box — otherwise arrowheads float in empty space. */
+const SIDES: { side: Side4; pos: Position }[] = [
+  { side: "left", pos: Position.Left },
+  { side: "right", pos: Position.Right },
+  { side: "top", pos: Position.Top },
+  { side: "bottom", pos: Position.Bottom },
+];
+export function besidePosition(centre: { x: number; y: number }, side: Side4) {
+  const dx = side === "right" ? 260 : side === "left" ? -260 : 0;
+  const dy = side === "bottom" ? 160 : side === "top" ? -160 : 0;
+  return { x: centre.x + dx, y: centre.y + dy };
+}
+function SideHandles({ nodeId, cardMode, centre }: { nodeId: string; cardMode: boolean; centre: { x: number; y: number } }) {
+  const setPendingConnection = useStore((s) => s.setPendingConnection);
+  const setPalette = useStore((s) => s.setPalette);
+  const cy = cardMode ? NODE_H / 2 : 39;
+  const hx = cardMode ? 0 : NODE_W / 2 - ICON / 2 - 6; // inset from the hit-box edge
+  const hy = cardMode ? (NODE_H - 76) / 2 : 39 - (ICON / 2 + 6); // top edge
+  const at = (side: Side4): React.CSSProperties => {
+    const c = { transform: "translate(-50%, -50%)" } as React.CSSProperties;
+    if (side === "left") return { ...c, top: cy, left: hx };
+    if (side === "right") return { ...c, top: cy, left: NODE_W - hx };
+    if (side === "top") return { ...c, top: hy, left: NODE_W / 2 };
+    return { ...c, top: NODE_H - hy, left: NODE_W / 2 };
+  };
+  const padAt = (side: Side4): React.CSSProperties => {
+    const h = at(side) as { top: number; left: number };
+    const push = 20;
+    return {
+      top: h.top + (side === "top" ? -push : side === "bottom" ? push : 0),
+      left: h.left + (side === "left" ? -push : side === "right" ? push : 0),
+    };
+  };
+  return (
+    <>
+      {SIDES.map(({ side, pos }) => (
+        <Handle key={side} id={side} type={side === "left" || side === "top" ? "target" : "source"} position={pos} style={at(side)} />
+      ))}
+      {SIDES.map(({ side }) => (
+        <button
+          key={`pad-${side}`}
+          className="oh-side-pad nodrag nopan absolute grid h-4 w-4 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full text-[11px] leading-none"
+          style={padAt(side)}
+          data-tip={`Add a connected service ${side === "left" ? "to the left" : side === "right" ? "to the right" : side === "top" ? "above" : "below"}`}
+          data-tip-pos={side === "bottom" ? "bottom" : "top"}
+          aria-label={`Add a connected service on the ${side}`}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            const rect = (e.currentTarget.closest(".overhead-canvas") as HTMLElement | null)?.getBoundingClientRect();
+            const r = e.currentTarget.getBoundingClientRect();
+            setPendingConnection({
+              fromNodeId: nodeId,
+              side,
+              at: besidePosition(centre, side),
+              screen: { x: r.left + r.width / 2 - (rect?.left ?? 0), y: r.top + r.height / 2 - (rect?.top ?? 0) },
+            });
+            setPalette(true);
+          }}
+        >
+          +
+        </button>
+      ))}
+    </>
+  );
 }
 
 /** Re-measure handles when the icon/card mode flips, so edges re-anchor. */
@@ -106,23 +178,13 @@ export const AwsNode = memo(function AwsNode({ data }: NodeProps<AwsNodeType>) {
     .filter(Boolean)
     .join(" · ");
 
-  // Icon-mode edges anchor at the 56px icon's rim, not the 200px hit-box —
-  // otherwise arrowheads float in empty space. Icon centre sits at y≈39.
-  const anchor = cardMode
-    ? { left: { top: NODE_H / 2, left: 0 }, right: { top: NODE_H / 2, right: 0 } }
-    : {
-        left: { top: 39, left: NODE_W / 2 - ICON / 2 - 6 },
-        right: { top: 39, right: NODE_W / 2 - ICON / 2 - 6 },
-      };
-
   return (
     <div
       className="overhead-node relative"
       style={{ width: NODE_W, height: NODE_H }}
     >
       <ModeInternals nodeId={data.nodeId} cardMode={cardMode} />
-      <Handle type="target" position={Position.Left} style={anchor.left} />
-      <Handle type="source" position={Position.Right} style={anchor.right} />
+      <SideHandles nodeId={node.id} cardMode={cardMode} centre={node.position} />
       {cardMode ? (
         <div
           className="absolute overflow-hidden rounded-lg border bg-panel shadow-sm"

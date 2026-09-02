@@ -204,6 +204,52 @@ body {
   color: var(--ink-3);
 }
 
+/* ---- cursors say what a press will do ----
+   Arrow at rest on the canvas; crosshair while dragging out a region;
+   grab / grabbing on anything that moves; crosshair on connection handles.
+   (React Flow's default is a pointing finger on the pane, which reads as
+   "clickable" rather than "select here".) */
+.react-flow__pane,
+.react-flow__pane.selection {
+  cursor: default;
+}
+.react-flow__pane.selection:active {
+  cursor: crosshair;
+}
+.overhead-canvas.marquee .react-flow__pane {
+  cursor: crosshair;
+}
+.react-flow__pane.draggable {
+  cursor: grab;
+}
+.react-flow__pane.draggable:active,
+.react-flow__pane.dragging {
+  cursor: grabbing;
+}
+.react-flow__node.draggable {
+  cursor: grab;
+}
+.react-flow__node.draggable:active,
+.react-flow__node.dragging {
+  cursor: grabbing;
+}
+.react-flow__edge {
+  cursor: pointer;
+}
+/* the frame's move grip — the one place you know you can pick a frame up */
+.oh-frame-move {
+  opacity: 0.55;
+  transition: opacity 0.12s, background 0.12s;
+  cursor: grab;
+}
+.oh-frame-move:hover,
+.oh-frame-head:hover ~ .oh-frame-move {
+  opacity: 1;
+}
+.oh-frame-move:active {
+  cursor: grabbing;
+}
+
 /* Everything painted through ViewportPortal inherits React Flow's
    `.react-flow__viewport { pointer-events: none }`. The decorative parts stay
    inert; the handles opt back in — without this no frame ever saw a pointer. */
@@ -216,6 +262,7 @@ body {
 .oh-collapse,
 .oh-section-chip,
 .oh-section-grip,
+.oh-frame-move,
 .oh-frame-input {
   pointer-events: auto;
 }
@@ -246,12 +293,50 @@ body {
   cursor: grabbing;
 }
 
-/* Edge route handle: visible when the edge is selected */
+/* Edge waypoint handles: visible when the edge is selected */
 .oh-route-handle {
   cursor: grab;
 }
 .oh-route-handle:active {
   cursor: grabbing;
+}
+.oh-route-add {
+  opacity: 0.55;
+  cursor: copy;
+  transition: opacity 0.12s;
+}
+.oh-route-add:hover {
+  opacity: 1;
+}
+.oh-edge-toolbar {
+  overflow: visible;
+}
+
+/* Connecting: handles are crosshairs, the pane too while a line is dragged;
+   the "+" pads fade in with the handles. */
+.react-flow__handle {
+  cursor: crosshair;
+}
+.overhead-canvas.connecting .react-flow__pane,
+.overhead-canvas.connecting .react-flow__node {
+  cursor: crosshair;
+}
+.oh-side-pad {
+  opacity: 0;
+  transition: opacity 0.12s;
+  background: var(--panel);
+  border: 1px solid var(--accent);
+  color: var(--accent-ink);
+  cursor: pointer;
+  z-index: 3;
+}
+.react-flow__node:hover .oh-side-pad,
+.oh-side-pad:hover {
+  opacity: 1;
+}
+.oh-side-pad:hover {
+  background: var(--accent);
+  color: #fff;
 }
 
 /* Inspector sections */

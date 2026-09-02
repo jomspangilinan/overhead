@@ -222,12 +222,34 @@ export function ContainerFrames() {
                 {c.cidr ? `${c.name} · ${c.cidr}` : c.name}
               </div>
             )}
+            {/* move grip: the frame's own handle, so nobody has to guess */}
+            <div
+              className="oh-frame-move nopan nodrag absolute grid place-items-center rounded-md"
+              style={{
+                left: box.r - 30,
+                top: box.t + 7,
+                width: 22,
+                height: 20,
+                background: selected ? "var(--accent-bg)" : "var(--panel)",
+                border: `1px solid ${selected ? "var(--accent)" : meta.color}`,
+                color: selected ? "var(--accent-ink)" : meta.color,
+              }}
+              title={`Drag to move ${c.name} with everything in it`}
+              onPointerDown={(e) => begin(e, c, "move", box)}
+              onPointerMove={move}
+              onPointerUp={end}
+              onPointerCancel={end}
+            >
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M8 1.5v13M1.5 8h13M8 1.5 6 3.5M8 1.5l2 2M8 14.5l-2-2M8 14.5l2-2M1.5 8l2-2M1.5 8l2 2M14.5 8l-2-2M14.5 8l-2 2" />
+              </svg>
+            </div>
             {costOn && stat ? (
               <div
                 className="pointer-events-none absolute select-none whitespace-nowrap text-[10px] font-semibold"
                 style={{
                   left: box.l,
-                  width: box.r - box.l - 10,
+                  width: box.r - box.l - 40,
                   top: box.t + 13,
                   textAlign: "right",
                   color: meta.color,

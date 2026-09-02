@@ -2,7 +2,7 @@
 // a sample file — comes through here. Never lose the user's work: an illegal
 // placement is re-parented up to the nearest legal ancestor, not dropped.
 
-import type { StateSnapshot, Section } from "./model";
+import type { StateSnapshot, Section, ArchEdge, EdgeStyle } from "./model";
 import { DEFAULT_TRAFFIC } from "./model";
 import {
   LEGAL_PARENTS,
@@ -32,10 +32,29 @@ interface LegacyGroup {
   collapsed?: boolean;
 }
 
+/** Edge shape drift: a single `route` point became `waypoints[]`; the
+ *  arrowhead flag became a mode. `kind` is never touched — it is semantic
+ *  and independent of style. Idempotent on the current shape. */
+export function migrateEdge(raw: unknown): ArchEdge {
+  const e = { ...((raw ?? {}) as Record<string, unknown>) };
+  const style = { ...((e.style as Record<string, unknown> | undefined) ?? {}) } as Record<string, unknown>;
+  if (style.arrow === true) style.arrow = "end";
+  else if (style.arrow === false) style.arrow = "none";
+  for (const k of Object.keys(style)) if (style[k] === undefined) delete style[k];
+  if (Object.keys(style).length) e.style = style as EdgeStyle;
+  else delete e.style;
+  const route = e.route as { x: number; y: number } | undefined;
+  if (route && typeof route.x === "number" && !Array.isArray(e.waypoints)) e.waypoints = [{ x: route.x, y: route.y }];
+  delete e.route;
+  if (Array.isArray(e.waypoints) && (e.waypoints as unknown[]).length === 0) delete e.waypoints;
+  if (!e.kind) e.kind = "sync";
+  return e as unknown as ArchEdge;
+}
+
 export function migrateSnapshot(raw: unknown): StateSnapshot {
   const src = (raw ?? {}) as Record<string, unknown>;
   const nodes = Array.isArray(src.nodes) ? [...(src.nodes as StateSnapshot["nodes"])] : [];
-  const edges = Array.isArray(src.edges) ? (src.edges as StateSnapshot["edges"]) : [];
+  const edges = Array.isArray(src.edges) ? (src.edges as unknown[]).map(migrateEdge) : [];
   const traffic = (src.traffic as StateSnapshot["traffic"]) ?? { ...DEFAULT_TRAFFIC };
 
   let containers: Container[] = Array.isArray(src.containers)

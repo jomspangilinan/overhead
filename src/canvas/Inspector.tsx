@@ -12,7 +12,7 @@ import { getService } from "@/engine/services";
 import { validateSetting, type SettingDef } from "@/engine/defineService";
 import { nodeCost } from "@/engine/cost";
 import { findingsForNode } from "@/engine/findings";
-import { toMoney, type EdgeStyle } from "@/engine/model";
+import { toMoney, type EdgeKind, type Side } from "@/engine/model";
 import {
   KIND_META,
   ancestorsOf,
@@ -23,7 +23,7 @@ import {
 import { contentBoxes, frameBoxes } from "@/engine/frames";
 import { NODE_W, NODE_H } from "./nodeMetrics";
 import { Icon } from "./Icon";
-import { dashFor, widthFor } from "./TypedEdge";
+import { EdgeStylePicker } from "./EdgeStylePicker";
 
 // ---- section chrome ------------------------------------------------------
 
@@ -194,39 +194,68 @@ function Field({
 }
 
 // ---- edge ----------------------------------------------------------------
+// Two sections kept apart on purpose: Connection is semantic (what it is —
+// `kind`, volume, label), Styling is visual (`style`, anchors, waypoints).
+// Neither reads or writes the other's fields.
+
+const KIND_CHIPS: { kind: EdgeKind; label: string; hint: string }[] = [
+  { kind: "sync", label: "Request", hint: "Synchronous request / response" },
+  { kind: "async", label: "Event", hint: "Queue, topic or event — asynchronous" },
+  { kind: "data", label: "Data flow", hint: "Reads and writes to storage" },
+];
 
 function EdgeInspector({ edgeId }: { edgeId: string }) {
   const edge = useStore((s) => s.edges.find((e) => e.id === edgeId));
   const nodes = useStore((s) => s.nodes);
   const setEdge = useStore((s) => s.setEdge);
+  const setEdgeAnchors = useStore((s) => s.setEdgeAnchors);
+  const setWaypoints = useStore((s) => s.setWaypoints);
   const removeEdge = useStore((s) => s.removeEdge);
   const selectEdge = useStore((s) => s.selectEdge);
   if (!edge) return null;
   const name = (id: string) => nodes.find((n) => n.id === id)?.name ?? id;
-  const style = edge.style ?? {};
-  const patchStyle = (p: Partial<EdgeStyle>) => {
-    const next: EdgeStyle = { ...style, ...p };
-    for (const k of Object.keys(next) as (keyof EdgeStyle)[]) if (next[k] === undefined) delete next[k];
-    setEdge(edge.id, { style: Object.keys(next).length ? next : undefined });
-  };
-  const autoWidth = style.width === undefined;
+  const sideSelect = (end: "from" | "to") => (
+    <select
+      className="oh-field"
+      value={edge.anchors?.[end] ?? "auto"}
+      onChange={(e) => setEdgeAnchors(edge.id, { ...(edge.anchors ?? {}), [end]: e.target.value as Side })}
+    >
+      <option value="auto">auto</option>
+      <option value="left">left</option>
+      <option value="right">right</option>
+      <option value="top">top</option>
+      <option value="bottom">bottom</option>
+    </select>
+  );
   return (
     <div className="flex h-full flex-col">
       <header className="px-3.5 pb-3 pt-3.5">
-        <div className="lab">Edge · {edge.kind}</div>
+        <div className="lab">Edge</div>
         <h2 className="mt-0.5 text-[14px] font-semibold">
-          {name(edge.from)} → {name(edge.to)}
+          {name(edge.from)} {edge.from === edge.to ? "↺" : "→"} {edge.from === edge.to ? "" : name(edge.to)}
         </h2>
       </header>
 
-      <Section id="edge-semantics" title="Semantics">
-        <Row label="Kind">
-          <select className="oh-field" value={edge.kind} onChange={(e) => setEdge(edge.id, { kind: e.target.value as typeof edge.kind })}>
-            <option value="sync">sync — request/response</option>
-            <option value="async">async — queue/event</option>
-            <option value="data">data — storage flow</option>
-          </select>
-        </Row>
+      <Section id="edge-connection" title="Connection">
+        <div className="grid grid-cols-3 gap-1" role="radiogroup" aria-label="Connection type">
+          {KIND_CHIPS.map((c) => (
+            <button
+              key={c.kind}
+              role="radio"
+              aria-checked={edge.kind === c.kind}
+              title={c.hint}
+              className="rounded-md border px-1.5 py-1 text-[11px] font-medium"
+              style={{
+                borderColor: edge.kind === c.kind ? "var(--accent)" : "var(--line)",
+                background: edge.kind === c.kind ? "var(--accent-bg)" : "var(--panel-2)",
+                color: edge.kind === c.kind ? "var(--accent-ink)" : "var(--ink-2)",
+              }}
+              onClick={() => setEdge(edge.id, { kind: c.kind })}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
         <Row label="Volume/mo">
           <input
             type="number"
@@ -242,61 +271,21 @@ function EdgeInspector({ edgeId }: { edgeId: string }) {
         </Row>
       </Section>
 
-      <Section id="edge-appearance" title="Appearance" aside={edge.style ? "custom" : "by kind"}>
-        <Row label="Weight">
-          <div className="flex items-center gap-2">
-            <input
-              type="range"
-              min={1}
-              max={6}
-              step={0.5}
-              className="w-full"
-              style={{ accentColor: "var(--accent)" }}
-              value={style.width ?? widthFor(edge.volumePerMonth)}
-              onChange={(e) => patchStyle({ width: Number(e.target.value) })}
-              aria-label="Stroke weight"
-            />
-            <span className="mono w-9 text-right text-[11px]" style={{ color: "var(--ink-2)" }}>
-              {(style.width ?? widthFor(edge.volumePerMonth)).toFixed(1)}
-            </span>
-          </div>
-        </Row>
-        <Row label="">
-          <label className="flex items-center gap-1.5 text-[11px]" style={{ color: "var(--ink-3)" }}>
-            <input type="checkbox" checked={autoWidth} onChange={(e) => patchStyle({ width: e.target.checked ? undefined : widthFor(edge.volumePerMonth) })} />
-            auto from volume
-          </label>
-        </Row>
-        <Row label="Dash">
-          <select className="oh-field" value={style.dash ?? "auto"} onChange={(e) => patchStyle({ dash: e.target.value === "auto" ? undefined : (e.target.value as EdgeStyle["dash"]) })}>
-            <option value="auto">by kind ({dashFor(edge.kind)})</option>
-            <option value="solid">solid</option>
-            <option value="dashed">dashed</option>
-            <option value="dotted">dotted</option>
-          </select>
-        </Row>
-        <Row label="Arrowhead">
-          <select
-            className="oh-field"
-            value={style.arrow === undefined ? "auto" : style.arrow ? "on" : "off"}
-            onChange={(e) => patchStyle({ arrow: e.target.value === "auto" ? undefined : e.target.value === "on" })}
-          >
-            <option value="auto">by kind ({edge.kind === "data" ? "none" : "arrow"})</option>
-            <option value="on">arrow</option>
-            <option value="off">none</option>
-          </select>
-        </Row>
-        <Row label="Route">
+      <Section id="edge-styling" title="Styling" aside={edge.style ? "custom" : "default"}>
+        <EdgeStylePicker edge={edge} tipPos="bottom" />
+        <Row label="Leaves">{sideSelect("from")}</Row>
+        <Row label="Enters">{sideSelect("to")}</Row>
+        <Row label="Bends">
           <div className="flex items-center justify-between gap-2 text-[11px]" style={{ color: "var(--ink-3)" }}>
-            {edge.route ? (
+            {edge.waypoints?.length ? (
               <>
-                <span className="mono">via {Math.round(edge.route.x)}, {Math.round(edge.route.y)}</span>
-                <button className="rounded border px-1.5 py-0.5 hover:bg-panel-2" style={{ borderColor: "var(--line)" }} onClick={() => setEdge(edge.id, { route: undefined })}>
-                  reset
+                <span className="mono">{edge.waypoints.length} point{edge.waypoints.length === 1 ? "" : "s"}</span>
+                <button className="rounded border px-1.5 py-0.5 hover:bg-panel-2" style={{ borderColor: "var(--line)" }} onClick={() => setWaypoints(edge.id, undefined)}>
+                  straighten
                 </button>
               </>
             ) : (
-              <span>floating — drag the handle on the canvas</span>
+              <span>none — press + on the edge</span>
             )}
           </div>
         </Row>

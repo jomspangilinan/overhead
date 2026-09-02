@@ -29,7 +29,10 @@ export function Keyboard() {
       if (mod) return;
 
       if (e.key === "Delete" || e.key === "Backspace") {
-        if (s.selectedEdgeId) {
+        if (s.selectedEdgeId && s.selectedWaypoint !== null) {
+          e.preventDefault();
+          s.removeWaypoint(s.selectedEdgeId, s.selectedWaypoint);
+        } else if (s.selectedEdgeId) {
           e.preventDefault();
           s.removeEdge(s.selectedEdgeId);
           s.selectEdge(null);
@@ -42,7 +45,11 @@ export function Keyboard() {
         return;
       }
       if (e.key === "Escape") {
-        if (s.exportPanel) s.setExportPanel(null);
+        if (s.labelEditingEdgeId) s.setLabelEditing(null);
+        else if (s.pendingConnection) {
+          s.setPendingConnection(null);
+          closePalette();
+        } else if (s.exportPanel) s.setExportPanel(null);
         else if (s.templatesOpen) s.setTemplatesOpen(false);
         else if (s.palette) closePalette();
         else {

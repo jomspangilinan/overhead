@@ -6,6 +6,8 @@
 import { create } from "zustand";
 import type {
   ArchEdge,
+  EdgeStyle,
+  Side,
   Container,
   Section,
   ArchNode,
@@ -140,6 +142,11 @@ export interface OverheadState {
   renameNode: (id: string, name: string) => void;
   renameContainer: (id: string, name: string, cidr?: string) => void;
   setEdge: (id: string, patch: Partial<Omit<ArchEdge, "id" | "from" | "to">>) => void;
+  /** Visual only — never touches `kind`. Undefined values clear a key. */
+  setEdgeStyle: (id: string, patch: Partial<EdgeStyle>) => void;
+  setEdgeAnchors: (id: string, anchors: ArchEdge["anchors"] | undefined) => void;
+  setWaypoints: (id: string, waypoints: { x: number; y: number }[] | undefined) => void;
+  removeWaypoint: (id: string, index: number) => void;
   removeNode: (id: string) => void;
   moveNode: (id: string, x: number, y: number) => void;
   setNodeSetting: (id: string, key: string, value: unknown) => void;
@@ -148,6 +155,7 @@ export interface OverheadState {
     to: string,
     kind: EdgeKind,
     volumePerMonth?: number,
+    extra?: Pick<ArchEdge, "anchors" | "style" | "label">,
   ) => string;
   removeEdge: (id: string) => void;
   setTraffic: (traffic: Partial<Traffic>) => void;
@@ -158,6 +166,25 @@ export interface OverheadState {
   setZoom: (zoom: number) => void;
   select: (id: string | null) => void;
   selectEdge: (id: string | null) => void;
+  /** Index into the selected edge's waypoints (Delete removes it). */
+  selectedWaypoint: number | null;
+  setSelectedWaypoint: (i: number | null) => void;
+  /** Edge whose label is being edited inline on the canvas. */
+  labelEditingEdgeId: string | null;
+  setLabelEditing: (id: string | null) => void;
+  /** A connection drag is in progress (cursor + handles). */
+  connecting: boolean;
+  setConnecting: (on: boolean) => void;
+  /** A "+" pad or a drag onto empty canvas: the palette will add a node
+   *  beside `fromNodeId` and connect it. `at` is the flow position for the
+   *  new node; `screen` is where to open the palette (canvas-relative). */
+  pendingConnection: {
+    fromNodeId: string;
+    side: Exclude<Side, "auto">;
+    at: { x: number; y: number };
+    screen: { x: number; y: number };
+  } | null;
+  setPendingConnection: (p: OverheadState["pendingConnection"]) => void;
   hover: (id: string | null) => void;
   setTrace: (ids: string[] | null) => void;
   setExportPanel: (format: OverheadState["exportPanel"]) => void;
@@ -315,11 +342,60 @@ export const useStore = create<OverheadState>((set, get) => ({
       ),
     })),
 
-  addEdge: (from, to, kind, volumePerMonth) => {
+  addEdge: (from, to, kind, volumePerMonth, extra) => {
     const id = newId("edge");
-    set((s) => ({ edges: [...s.edges, { id, from, to, kind, volumePerMonth }] }));
+    set((s) => ({ edges: [...s.edges, { id, from, to, kind, volumePerMonth, ...(extra ?? {}) }] }));
     return id;
   },
+
+  setEdgeStyle: (id, patch) =>
+    set((s) => ({
+      edges: s.edges.map((e) => {
+        if (e.id !== id) return e;
+        const next: EdgeStyle = { ...(e.style ?? {}), ...patch };
+        for (const k of Object.keys(next) as (keyof EdgeStyle)[]) if (next[k] === undefined) delete next[k];
+        const { style: _drop, ...rest } = e;
+        void _drop;
+        return Object.keys(next).length ? { ...rest, style: next } : rest;
+      }),
+    })),
+
+  setEdgeAnchors: (id, anchors) =>
+    set((s) => ({
+      edges: s.edges.map((e) => {
+        if (e.id !== id) return e;
+        const clean = anchors
+          ? Object.fromEntries(Object.entries(anchors).filter(([, v]) => v && v !== "auto"))
+          : {};
+        const { anchors: _drop, ...rest } = e;
+        void _drop;
+        return Object.keys(clean).length ? { ...rest, anchors: clean } : rest;
+      }),
+    })),
+
+  setWaypoints: (id, waypoints) =>
+    set((s) => ({
+      edges: s.edges.map((e) => {
+        if (e.id !== id) return e;
+        const { waypoints: _drop, ...rest } = e;
+        void _drop;
+        return waypoints?.length
+          ? { ...rest, waypoints: waypoints.map((p) => ({ x: Math.round(p.x), y: Math.round(p.y) })) }
+          : rest;
+      }),
+    })),
+
+  removeWaypoint: (id, index) =>
+    set((s) => ({
+      edges: s.edges.map((e) => {
+        if (e.id !== id || !e.waypoints) return e;
+        const wp = e.waypoints.filter((_, i) => i !== index);
+        const { waypoints: _drop, ...rest } = e;
+        void _drop;
+        return wp.length ? { ...rest, waypoints: wp } : rest;
+      }),
+      selectedWaypoint: null,
+    })),
 
   removeEdge: (id) => set((s) => ({ edges: s.edges.filter((e) => e.id !== id) })),
 
@@ -354,8 +430,16 @@ export const useStore = create<OverheadState>((set, get) => ({
 
   setCardsForced: (on) => set({ cardsForced: on }),
   setZoom: (zoom) => set({ zoom }),
-  select: (id) => set({ selectedId: id, ...(id ? { selectedEdgeId: null } : {}) }),
-  selectEdge: (id) => set({ selectedEdgeId: id, ...(id ? { selectedId: null } : {}) }),
+  select: (id) => set({ selectedId: id, selectedWaypoint: null, ...(id ? { selectedEdgeId: null } : {}) }),
+  selectEdge: (id) => set({ selectedEdgeId: id, selectedWaypoint: null, ...(id ? { selectedId: null } : {}) }),
+  selectedWaypoint: null,
+  setSelectedWaypoint: (i) => set({ selectedWaypoint: i }),
+  labelEditingEdgeId: null,
+  setLabelEditing: (id) => set({ labelEditingEdgeId: id }),
+  connecting: false,
+  setConnecting: (on) => set({ connecting: on }),
+  pendingConnection: null,
+  setPendingConnection: (p) => set({ pendingConnection: p }),
   hover: (id) => set({ hoveredId: id }),
   setTrace: (ids) => set({ traceIds: ids }),
   setExportPanel: (format) => set({ exportPanel: format }),
