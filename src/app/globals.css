@@ -138,10 +138,16 @@ body {
   inset: 0;
   background: radial-gradient(1300px 760px at 58% 42%, #141922 0%, var(--bg) 70%);
 }
-/* React Flow's wrapper is pinned to the cell, never sized by percentages. */
+/* React Flow's wrapper is pinned to the cell, never sized by percentages.
+   Nothing on the canvas is text to select; drags must never highlight. */
 .overhead-canvas {
   position: absolute;
   inset: 0;
+  user-select: none;
+}
+.overhead-canvas input,
+.overhead-canvas textarea {
+  user-select: text;
 }
 .overhead-canvas,
 .react-flow,

@@ -17,6 +17,9 @@ import {
   type ContainerKind,
 } from "@/engine/containers";
 import { Icon } from "./Icon";
+import { useReactFlow } from "@xyflow/react";
+import { frameBoxes } from "@/engine/frames";
+import { NODE_W, NODE_H } from "./nodeMetrics";
 
 function Caption({ children }: { children: React.ReactNode }) {
   return (
@@ -49,6 +52,20 @@ export function PaletteFloat() {
   const [query, setQuery] = useState("");
   const ref = useRef<HTMLDivElement>(null);
   const fromNode = pending ? nodes.find((n) => n.id === pending.fromNodeId) : undefined;
+  const { setCenter, getViewport } = useReactFlow();
+
+  // A new frame lands clear of everything, which can be off-screen and
+  // look like nothing happened: pan to it when it is out of view.
+  const reveal = (id: string) => {
+    const st = useStore.getState();
+    const box = frameBoxes(st.nodes, st.containers, { nodeW: NODE_W, nodeH: NODE_H }).get(id);
+    const host = ref.current?.parentElement;
+    if (!box || !host) return;
+    const { x, y, zoom } = getViewport();
+    const view = { l: -x / zoom, t: -y / zoom, r: (host.clientWidth - x) / zoom, b: (host.clientHeight - y) / zoom };
+    const visible = box.l >= view.l && box.r <= view.r && box.t >= view.t && box.b <= view.b;
+    if (!visible) void setCenter((box.l + box.r) / 2, (box.t + box.b) / 2, { zoom, duration: 240 });
+  };
 
   // Add a service: beside the pending source and connected to it, else
   // inside the selected region/cloud.
@@ -178,6 +195,7 @@ export function PaletteFloat() {
               else {
                 select(res.id);
                 notify(parent ? `${meta.label} added inside ${parent.name}` : `${meta.label} added`);
+                requestAnimationFrame(() => reveal(res.id));
               }
             }}
           >

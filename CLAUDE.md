@@ -38,8 +38,18 @@ Phases 0–9 (§15) are done under the current spec; what remains is **video, RE
 - Chrome: Instrument palette in a **docked** shell (§7) — the user overruled the mock's floating panels.
   2026-09-02 UX pass: the shell has a hard floor so the canvas never measures zero; frames drag, resize and
   accept dropped nodes; the Inspector is sectioned; Add is a floating palette and Templates a dialog.
+  2026-09-02 evening (the user's Figma / Claude Design review): a **bottom-centre toolbar** with tooltips
+  and one **View gear** (layers, cards, cost display); Add covers services *and* containers; the Section
+  tool **draws a rectangle**; edges got four-sided anchors, waypoints, arrow modes, shapes, self-loops and
+  a floating styling toolbar (kind and style kept apart); Layers is **one object tree** with sections,
+  groups (⌘G) and connections; containers and sections share **one frame chrome and gesture** and moving a
+  frame carries the sections inside it; security is schema-driven with gears on cards, frames and the
+  view. Three root causes fixed on the way: frames never received pointer events (`.react-flow__viewport`
+  is `pointer-events: none` and the portal inherited it); React Flow logged #015 on every drag because
+  controlled nodes never carried `measured`; an unlayered `[data-tip] { position: relative }` beat
+  Tailwind's `absolute` on anything with a tooltip (pads, gears).
 - 33 tools live, 37 while a scenario is open (§9).
-- Tests: 69 across 10 vitest files.
+- Tests: 91 across 13 vitest files.
 
 **Workflow the user asked for:** keep `npm run dev` running; the user reviews every change on
 `localhost:3000` **before** anything is deployed. Deploy only when they say "deploy" (`npx vercel deploy
@@ -69,7 +79,11 @@ Phases 0–9 (§15) are done under the current spec; what remains is **video, RE
 - `src/engine/**` imports nothing from React or the DOM. Cost, findings, container stats and deltas are
   **derived selectors**, never stored.
 - **Every affordance the chrome shows must work.** A printed keyboard hint is a binding; a button has an
-  `onClick`; a rail tool changes something. If it can't be made real, remove it.
+  `onClick`; a toolbar tool changes something. If it can't be made real, remove it.
+- **No band-aids.** Fix at the root with one shared implementation (containers and sections share
+  `FrameChrome` + `useFrameGesture`; pads and edge anchors share `shapeOf`/`anchorPoint`); verify with a
+  measurement (a unit test or a headless number), then check the siblings.
+- **No em dashes in UI copy** (tooltips, notices, labels, setting descriptions). Use `·` or a colon.
 
 ---
 
@@ -152,9 +166,15 @@ and `KIND_META` plus the `ContainerKind` union.
   per-kind padding; `bounds` (set by a drag, a resize, or on creation of an empty container) is a floor and
   a position, never a clip — a member dragged past the edge grows the frame, removing members shrinks it
   back to the stored rectangle and no further. `setContainerBounds` clamps to the content floor.
-- **Direct manipulation:** the header band drags the frame and everything inside (`frameDrag` preview,
-  `moveContainer` commits once on release → one undo step); the corner grip resizes; click selects the
-  frame (Inspector shows a container panel); double-click the name to rename (`name · cidr`).
+- **Direct manipulation** (`canvas/frames/FrameChrome.tsx` + `useFrameGesture.ts`, shared with sections):
+  the header band and the **move grip** (top-right, next to the gear) drag the frame and everything inside
+  (`frameDrag` preview, `moveContainer` → `translateFrame` commits once on release → one undo step); the
+  corner grip resizes; click selects the frame; double-click the name renames (`name · cidr`); the gear
+  opens a popover (name, CIDR, collapse, open in Inspector). **Moving a frame also moves every section
+  whose members are all inside it** (`movedSectionIds`); a section spanning in and out stays and stretches.
+  **Gotcha:** everything rendered through `ViewportPortal` inherits React Flow's
+  `.react-flow__viewport { pointer-events: none }` — `globals.css` opts the handles back in
+  (`.oh-frame-head`, `.oh-frame-grip`, `.oh-frame-move`, `.oh-frame-gear`, …) and they carry `nopan nodrag`.
 - **Drop to re-parent:** dropping a node inside another frame calls `moveIntoContainer` with the same
   `validateNodePlacement` the agent gets; an illegal drop snaps back and the rule shows in the notice chip.
   While a node is dragged its own frame leaves it out (`exclude`), so the frame doesn't chase it.
@@ -165,15 +185,26 @@ and `KIND_META` plus the `ContainerKind` union.
   dropped (`Canvas.tsx` `collapsedByNode`).
 - `removeContainer` re-parents children and members upward — never deletes what was inside.
 
-### 5b. Sections — yours, free-form, orthogonal (`Section` in `src/engine/model.ts`)
+### 5b. Sections and groups — yours, free-form, orthogonal (`Section` in `src/engine/model.ts`)
 
-- `{ id, name, color, bounds?, nodeIds[], collapsed }`. **`nodeIds` is the single source of truth**; nothing is
-  stored on the node.
-- Dotted frame (`2 5`, round caps) with a label chip above it (`SectionFrames.tsx`). Drag the chip: the frame
-  and every member move together in one undo step (`moveSection`). Double-click the chip to rename.
-- Never validated; crosses containers freely; a node may be in many sections or none.
-- `sections` is a layer, default on.
-- A section created with no members gets default bounds so it is visible and draggable at once.
+- `{ id, name, color, kind?: 'section'|'group', parentId?, bounds?, nodeIds[], collapsed, style?: { dash,
+  width, fill } }`. **`nodeIds` is the single source of truth**; nothing is stored on the node.
+- **Made by drawing:** the Section tool (S) drags a rectangle on the canvas; the section gets those bounds
+  and every resource whose centre is inside as members (`Canvas.tsx` `onDrawUp`). Also from the Layers
+  header (from the selection) and the `add_section` tool.
+- A **section** draws a dashed frame with the **same chrome as a container** (`FrameChrome`: header band,
+  name, gear, move grip, resize grip in the same places); its geometry is `sectionBoxes` in
+  `engine/frames.ts` (members ∪ stored bounds, `SECTION_PAD` + `SECTION_HEAD`). `style` is the user's
+  border/fill; absent = dashed 1.4 px with a faint tint. The gear opens the appearance popover; selecting
+  it shows Appearance / Members / Frame in the Inspector.
+- **Moving:** `moveSection` → `translateFrame` moves its members through nested sections, its own bounds
+  and every descendant section's bounds, in one undo step. Selecting a section sets `selectedIds` to its
+  members (deep) so dragging any member carries the rest.
+- A **group** (`kind: 'group'`, ⌘G on a multi-selection, ⇧⌘G ungroups) draws nothing: a folder in Layers
+  whose members select and move together. Same model, `addGroup` / `ungroup`.
+- `parentId` nests sections/groups under a section **in the tree only** (`layers.ts`).
+- Never validated; crosses containers freely; a node may be in many sections or none. `sections` is a
+  layer (View gear), default on.
 - `auto_layout` arranges by role and **emits** one section per non-empty role (`auto-*` ids, replaced on
   re-run, user sections untouched). Roles (`ingress/handlers/messaging/workers/data`) are internal to
   `src/engine/layout.ts` and `ServiceDef.role` — never a model field, never shown.
@@ -195,14 +226,22 @@ carrying its members, `az` dissolves upward, `subnet` → `subnetpub`, `node.gro
 4. **Three edge kinds, three encodings, nothing else.** `sync` solid + arrowhead · `async` dashed `7 5` +
    arrowhead · `data` dotted `2 5`, no head. Permissions, logging, encryption are **node properties** (security
    badges), never edges.
-5. **Edges are floating beziers** (`edgeGeometry.ts`): anchors computed from node position + visual shape (icon
-   rim ±34, y 39 · card edge ±100, y 50), never from handle coordinates. Cases: forward (right-mid → left-mid,
-   controls at 50% Δx), back (S-curve leaving left, entering right), bracket (same column, out one side).
-   Edges converging on one node **fan** their anchors (`fan` in edge data) so arrowheads never stack.
-   Connections can start from either side (`ConnectionMode.Loose`). A selected edge shows a midpoint
-   handle: drag it and the curve becomes a quadratic **through** that point, stored as `edge.route`
-   (`routedPath`) between the same anchors; double-click the handle or "reset" in the Inspector lets go.
-   `edge.style` pins weight / dash / arrowhead a user changed by hand; absent = follow the kind and volume.
+5. **Edges are floating and four-sided** (`edgeGeometry.ts`, pure TS): anchors come from node position +
+   visual shape (`shapeOf`: icon rim ±34 around centre y 39 · card ±100 × ±38), never from handle
+   coordinates; the node's handles and "+" pads are placed from the same `shapeOf`/`anchorPoint`.
+   `pickSides` chooses exit/entry sides by geometry (the axis with the larger clear gap wins, so a target
+   below is left from the bottom and entered from the top); `bracket` only when shapes overlap;
+   `edge.anchors` pins a side per end. **Sides are picked in `Canvas.tsx`** so fans (`fan`) are keyed per
+   node *and* side. A path runs through `[p0, ...waypoints, p3]` as a curve (cubic segments, end tangents
+   along the side normals), straight polyline, or axis-aligned steps (`style.shape`); self-loops draw
+   `loopPath`. Selected, an edge shows its waypoints (drag; double-click or Delete removes), a dashed "+"
+   per segment (`geo.mids`) that adds one, a floating **styling toolbar** (`EdgeStylePicker`) and a
+   double-click-to-edit label. Connections start from any of the four handles (`ConnectionMode.Loose`, ids
+   `left/right/top/bottom`); each side's "+" pad (hover zone around the visible shape) spawns a connected
+   service through the palette (`pendingConnection`); dropping a connection on empty canvas opens the same
+   palette at the drop. **`kind` and `style` are separate.** `kind` is semantic (Connection section:
+   request · event · data flow); `style` is visual (dash / arrow `none|end|start|both` / weight / shape);
+   neither writes the other; absent style = the kind's default look (`dashOf`, `arrowModeOf`).
 6. **Layers:** `request` · `events` · `data` · `security` · `cost` · `sections`. Default on: request, events,
    data, sections.
 7. **Volume on edges.** Stroke width follows `volumePerMonth` on a log scale (1.2 → 3.5 px).
@@ -219,15 +258,19 @@ carrying its members, `az` dissolves upward, `subnet` → `subnetpub`, `node.gro
 export const lambda = defineService({
   id: 'lambda', term: 'AWS Lambda', icon: 'aws-lambda',
   role: 'handlers',                    // layout hint only
-  settings: { architecture: { type: 'enum', values: ['arm64','x86_64'], default: 'arm64', label: 'Architecture', driver: true }, … },
+  settings: { architecture: { type: 'enum', values: ['arm64','x86_64'], default: 'arm64', label: 'Architecture', driver: true }, …,
+              iamRole: { type: 'enum', values: ['least-privilege','broad'], default: 'least-privilege', label: 'Execution role', group: 'security' } },
   cardLines: ['architecture', 'memoryMb', 'avgDurationMs'],
+  badge: (s) => 'IAM role' | 'IAM role · VPC' | …,   // the security badge, from the security settings
   price: (s, traffic, pricing) => CostLine[],   // from the price list, never literals
-  cdk:   (s, { varName, resourceName }) => string,
+  cdk:   (s, { varName, resourceName }) => string,  // security settings become construct props or comments
 });
 ```
 
-From this one definition derive: the Inspector form, `set_property`'s validation, `list_services`, the card's
-lines, pricing, and CDK. **One vocabulary for the human and the agent.**
+From this one definition derive: the Inspector form (Settings + Security), the card gear, the badge,
+`set_property`'s validation, `list_services` (security settings flagged), the card's lines, pricing, and
+CDK. **One vocabulary for the human and the agent.** Security settings are never priced unless the SKU is
+already in the price list (none are today).
 
 ## 7. Chrome — Instrument, docked
 
@@ -235,7 +278,7 @@ Direction is **Instrument** (dark, dense, pro-tool). The mock floats every panel
 ("too many floating things") — panels are **docked** and reserve space. Only two small pills float.
 
 ```
-grid-template-columns: 52px  auto(left dock)  minmax(420px, 1fr)(canvas)  auto(right dock)
+grid-template-columns: auto(left dock)  minmax(420px, 1fr)(canvas)  auto(right dock)
 grid-template-rows:    46px(top bar)  minmax(280px, 1fr)  36px(bottom bar)
 ```
 
@@ -245,37 +288,62 @@ queries; past that the shell overflows and the body clips. `.overhead-canvas` is
 `.oh-main` — never percentage-sized. React Flow's attribution stays **visible** (no Pro plan): restyled to
 the palette at bottom-centre, never `display: none`.
 
-- **Rail** (`chrome/Rail.tsx`, 52 px): select V · pan H │ add A · connect C · container B · section S │ trace T
-  · auto-layout L · cards K │ templates │ … │ grid ⇧G · undo ⌘Z · redo ⇧⌘Z. Active = `--accent-bg` + a 2.5 px
-  accent tick bleeding out the left edge. A and B open the floating palette (B lists container kinds first);
-  S reveals the layer tree; C keeps connection handles visible; T makes the next node click trace.
+- **Toolbar** (`chrome/Toolbar.tsx`, a floating pill at the bottom-centre of the canvas; the user chose it
+  over the left rail): select V · hand H │ add A · connect C · section S │ trace T · auto-layout L │ grid ⇧G ·
+  undo ⌘Z · redo ⇧⌘Z │ View gear. Every button has a `data-tip` tooltip above it; no native `title` on
+  chrome buttons. A opens the palette (services and containers together; B still opens it containers
+  first); S arms the rectangle tool; C keeps handles visible; T makes the next node click trace; K toggles
+  card view (also in the View gear). Templates lives in the top bar.
 - **Top bar** (`chrome/TopBar.tsx`): brand · editable **drawing name** · price-list pill with the region
   select · monthly total (23 px mono — the one loud number) · Scenario (forks via `openScenarioFromUi`, so the
   tool count ticks) · Export.
 - **Left dock** (`chrome/Dock.tsx`, 248 px, collapsible to a spine): one panel, **Layers**
-  (`chrome/StructurePanel.tsx`) — the containment tree with a disclosure triangle per frame (folds the tree,
-  not the canvas), per-type icons, click selects a frame or a resource, hover reveals collapse-on-canvas and
-  remove; sections listed beneath with `+` and `×`. No tabs.
-- **Palette** (`Palette.tsx`, floating over the canvas top-left, A or `/`): search, the ten services (click
-  adds — inside a selected region/cloud — or drag onto the canvas), container kinds that create with the
-  validator's verdict as tooltip and the new frame selected. Escape / click outside closes.
+  (`chrome/LayersPanel.tsx`, rows from `src/engine/layers.ts`) — **one object tree**: containers by
+  ownership, sections and groups nested *positionally* under every frame that holds one of their members
+  (a spanning section appears under each, showing only the members held there; memberless ones sit at the
+  top level), resources under their section or frame, and a trailing collapsible **Connections** group.
+  Disclosure triangles fold the tree, not the canvas; click selects the object itself; hover reveals
+  collapse-on-canvas and remove. Header buttons add a section from the selection or open the container
+  palette. No tabs.
+- **Palette** (`Palette.tsx`, floating above the toolbar, A or `/`): search, the ten services (click adds —
+  inside a selected region/cloud — or drag onto the canvas) and the container kinds, which create with the
+  validator's verdict as tooltip, select the new frame and **pan to it when it lands off-screen** (a second
+  AWS Cloud is placed clear of everything, to the right). With a `pendingConnection` it opens at that point
+  as "Connect from …": the picked service lands beside the source, in its container, already connected.
 - **Templates** (`Templates.tsx`): a modal dialog from the rail with the three samples.
 - **Right dock** (300 px): the **Inspector** (`Inspector.tsx`) in named, independently collapsible sections
-  (state remembered in `localStorage`): node → Position (X/Y numeric, Inside select validated like the tool,
-  breadcrumb) · Settings (schema-driven) · Cost · Findings; container → Identity (CIDR, ancestry) · Frame
-  (X/Y/W/H, pinned/derived, Fit to contents) · Contents; edge → Semantics (kind / volume / label) ·
-  Appearance (weight with auto-from-volume, dash, arrowhead, route reset). `ExportPanel` overlays this dock.
+  (state remembered in `localStorage`): node → Position · Settings (schema, `group !== 'security'`) ·
+  **Security** (schema, `group: 'security'`, drives the badge and CDK) · Cost · Findings; container →
+  Identity · Frame · Contents; section/group → Appearance · Members · Frame; edge → **Connection** (type
+  chips = `kind`, volume, label) · **Styling** (`EdgeStylePicker`, anchor sides, bends). `ExportPanel`
+  overlays this dock.
 - **Notice chip** (`Notice.tsx`): one transient message over the canvas — a refused drop and its rule, a
   created frame, a re-parented node. No `window.alert`.
 - **Bottom bar** (`chrome/BottomBar.tsx`): title-block facts (Drawing · Region · Containers · Resources ·
   Findings · Est. monthly) and the WebMCP readout — live count, last three calls (ring buffer in
   `toolRegistry.ts`'s execute wrapper), click for the tool list.
-- **Floating:** layer switch (bottom-left), zoom pill (bottom-right, 50–180%, Fit), the palette when open,
-  the notice chip while it shows.
+- **Floating:** toolbar (bottom-centre), zoom pill (bottom-right: −, %, +, Fit; click the % for 100%), the
+  palette when open, the edge styling toolbar on a selected edge, one popover at a time, the notice chip
+  while it shows. React Flow's attribution sits bottom-left.
 - Canvas: radial stage lift; React Flow `<Background>` dots (26 px, `#2A3441`) that pan and zoom; ⇧G toggles.
-- Inline editing: double-click a node label or container name on the canvas. Delete/Backspace removes the
-  selected edge, else node. Escape backs out (export → selection/trace → select tool).
+- Inline editing: double-click a node label, a frame name or an edge label on the canvas. Delete/Backspace
+  removes the selected waypoint, else edge, else container/section/node. ⌘G groups the selection, ⇧⌘G
+  ungroups. Escape backs out (label edit → pending connection → export → templates → palette → selection/
+  trace → select tool).
 - `HowTo` banner is dismissible; `BillDrop` accepts a CSV anywhere on the canvas.
+
+**Cursors say what a press will do** (`globals.css`): arrow at rest on the canvas, crosshair while a
+marquee is dragged (`.marquee`) or the Section tool is armed (`.drawing`), grab / grabbing on anything that
+moves, crosshair on connection handles and while connecting. `nodeDragThreshold={4}` keeps a quick click a
+select and a held drag a move; ⇧/⌘-click adds to the selection, marquee selects many.
+
+**Gears open one anchored popover** (`Popovers.tsx`, `store.popover`): the **View** gear on the toolbar
+(Layers: sections / security badges / cost figures / request-events-data edges / grid · Cards: card view
+and what every card shows, `cardShow` · Cost: period, decimals, where it shows, `costDisplay`); the card
+gear on a node (Security settings + this card's lines, cost, badge → `node.card`); the frame gear on a
+container (name, CIDR, collapse) or a section (colour, border, fill). The UI slice (`cardShow`,
+`costDisplay`) autosaves under `ui`. **Tooltip CSS lives in `@layer components`** so Tailwind's `absolute`
+still wins on the element.
 
 **Tokens** (`src/app/globals.css`; legacy aliases `--ground/--surface/--rule/--saving/--finding/--critical`
 still resolve pending cleanup):
@@ -297,11 +365,12 @@ number, code and log line. Uppercase only for 9.5 px labels at `.14em` tracking.
 ## 8. Data model (`src/engine/model.ts`)
 
 ```ts
-Node      { id, service, name, settings, container?, position }
-Edge      { id, from, to, kind: 'sync'|'async'|'data', volumePerMonth?, label?,
-            style?: { width?, dash?: 'solid'|'dashed'|'dotted', arrow? }, route?: { x, y } }  // overrides, absent = by kind
+Node      { id, service, name, settings, container?, position, card?: { lines?, cost?, badge? } }
+Edge      { id, from, to, kind: 'sync'|'async'|'data' /* semantic */, volumePerMonth?, label?,
+            style?: { width?, dash?, arrow?: 'none'|'end'|'start'|'both', shape?: 'curve'|'straight'|'step' } /* visual, absent = by kind */,
+            waypoints?: {x,y}[], anchors?: { from?: Side, to?: Side } }
 Container { id, kind, name, cidr?, parent?, collapsed, bounds? }      // structural — validated, priced
-Section   { id, name, color, bounds?, nodeIds[], collapsed }          // yours — never validated
+Section   { id, name, color, kind?: 'section'|'group', parentId?, bounds?, nodeIds[], collapsed, style? }  // yours — never validated
 Traffic   { requestsPerMonth, avgPayloadKb }
 StateSnapshot { nodes, edges, containers, sections, traffic }
 Scenario  { name, base: StateSnapshot }                               // the live state IS the fork
@@ -310,10 +379,16 @@ Cost      { nodeId, lines: [{ sku, unit, qty, rate, monthly, sourceUrl }], month
 ```
 
 Store (`src/store/useStore.ts`, zustand) also holds UI state: layers, tool, docks, `palette`, `templatesOpen`,
-`notice`, `drawingName`, `gridOn`, `cardsForced`, zoom, selection (`selectedId` — a node **or a container**
-id — / `selectedEdgeId`, mutually exclusive), `draggingId`, `frameDrag`, trace, scenario, export panel, bill,
-`webmcpOutcome`. Container actions: `moveContainer(id, dx, dy)`, `setContainerBounds(id, bounds|undefined)`. `snapshotOf(s)` feeds autosave, undo (`store/history.ts`), and
-scenarios. **Selectors must return stable values** — derive objects in `useMemo`, not in `useStore(fn)`
+`notice`, `drawingName`, `gridOn`, `cardsForced`, `cardShow`, `costDisplay`, `popover`, zoom, selection
+(`selectedId` — a node, a container **or a section** id — / `selectedEdgeId`, mutually exclusive;
+`selectedIds` for the multi-selection; `selectedWaypoint`; `labelEditingEdgeId`), `draggingId`, `frameDrag`
+(`{ kind: 'container'|'section', id, dx, dy }`), `connecting`, `pendingConnection`, trace, scenario, export
+panel, bill, `webmcpOutcome`. Frame moves go through `engine/frames.ts` `translateFrame` (`moveContainer`,
+`moveSection`); bounds through `setContainerBounds` / `setSectionBounds` (both floored at content). Edge
+actions keep semantics and style apart: `setEdge` (kind/label/volume) vs `setEdgeStyle` / `setEdgeAnchors`
+/ `setWaypoints` / `removeWaypoint`. Sections: `setSectionColor`, `setSectionStyle`, `setSectionParent`,
+`addGroup`, `ungroup`. `snapshotOf(s)` feeds autosave, undo (`store/history.ts`), and scenarios. Migration
+(`migrateEdge`) turns the old single `route` into `waypoints` and boolean `arrow` into a mode. **Selectors must return stable values** — derive objects in `useMemo`, not in `useStore(fn)`
 (returning a fresh object per call is a React #185 render loop; it bit us once).
 
 ## 9. Tool surface (33 live · 37 in a scenario)
@@ -339,7 +414,7 @@ Read tools: `readOnlyHint`. Mutations update the store before returning. `text()
 | `collapse_container` / `expand_container` | write | resources + monthly |
 | `get_containers` | read | flat list with `parent` pointers + `legalChildren` map |
 | `add_section` / `rename_section` / `set_section_nodes` / `remove_section` | write | no validation |
-| `get_sections` | read | |
+| `get_sections` | read | includes `kind` (section / group) |
 | `open_scenario` | **dynamic** | forks; registers the four below under one `AbortController` |
 | `scenario_apply` / `get_delta` / `commit_scenario` / `discard_scenario` | dynamic | abort on commit/discard |
 | `get_bill_summary` | read, untrusted | |
@@ -405,25 +480,32 @@ src/
                     exporters/{json,markdown,mermaid,cdk,index}.ts
   webmcp/           register.ts · tools.ts · scenario.ts · toolRegistry.ts · provider.tsx
   store/            useStore.ts · history.ts (undo/redo)
-  canvas/           App.tsx (shell) · Canvas.tsx (drag → drop re-parent) · AwsNode · ContainerCard ·
-                    ContainerFrames (drag/resize) · SectionFrames · TypedEdge (style, route handle) ·
-                    edgeGeometry.ts · nodeMetrics.ts · Inspector (sections) · Palette (floating) ·
+  engine/layers.ts  layerRows() — the Layers tree as rows (positional nesting of sections/groups)
+  engine/frames.ts  container + section geometry, hit-test, translateFrame / movedNodeIds / movedSectionIds
+  canvas/           App.tsx (shell) · Canvas.tsx (sides + fans, multi-select, section drawing, drag → drop
+                    re-parent, connect start/end) · AwsNode (4 handles, + pads, gear, badge) · ContainerCard ·
+                    ContainerFrames · SectionFrames · frames/FrameChrome + frames/useFrameGesture (shared) ·
+                    TypedEdge (waypoints, + mids, styling toolbar, label edit) · EdgeStylePicker ·
+                    edgeGeometry.ts · edgeStyle.ts · nodeMetrics.ts · Inspector (node/container/section/edge)
+                    · Popovers (view / card / container / section gears) · Palette (floating, connect-from) ·
                     Templates (dialog) · Notice · ExportPanel · ScenarioBanner · BillDrop · HowTo · Keyboard ·
                     Icon · Sprite
-    chrome/         Rail · Dock · TopBar · BottomBar · Floats (layers, zoom) · StructurePanel
+    chrome/         Toolbar (bottom-centre, View gear) · Dock · TopBar · BottomBar · Floats (zoom) · LayersPanel
   app/              layout.tsx (fonts, provider) · page.tsx · globals.css (tokens, shell grid)
 scripts/            fetch-pricing.ts · synth-samples.ts
 data/               pricing.us-east-1.json · pricing.ap-southeast-1.json
 samples/            api-backend · media-pipeline · event-driven (seeded; has cloud›region›vpc›subnet)
 public/icons/aws/   sprite.svg (26 symbols) · Arch_*_64.svg · NOTICE.md
-tests/              containers · migrate(in containers) · frames · rules · exporters · golden-costs ·
-                    edge-geometry(incl. routed) · bill · define-service · delta · write-cdk-stacks
+tests/              containers · migrate(in containers) · migrate-edges · frames (incl. translateFrame with
+                    sections) · layers · rules · exporters · golden-costs · edge-geometry (sides, waypoints,
+                    shapes, loops) · bill · define-service (incl. security badges, list_services size) ·
+                    delta · write-cdk-stacks
 ```
 
 ```
 npm run dev            # localhost:3000 — the user reviews here first
 npm run build          # static export (kills the dev cache — restart dev after)
-npm test               # vitest (69)
+npm test               # vitest (91)
 npm run synth          # cdk synth on the three sample exports
 npm run fetch-pricing  # refresh data/pricing.*.json
 npx vercel deploy --prod --yes   # only when the user says deploy
