@@ -1,6 +1,6 @@
 import { defineService } from "../defineService";
 import { price } from "../pricing";
-import { line, num } from "./util";
+import { defined, line, num } from "./util";
 
 export const sns = defineService({
   id: "sns",
@@ -40,6 +40,18 @@ export const sns = defineService({
   // masterKey: pass a kms.Key to encrypt messages at rest
 });`
       : `new sns.Topic(this, "${varName}", { topicName: "${resourceName}" });`,
+  cfnTypes: ["AWS::SNS::Topic"],
+  cfn: (s, { resourceName }) => [
+    {
+      Type: "AWS::SNS::Topic",
+      Properties: {
+        TopicName: resourceName,
+        ...(s.encryption === "sse-kms" ? { KmsMasterKeyId: "alias/aws/sns" } : {}),
+      },
+      Metadata: { Overhead: "Subscriptions are not generated · add them for your fan-out." },
+    },
+  ],
+  fromCfn: (p) => defined({ encryption: p.KmsMasterKeyId ? "sse-kms" : undefined }),
   price: (s, traffic, pricing) => {
     const publishes = num(s.publishesPerMonth, traffic.requestsPerMonth);
     return [line(price(pricing, "sns.requests"), publishes)];

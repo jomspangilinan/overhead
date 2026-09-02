@@ -22,8 +22,8 @@ export const ROLE_LABELS: Record<Role, string> = {
   data: "DATA",
 };
 
-const COL_GAP = 80; // clear space between columns
-const ROW_GAP = 50; // clear space between rows
+export const COL_GAP = 44; // clear space between columns, before labels widen it
+export const ROW_GAP = 40; // clear space between rows
 const FRAME_GAP = 40; // between sibling frames, and between resources and frames
 const X0 = 80;
 const Y0 = 80;
@@ -105,9 +105,25 @@ function ranks(nodes: ArchNode[], edges: ArchEdge[]): Map<string, number> {
   return rank;
 }
 
+/** Roughly how wide a string draws. The canvas label is 11px Archivo and
+ *  an edge label 10px; there is no DOM here (the layout is pure TS so it
+ *  can be unit-tested), and half a character of error costs nothing at
+ *  this scale. */
+const CHAR_W = 6.2;
+const EDGE_CHAR_W = 5.4;
+export function textWidth(text: string, charW = CHAR_W): number {
+  return Math.ceil(text.trim().length * charW);
+}
+
 /** Columns by rank, rows ordered by the mean row of each node's sources in
  *  the columns already placed (a one-pass barycentre), so edges run short
- *  and cross as little as possible. */
+ *  and cross as little as possible.
+ *
+ *  Column widths and the gaps between them are measured, not fixed: a
+ *  column is as wide as the widest thing drawn in it (the node, or its
+ *  name underneath, which is often the wider of the two), and the gap
+ *  between two columns is opened up by whatever edge labels have to sit in
+ *  it. A gap of one constant put "upload events" on top of an arrowhead. */
 function grid(nodes: ArchNode[], edges: ArchEdge[], opts: LayoutOpts): Block {
   const ids = new Set(nodes.map((n) => n.id));
   const within = edges.filter((e) => e.from !== e.to && ids.has(e.from) && ids.has(e.to));
@@ -124,15 +140,32 @@ function grid(nodes: ArchNode[], edges: ArchEdge[], opts: LayoutOpts): Block {
     ordered.forEach(({ n }, ri) => row.set(n.id, ri));
     columns[ci] = ordered.map((o) => o.n);
   });
+  // What each column has to hold: the node box, or a longer name.
+  const colOf = new Map<string, number>();
+  columns.forEach((col, ci) => col.forEach((n) => colOf.set(n.id, ci)));
+  const widths = columns.map((col) => Math.max(opts.nodeW, ...col.map((n) => textWidth(n.name) + 16)));
+  // What each gap has to hold: the widest label on an edge crossing it.
+  const gaps = columns.slice(1).map((_, i) => {
+    const crossing = within.filter((e) => {
+      const a = colOf.get(e.from)!;
+      const b = colOf.get(e.to)!;
+      return Math.min(a, b) <= i && Math.max(a, b) >= i + 1 && e.label;
+    });
+    const widest = Math.max(0, ...crossing.map((e) => textWidth(e.label!, EDGE_CHAR_W) + 28));
+    return Math.max(COL_GAP, widest);
+  });
+
   const out: Block = { w: 0, h: 0, nodes: {}, frames: {} };
+  let x = 0;
   columns.forEach((col, ci) => {
     col.forEach((n, ri) => {
-      out.nodes[n.id] = { x: ci * (opts.nodeW + COL_GAP) + opts.nodeW / 2, y: ri * (opts.nodeH + ROW_GAP) + opts.nodeH / 2 };
+      out.nodes[n.id] = { x: x + widths[ci] / 2, y: ri * (opts.nodeH + ROW_GAP) + opts.nodeH / 2 };
     });
+    x += widths[ci] + (gaps[ci] ?? 0);
   });
   if (columns.length) {
     const rows = Math.max(...columns.map((c) => c.length));
-    out.w = columns.length * opts.nodeW + (columns.length - 1) * COL_GAP;
+    out.w = widths.reduce((a, b) => a + b, 0) + gaps.reduce((a, b) => a + b, 0);
     out.h = rows * opts.nodeH + (rows - 1) * ROW_GAP;
   }
   return out;

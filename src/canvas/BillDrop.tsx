@@ -1,18 +1,23 @@
 "use client";
 
-// Drop a Cost Explorer CSV anywhere on the canvas. Parsed in the tab with
-// papaparse; the summary lands in the store for get_bill_summary /
-// reconstruct_from_bill. Nothing leaves the browser.
+// Drop a file anywhere on the canvas. Two kinds land here, and the
+// extension says which: a Cost Explorer CSV becomes the bill summary
+// (papaparse, in the tab), a CloudFormation template opens the import
+// dialog. Both are read in the browser · nothing leaves it.
 
 import { useCallback, useEffect, useState } from "react";
 import Papa from "papaparse";
 import { summarizeBill } from "@/engine/bill";
 import { useStore } from "@/store/useStore";
 
+const CSV = /\.csv$/i;
+const TEMPLATE = /\.(ya?ml|json|template)$/i;
+
 export function BillDrop() {
   const [dragging, setDragging] = useState(false);
   const bill = useStore((s) => s.bill);
   const setBill = useStore((s) => s.setBill);
+  const setImportPanel = useStore((s) => s.setImportPanel);
 
   const onFile = useCallback(
     (file: File) => {
@@ -38,9 +43,13 @@ export function BillDrop() {
     const drop = (e: DragEvent) => {
       setDragging(false);
       const file = e.dataTransfer?.files?.[0];
-      if (file && /\.csv$/i.test(file.name)) {
+      if (!file) return;
+      if (CSV.test(file.name)) {
         e.preventDefault();
         onFile(file);
+      } else if (TEMPLATE.test(file.name)) {
+        e.preventDefault();
+        void file.text().then((template) => setImportPanel({ fileName: file.name, template }));
       }
     };
     window.addEventListener("dragover", over);
@@ -51,14 +60,14 @@ export function BillDrop() {
       window.removeEventListener("dragleave", leave);
       window.removeEventListener("drop", drop);
     };
-  }, [onFile]);
+  }, [onFile, setImportPanel]);
 
   return (
     <>
       {dragging ? (
         <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center border-4 border-dashed border-accent bg-panel/70">
           <div className="rounded-lg bg-panel px-6 py-4 text-[15px] font-medium shadow-lg">
-            Drop a Cost Explorer CSV · parsed here, never uploaded
+            Drop a Cost Explorer CSV or a CloudFormation template · read here, never uploaded
           </div>
         </div>
       ) : null}

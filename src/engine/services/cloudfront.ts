@@ -1,6 +1,6 @@
 import { defineService } from "../defineService";
 import { price } from "../pricing";
-import { line, num } from "./util";
+import { defined, line, num, oneOf } from "./util";
 
 export const cloudfront = defineService({
   id: "cloudfront",
@@ -63,6 +63,58 @@ new cloudfront.Distribution(this, "${varName}", {${oac}
   priceClass: cloudfront.PriceClass.${pc},
   minimumProtocolVersion: cloudfront.SecurityPolicyProtocol.${tls},
 });`;
+  },
+  cfnTypes: ["AWS::CloudFront::Distribution"],
+  cfn: (s, { resourceName }) => [
+    {
+      Type: "AWS::CloudFront::Distribution",
+      Properties: {
+        DistributionConfig: {
+          Comment: resourceName,
+          Enabled: true,
+          PriceClass: oneOf(s.priceClass, ["PriceClass_All", "PriceClass_200", "PriceClass_100"] as const, "PriceClass_All"),
+          Origins: [
+            {
+              Id: "overhead-origin",
+              DomainName: "origin.example.com",
+              CustomOriginConfig: { OriginProtocolPolicy: "https-only" },
+            },
+          ],
+          DefaultCacheBehavior: {
+            TargetOriginId: "overhead-origin",
+            ViewerProtocolPolicy: "redirect-to-https",
+            // CachingOptimized · the AWS managed cache policy
+            CachePolicyId: "658327ea-f89d-4fab-a63d-7e88639e58f6",
+          },
+          ViewerCertificate: {
+            CloudFrontDefaultCertificate: true,
+            MinimumProtocolVersion: oneOf(s.minTls, ["TLSv1.2_2021", "TLSv1.2_2019", "TLSv1"] as const, "TLSv1.2_2021"),
+          },
+        },
+      },
+      Metadata: {
+        Overhead: `Stub origin · point DomainName at your real one.${s.originAccess === "oac" ? " Origin access on the canvas is OAC: attach an OriginAccessControl for an S3 origin." : ""}`,
+      },
+    },
+  ],
+  fromCfn: (p) => {
+    const c = (p.DistributionConfig ?? {}) as {
+      PriceClass?: unknown;
+      ViewerCertificate?: { MinimumProtocolVersion?: unknown };
+      Origins?: { S3OriginConfig?: unknown; OriginAccessControlId?: unknown }[];
+    };
+    const origin = c.Origins?.[0];
+    return defined({
+      priceClass:
+        typeof c.PriceClass === "string"
+          ? oneOf(c.PriceClass, ["PriceClass_All", "PriceClass_200", "PriceClass_100"] as const, "PriceClass_All")
+          : undefined,
+      minTls:
+        typeof c.ViewerCertificate?.MinimumProtocolVersion === "string"
+          ? oneOf(c.ViewerCertificate.MinimumProtocolVersion, ["TLSv1.2_2021", "TLSv1.2_2019", "TLSv1"] as const, "TLSv1.2_2021")
+          : undefined,
+      originAccess: origin ? (origin.OriginAccessControlId || origin.S3OriginConfig ? "oac" : "public-origin") : undefined,
+    });
   },
   price: (s, traffic, pricing) => {
     const defaultGb =

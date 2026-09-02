@@ -122,29 +122,40 @@ truth about both.
   keeping its source URL.
 - **CDK TypeScript export**, one stack, one construct per resource, `cdk synth` passing on all three
   samples.
+- **CloudFormation, both directions.** Export writes deployable YAML; `import_cloudformation` (and
+  the Import button, and dropping a template on the canvas) turns YAML or JSON back into a priced
+  drawing. Our own template round-trips exactly, because the exporter also writes a
+  `Metadata.Overhead` block holding the things a template has no place for: positions, containers,
+  sections, traffic, and the settings that only drive price. Somebody else's template is read
+  structurally: resources match services by CloudFormation type, `Properties` become settings
+  through the same per-service definitions that write them, VPCs and subnets become containers, and
+  the connections are inferred from what references what (`Ref`, `Fn::GetAtt`, `Fn::Sub`, and the
+  connector resources · an `EventSourceMapping` *is* the queue-to-function arrow). YAML is read
+  without a dependency, short-form `!Ref` / `!GetAtt` included.
+- **Reconciliation**, which is what stands in for a sync. `diff_cloudformation` names every
+  difference between a template and the drawing · added, removed, and which settings changed · and
+  the import dialog shows the same list before anything happens. **Replace** takes the template.
+  **Merge** takes it only where it speaks: resources the template lacks stay, positions and sections
+  stay, and the settings CloudFormation has no home for (traffic, durations, storage) are never
+  reset to a default.
 - **JSON state** exports and imports, through the UI and through the `export` / `import_state` tools.
-  This is the only round trip that exists today.
 
 **Not built. Say so plainly if asked.**
-- **No CloudFormation exporter.** CDK synthesises to CloudFormation, so the template is one command
-  away, but Overhead does not emit it directly.
-- **No IaC import.** You cannot point Overhead at a CDK app or a CloudFormation template and get the
-  drawing. Editing your CDK does not move anything on the canvas.
-- **No sync.** Export is a one-way door. There is no reconciliation between a drawing and a repo.
+- **No live sync.** Nothing watches a repo and nothing writes to one. Reconciliation is a file you
+  hand over and a diff you approve, not a daemon.
+- **No Terraform, no SAM directly** · though a SAM template is CloudFormation, and Terraform with a
+  plan could be mapped onto the same table.
+- **No CDK app import.** The template is the interchange format, deliberately: reading a synthesised
+  template works for CDK, SAM and CloudFormation alike without parsing anybody's TypeScript.
 
 **Next, in the order it is worth doing.**
-1. **`import_cloudformation`** · a synthesised template is already a flat, typed resource graph:
-   `AWS::Lambda::Function`, `AWS::DynamoDB::Table`, `AWS::ApiGatewayV2::Api`, with `Ref` and
-   `Fn::GetAtt` giving the edges and `Properties` giving the settings the price model already wants
-   (`MemorySize`, `Architectures`, `BillingMode`). This is the highest-value tool in the whole
-   product and it is mostly a mapping table, because the template is the interchange format: it
-   works for CDK, SAM and Terraform-with-a-plan alike, without parsing anybody's TypeScript.
-2. **`export_cloudformation`** · the same mapping backwards, so the two directions share one table
-   and cannot drift.
-3. **Round trip with identity** · stamp each resource's logical id into the node so a re-import
-   updates the drawing instead of rebuilding it: positions, containers and sections survive, and the
-   diff is shown the way a scenario delta is shown today.
-4. **"Visualise my architecture"** · this is the real destination. A coding agent has your repo; the
+1. **Resource identity that survives a repo** · today a foreign template matches back by service and
+   name. Stamping the logical id into the node would make a second import an update even after a
+   rename.
+2. **The wiring, generated** · the CloudFormation export names its stubs honestly (permissions,
+   event sources, targets are not generated). The edges on the canvas already know what should be
+   wired to what.
+3. **"Visualise my architecture"** · this is the real destination. A coding agent has your repo; the
    page has the tools. The agent reads the stack, calls `add_service` and `connect` on the open page,
    and the diagram appears priced, without an export step or a file to move. Today an agent can do a
    crude version of this already, by building the JSON and calling `import_state` · the tools accept

@@ -4,10 +4,11 @@ import { exportJson } from "./json";
 import { exportMarkdown } from "./markdown";
 import { exportMermaid } from "./mermaid";
 import { exportCdk } from "./cdk";
+import { exportCloudFormation } from "./cloudformation";
 
-export type ExportFormat = "json" | "markdown" | "mermaid" | "cdk";
+export type ExportFormat = "json" | "markdown" | "mermaid" | "cdk" | "cloudformation";
 
-export const EXPORT_FORMATS: ExportFormat[] = ["json", "markdown", "mermaid", "cdk"];
+export const EXPORT_FORMATS: ExportFormat[] = ["json", "markdown", "mermaid", "cdk", "cloudformation"];
 
 function stackName(title: string): string {
   const words = title.split(/[^a-zA-Z0-9]+/).filter(Boolean);
@@ -30,6 +31,8 @@ export function exportAs(
       return exportMermaid(snapshot, pricing);
     case "cdk":
       return exportCdk(snapshot, pricing, stackName(title));
+    case "cloudformation":
+      return exportCloudFormation(snapshot, pricing, title);
   }
 }
 
@@ -43,4 +46,4 @@ export function chunkOf(content: string, index: number): string {
   return content.slice(index * CHUNK_SIZE, (index + 1) * CHUNK_SIZE);
 }
 
-export { exportJson, exportMarkdown, exportMermaid, exportCdk };
+export { exportJson, exportMarkdown, exportMermaid, exportCdk, exportCloudFormation };

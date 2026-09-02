@@ -16,6 +16,7 @@ import { PaletteFloat } from "./Palette";
 import { TemplatesDialog } from "./Templates";
 import { ScenarioBanner } from "./ScenarioBanner";
 import { ExportPanel } from "./ExportPanel";
+import { ImportPanel } from "./ImportPanel";
 import { BillDrop } from "./BillDrop";
 import { Keyboard } from "./Keyboard";
 import { HowTo } from "./HowTo";
@@ -169,6 +170,7 @@ export function App() {
       {/* a dialog, not an overlay inside the right dock · Export used to do
           nothing at all while that dock was collapsed */}
       <ExportPanel />
+      <ImportPanel />
       <Sprite />
       <Autosave />
       <Keyboard />

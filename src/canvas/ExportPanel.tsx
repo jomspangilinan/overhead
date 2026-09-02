@@ -25,7 +25,7 @@ interface Spec {
   label: string;
   ext: string;
   blurb: string;
-  group: "Picture" | "Document" | "Build";
+  group: "Picture" | "Document" | "Build" | "Project";
 }
 
 const SPECS: Spec[] = [
@@ -35,10 +35,11 @@ const SPECS: Spec[] = [
   { kind: "markdown", label: "Markdown", ext: "md", group: "Document", blurb: "Assumptions, the cost table, findings with links, diagram inline." },
   { kind: "mermaid", label: "Mermaid", ext: "mmd", group: "Document", blurb: "A flowchart for a README or a PR · labels carry the monthly cost." },
   { kind: "cdk", label: "CDK · TypeScript", ext: "ts", group: "Build", blurb: "One stack, one construct per resource · cdk synth passes." },
-  { kind: "json", label: "JSON", ext: "json", group: "Build", blurb: "This drawing, with the pricing snapshot · reloads here or via a tool." },
+  { kind: "cloudformation", label: "CloudFormation", ext: "yaml", group: "Build", blurb: "Deployable YAML · and the one format that imports back." },
+  { kind: "json", label: "Overhead file", ext: "json", group: "Project", blurb: "This drawing, with the pricing snapshot · reopen it here or via a tool." },
 ];
 
-const GROUPS: Spec["group"][] = ["Picture", "Document", "Build"];
+const GROUPS: Spec["group"][] = ["Picture", "Document", "Build", "Project"];
 
 function download(filename: string, content: string | Blob, type = "text/plain") {
   const blob = typeof content === "string" ? new Blob([content], { type }) : content;

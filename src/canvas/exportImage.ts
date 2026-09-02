@@ -83,6 +83,19 @@ export async function captureDrawing(
   const fit = fitDrawing(nodes, opts);
   if (!fit) return null;
   const scale = opts.scale ?? 2;
+  // Every service icon is a <use href="#aws-…"> into the sprite, and the
+  // sprite is injected at the app root · outside the element being
+  // captured. html-to-image serialises only that element into an isolated
+  // document, where those ids resolve to nothing, which is why exported
+  // pictures came out with the icons missing and only the labels left. The
+  // picture has to carry the symbols it references, so the sprite rides
+  // along inside the captured subtree for the length of the capture.
+  const sprite = document.querySelector<HTMLElement>("[data-oh-sprite]");
+  const carried = sprite?.cloneNode(true) as HTMLElement | undefined;
+  if (carried) {
+    carried.removeAttribute("data-oh-sprite");
+    fit.el.appendChild(carried);
+  }
   const common = {
     width: fit.width,
     height: fit.height,
@@ -92,13 +105,17 @@ export async function captureDrawing(
     // can survive the click that opened the dialog
     filter: (n: HTMLElement) => !n.classList?.contains?.("oh-frame-cluster"),
   };
-  const dataUrl =
-    kind === "svg"
-      ? await toSvg(fit.el, common)
-      : kind === "png"
-        ? await toPng(fit.el, { ...common, pixelRatio: scale })
-        : await toJpeg(fit.el, { ...common, pixelRatio: scale, quality: 0.94, backgroundColor: opts.background ?? "#0B0D10" });
-  return { dataUrl, width: fit.width * scale, height: fit.height * scale };
+  try {
+    const dataUrl =
+      kind === "svg"
+        ? await toSvg(fit.el, common)
+        : kind === "png"
+          ? await toPng(fit.el, { ...common, pixelRatio: scale })
+          : await toJpeg(fit.el, { ...common, pixelRatio: scale, quality: 0.94, backgroundColor: opts.background ?? "#0B0D10" });
+    return { dataUrl, width: fit.width * scale, height: fit.height * scale };
+  } finally {
+    carried?.remove();
+  }
 }
 
 function bytesOf(dataUrl: string): Uint8Array {

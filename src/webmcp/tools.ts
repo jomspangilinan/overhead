@@ -28,6 +28,13 @@ import {
   TYPICAL_PARENTS,
   type ContainerKind,
 } from "@/engine/containers";
+import { importCloudFormation } from "@/engine/iac/cloudformation";
+import {
+  applyReconciliation,
+  placeNewNodes,
+  reconcile,
+  type MergeMode,
+} from "@/engine/iac/reconcile";
 import { errorResult, text, type ToolSpec } from "./toolRegistry";
 
 const money = (n: number) => toMoney(n);
@@ -905,7 +912,7 @@ export function coreTools(): ToolSpec[] {
     {
       name: "export",
       description:
-        "Export the design as json (reloadable state), markdown (client-readable report with Mermaid), mermaid, cdk (TypeScript stack), or svg. Opens the export panel; text formats deliver via get_export_chunk.",
+        "Export the design as json (reloadable state), markdown (report with Mermaid), mermaid, cdk (TypeScript stack), cloudformation (deployable template, the one format import_cloudformation reads back), or svg. Text formats deliver via get_export_chunk.",
       inputSchema: {
         type: "object",
         properties: {
@@ -1011,6 +1018,74 @@ export function coreTools(): ToolSpec[] {
           nodes: s.nodes.length,
           edges: s.edges.length,
           monthlyTotal: money(monthlyTotal(snapshotOf(s), pricingOf(s))),
+        });
+      },
+    },
+    {
+      name: "diff_cloudformation",
+      description:
+        "Compare a CloudFormation template (JSON) with the canvas without changing anything: what it adds, what it drops, and which settings differ. Call before import_cloudformation with mode merge.",
+      inputSchema: {
+        type: "object",
+        properties: { template: { type: "string", description: "A CloudFormation template, JSON" } },
+        required: ["template"],
+        additionalProperties: false,
+      },
+      readOnly: true,
+      execute: ({ template }) => {
+        const s = useStore.getState();
+        const parsed = importCloudFormation(String(template), { region: s.region });
+        if (!parsed.ok) return errorResult(parsed.code, parsed.message);
+        const diff = reconcile(snapshotOf(s), parsed.snapshot, parsed.stated);
+        return text({
+          templateFrom: parsed.report.source === "overhead" ? "this app" : "elsewhere",
+          ...diff.counts,
+          changes: diff.nodes
+            .filter((n) => n.kind === "changed")
+            .slice(0, 6)
+            .map((n) => `${n.name}: ${n.changes.map((c) => `${c.key} ${String(c.from)} → ${String(c.to)}`).join(", ")}`),
+          added: diff.nodes.filter((n) => n.kind === "added").slice(0, 6).map((n) => n.name),
+          removed: diff.nodes.filter((n) => n.kind === "removed").slice(0, 6).map((n) => n.name),
+          connections: diff.edges.slice(0, 6).map((e) => `${e.kind}: ${e.label}`),
+        });
+      },
+    },
+    {
+      name: "import_cloudformation",
+      description:
+        "Turn a CloudFormation template (JSON) into the drawing, priced. mode replace makes the canvas the template; mode merge keeps what the template does not mention (extra resources, positions, sections, traffic figures).",
+      inputSchema: {
+        type: "object",
+        properties: {
+          template: { type: "string", description: "A CloudFormation template, JSON" },
+          mode: { type: "string", enum: ["replace", "merge"], description: "Default replace" },
+        },
+        required: ["template"],
+        additionalProperties: false,
+      },
+      execute: ({ template, mode }) => {
+        const s = useStore.getState();
+        const parsed = importCloudFormation(String(template), { region: s.region });
+        if (!parsed.ok) return errorResult(parsed.code, parsed.message);
+        const how: MergeMode = mode === "merge" ? "merge" : "replace";
+        const current = snapshotOf(s);
+        const diff = reconcile(current, parsed.snapshot, parsed.stated);
+        const applied = applyReconciliation(current, parsed.snapshot, diff, how, parsed.stated);
+        const addedIds = diff.nodes.filter((n) => n.kind === "added").map((n) => diff.matched[n.id] ?? n.id);
+        useStore.getState().loadSnapshot(how === "merge" ? placeNewNodes(applied, addedIds) : applied);
+        // A template carries no geometry · a wholesale import has to be laid out.
+        if (how === "replace") useStore.getState().applyAutoLayout();
+        const after = useStore.getState();
+        return text({
+          mode: how,
+          templateFrom: parsed.report.source === "overhead" ? "this app" : "elsewhere",
+          nodes: after.nodes.length,
+          edges: after.edges.length,
+          containers: after.containers.length,
+          applied: diff.counts,
+          skipped: parsed.report.skipped.slice(0, 5),
+          monthlyTotal: money(monthlyTotal(snapshotOf(after), pricingOf(after))),
+          note: parsed.report.notes[0],
         });
       },
     },

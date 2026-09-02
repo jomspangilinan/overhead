@@ -100,7 +100,10 @@ export interface OverheadState {
   hoveredId: string | null;
   traceIds: string[] | null;
   scenario: { name: string; base: StateSnapshot } | null;
-  exportPanel: "json" | "markdown" | "mermaid" | "cdk" | "png" | "svg" | "pdf" | null;
+  exportPanel: "json" | "markdown" | "mermaid" | "cdk" | "cloudformation" | "png" | "svg" | "pdf" | null;
+  /** A template waiting to be reconciled with the drawing. The diff itself
+   *  is derived in the dialog · only the text the user handed us is state. */
+  importPanel: { fileName: string; template: string } | null;
   bill: BillSummary | null;
 
   // mutations (synchronous — tools depend on it)
@@ -194,6 +197,7 @@ export interface OverheadState {
   hover: (id: string | null) => void;
   setTrace: (ids: string[] | null) => void;
   setExportPanel: (format: OverheadState["exportPanel"]) => void;
+  setImportPanel: (panel: OverheadState["importPanel"]) => void;
   setBill: (bill: BillSummary | null) => void;
   addContainer: (
     kind: ContainerKind,
@@ -275,6 +279,7 @@ export const useStore = create<OverheadState>((set, get) => ({
   traceIds: null,
   scenario: null,
   exportPanel: null,
+  importPanel: null,
   bill: null,
 
   loadSnapshot: (raw) =>
@@ -437,11 +442,27 @@ export const useStore = create<OverheadState>((set, get) => ({
     set({ region });
   },
 
-  /** Re-running replaces the sections it made before; user sections survive. */
+  /** Re-running replaces the sections it made before; user sections survive.
+   *  It also says so: a run that arranges a four-node chain finds no column
+   *  worth a section, so the ones a previous run left behind go away, and
+   *  that used to happen in silence. */
   applyAutoLayout: () =>
     set((s) => {
       const { positions, frames, sections } = autoLayoutWithSections(s.nodes, s.edges, s.containers, { nodeW: NODE_W, nodeH: NODE_H });
+      const droppedAuto = s.sections.filter((x) => x.id.startsWith("auto-")).length;
+      const columns = new Set(Object.values(positions).map((p) => p.x)).size;
+      const notice = [
+        `Arranged ${s.nodes.length} ${s.nodes.length === 1 ? "resource" : "resources"} in ${columns} ${columns === 1 ? "column" : "columns"} by dependency`,
+        sections.length
+          ? `${sections.length} ${sections.length === 1 ? "section" : "sections"}`
+          : droppedAuto
+            ? `${droppedAuto} auto ${droppedAuto === 1 ? "section" : "sections"} removed: every column holds one resource`
+            : null,
+      ]
+        .filter(Boolean)
+        .join(" · ");
       return {
+        notice: { message: notice, tone: "info" as const },
         nodes: s.nodes.map((n) => ({ ...n, position: positions[n.id] ?? n.position })),
         // every frame is re-fitted to what it holds
         containers: s.containers.map((c) => (frames[c.id] ? { ...c, bounds: frames[c.id] } : c)),
@@ -506,6 +527,7 @@ export const useStore = create<OverheadState>((set, get) => ({
   hover: (id) => set({ hoveredId: id }),
   setTrace: (ids) => set({ traceIds: ids }),
   setExportPanel: (format) => set({ exportPanel: format }),
+  setImportPanel: (panel) => set({ importPanel: panel }),
   setBill: (bill) => set({ bill }),
 
   addContainer: (kind, name, cidr, parent) => {

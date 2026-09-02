@@ -1,6 +1,6 @@
 import { defineService } from "../defineService";
 import { price } from "../pricing";
-import { line, num } from "./util";
+import { defined, line, num } from "./util";
 
 export const sqs = defineService({
   id: "sqs",
@@ -55,6 +55,48 @@ new sqs.Queue(this, "${varName}", {
     return `new sqs.Queue(this, "${varName}", {
   queueName: "${resourceName}${suffix}",${fifoProp}
 });`;
+  },
+  cfnTypes: ["AWS::SQS::Queue"],
+  cfn: (s, { logicalId, resourceName }) => {
+    const fifo = s.queueType === "fifo";
+    const suffix = fifo ? ".fifo" : "";
+    const base: Record<string, unknown> = {
+      ...(fifo ? { FifoQueue: true } : {}),
+      ...(s.encryption === "sse-kms"
+        ? { KmsMasterKeyId: "alias/aws/sqs" }
+        : { SqsManagedSseEnabled: true }),
+    };
+    const out = [];
+    if (s.dlqConfigured === true) {
+      out.push({
+        suffix: "Dlq",
+        Type: "AWS::SQS::Queue",
+        Properties: { QueueName: `${resourceName}-dlq${suffix}`, ...base },
+      });
+    }
+    out.push({
+      Type: "AWS::SQS::Queue",
+      Properties: {
+        QueueName: `${resourceName}${suffix}`,
+        ...base,
+        ...(s.dlqConfigured === true
+          ? {
+              RedrivePolicy: {
+                deadLetterTargetArn: { "Fn::GetAtt": [`${logicalId}Dlq`, "Arn"] },
+                maxReceiveCount: 3,
+              },
+            }
+          : {}),
+      },
+    });
+    return out;
+  },
+  fromCfn: (p) => {
+    return defined({
+      queueType: p.FifoQueue === true ? "fifo" : undefined,
+      encryption: p.KmsMasterKeyId ? "sse-kms" : p.SqsManagedSseEnabled === true ? "sse-sqs" : undefined,
+      dlqConfigured: p.RedrivePolicy ? true : undefined,
+    });
   },
   price: (s, traffic, pricing) => {
     const requests = num(s.requestsPerMonth, traffic.requestsPerMonth);

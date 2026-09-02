@@ -24,6 +24,7 @@ export function TopBar() {
   const setRegion = useStore((s) => s.setRegion);
   const scenario = useStore((s) => s.scenario);
   const setExportPanel = useStore((s) => s.setExportPanel);
+  const setImportPanel = useStore((s) => s.setImportPanel);
   const drawingName = useStore((s) => s.drawingName);
   const setDrawingName = useStore((s) => s.setDrawingName);
   const templatesOpen = useStore((s) => s.templatesOpen);
@@ -135,6 +136,18 @@ export function TopBar() {
           Scenario
         </button>
       )}
+      {/* The door back through the export · a template becomes the drawing,
+          or is reconciled with it. */}
+      <button
+        className="flex items-center gap-[7px] rounded-lg px-3 py-[7px] text-[12px] font-medium hover:bg-[var(--hover)]"
+        style={{ border: "1px solid var(--line-2)", background: "var(--panel)", color: "var(--ink-15)" }}
+        data-tip="Import · a CloudFormation template becomes the drawing, priced"
+        aria-label="Import"
+        onClick={() => setImportPanel({ fileName: "", template: "" })}
+      >
+        <Icon name="import" size={14} />
+        Import
+      </button>
       <button
         className="flex items-center gap-[7px] rounded-lg px-3 py-[7px] text-[12px] font-medium text-white"
         style={{ background: "var(--accent)", border: "1px solid var(--accent)" }}

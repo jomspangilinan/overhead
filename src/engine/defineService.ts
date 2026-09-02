@@ -42,6 +42,25 @@ export type SettingDef =
 
 export type SettingsSchema = Record<string, SettingDef>;
 
+/** One CloudFormation resource. `suffix` names the extra resources a node
+ *  emits beyond its own (a queue's DLQ, a function's execution role): the
+ *  logical id becomes `<node logical id><suffix>`. */
+export interface CfnResource {
+  suffix?: string;
+  Type: string;
+  Properties: Record<string, unknown>;
+  /** Resource-level Metadata — where an assumption or a stub is recorded. */
+  Metadata?: Record<string, unknown>;
+  DependsOn?: string[];
+}
+
+/** What a service's cfn() is handed: its own logical id (so extra resources
+ *  can reference it) and the resource name the user typed. */
+export interface CfnCtx {
+  logicalId: string;
+  resourceName: string;
+}
+
 export interface ServiceDef {
   id: ServiceId;
   /** The service's name as AWS writes it, e.g. "AWS Lambda". */
@@ -63,6 +82,17 @@ export interface ServiceDef {
     settings: Record<string, unknown>,
     ctx: { varName: string; resourceName: string },
   ) => string;
+  /** CloudFormation resources for this node — settings in, template out.
+   *  The first entry (no suffix) is the node itself; the rest are what it
+   *  needs to be deployable (an execution role, a DLQ). */
+  cfn?: (settings: Record<string, unknown>, ctx: CfnCtx) => CfnResource[];
+  /** The CloudFormation types that mean *this* service on the way back in.
+   *  The first is what cfn() emits for the default settings. */
+  cfnTypes?: readonly string[];
+  /** Settings recovered from a CloudFormation resource — the reverse of
+   *  cfn(). Only what the template actually says; the rest stay at their
+   *  defaults, which is why a price appears immediately after an import. */
+  fromCfn?: (properties: Record<string, unknown>, type: string) => Record<string, unknown>;
   /** The security badge under the icon, derived from the security settings
    *  (shown when the security layer is on). Null = nothing to say. */
   badge?: (settings: Record<string, unknown>) => string | null;
@@ -73,6 +103,11 @@ export function defineService(def: ServiceDef): ServiceDef {
     if (!def.settings[key]) {
       throw new Error(`${def.id}: cardLine "${key}" is not a setting`);
     }
+  }
+  // A service that writes CloudFormation must also say how to read it back,
+  // or the export is a one-way door for that service alone.
+  if (def.cfn && (!def.cfnTypes?.length || !def.fromCfn)) {
+    throw new Error(`${def.id}: cfn() needs cfnTypes and fromCfn()`);
   }
   return def;
 }

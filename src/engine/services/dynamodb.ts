@@ -1,6 +1,6 @@
 import { defineService } from "../defineService";
 import { price } from "../pricing";
-import { HOURS_PER_MONTH, line, num } from "./util";
+import { HOURS_PER_MONTH, defined, line, num } from "./util";
 
 export const dynamodb = defineService({
   id: "dynamodb",
@@ -87,6 +87,46 @@ export const dynamodb = defineService({
   partitionKey: { name: "pk", type: dynamodb.AttributeType.STRING },
   billingMode: dynamodb.BillingMode.${provisioned ? "PROVISIONED" : "PAY_PER_REQUEST"},${capacity}
 });`;
+  },
+  cfnTypes: ["AWS::DynamoDB::Table"],
+  cfn: (s, { resourceName }) => {
+    const provisioned = s.capacityMode === "provisioned";
+    const props: Record<string, unknown> = {
+      TableName: resourceName,
+      AttributeDefinitions: [{ AttributeName: "pk", AttributeType: "S" }],
+      KeySchema: [{ AttributeName: "pk", KeyType: "HASH" }],
+      BillingMode: provisioned ? "PROVISIONED" : "PAY_PER_REQUEST",
+    };
+    if (provisioned) {
+      props.ProvisionedThroughput = {
+        ReadCapacityUnits: num(s.provisionedRcu, 5),
+        WriteCapacityUnits: num(s.provisionedWcu, 5),
+      };
+    }
+    if (s.encryption !== "aws-owned") {
+      props.SSESpecification = { SSEEnabled: true, SSEType: "KMS" };
+    }
+    if (s.pitr === true) props.PointInTimeRecoverySpecification = { PointInTimeRecoveryEnabled: true };
+    return [
+      {
+        Type: "AWS::DynamoDB::Table",
+        Properties: props,
+        Metadata: { Overhead: "Key schema is a stub · set your real partition and sort keys." },
+      },
+    ];
+  },
+  fromCfn: (p) => {
+    const tp = p.ProvisionedThroughput as { ReadCapacityUnits?: number; WriteCapacityUnits?: number } | undefined;
+    const sse = p.SSESpecification as { SSEEnabled?: boolean; KMSMasterKeyId?: unknown } | undefined;
+    const pitr = p.PointInTimeRecoverySpecification as { PointInTimeRecoveryEnabled?: boolean } | undefined;
+    const mode = typeof p.BillingMode === "string" ? p.BillingMode : tp ? "PROVISIONED" : undefined;
+    return defined({
+      capacityMode: mode === "PROVISIONED" ? "provisioned" : mode === "PAY_PER_REQUEST" ? "on-demand" : undefined,
+      provisionedRcu: typeof tp?.ReadCapacityUnits === "number" ? tp.ReadCapacityUnits : undefined,
+      provisionedWcu: typeof tp?.WriteCapacityUnits === "number" ? tp.WriteCapacityUnits : undefined,
+      encryption: sse?.SSEEnabled ? (sse.KMSMasterKeyId ? "customer-managed" : "aws-managed") : undefined,
+      pitr: pitr ? pitr.PointInTimeRecoveryEnabled === true : undefined,
+    });
   },
   price: (s, traffic, pricing) => {
     const storageGb = num(s.storageGb, 5);

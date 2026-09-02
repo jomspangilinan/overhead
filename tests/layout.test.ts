@@ -5,7 +5,7 @@
 import { describe, expect, it } from "vitest";
 import type { Container } from "../src/engine/containers";
 import type { ArchNode, ArchEdge } from "../src/engine/model";
-import { autoLayout, autoLayoutWithSections } from "../src/engine/layout";
+import { autoLayout, autoLayoutWithSections, COL_GAP, ROW_GAP, textWidth } from "../src/engine/layout";
 import type { Bounds } from "../src/engine/frames";
 
 const OPTS = { nodeW: 200, nodeH: 100 };
@@ -24,8 +24,8 @@ describe("autoLayout", () => {
     // reads right to left, by dependency it reads left to right
     const nodes = [node("bucket", "s3"), node("queue", "sqs"), node("fn", "lambda")];
     const { positions } = autoLayout(nodes, [edge("bucket", "queue"), edge("queue", "fn")], [], OPTS);
-    expect(positions.queue.x - positions.bucket.x).toBe(OPTS.nodeW + 80);
-    expect(positions.fn.x - positions.queue.x).toBe(OPTS.nodeW + 80);
+    expect(positions.queue.x - positions.bucket.x).toBe(OPTS.nodeW + COL_GAP);
+    expect(positions.fn.x - positions.queue.x).toBe(OPTS.nodeW + COL_GAP);
     expect(positions.bucket.y).toBe(positions.fn.y);
   });
 
@@ -38,14 +38,31 @@ describe("autoLayout", () => {
       [],
       OPTS,
     );
-    const col = (id: string) => Math.round((positions[id].x - positions.cdn.x) / (OPTS.nodeW + 80));
+    const col = (id: string) => Math.round((positions[id].x - positions.cdn.x) / (OPTS.nodeW + COL_GAP));
     expect([col("cdn"), col("assets"), col("queue"), col("worker")]).toEqual([0, 1, 2, 3]);
   });
 
   it("stacks unconnected resources in one column", () => {
     const { positions } = autoLayout([node("fn", "lambda"), node("db", "dynamodb")], [], [], OPTS);
     expect(positions.db.x).toBe(positions.fn.x);
-    expect(positions.db.y - positions.fn.y).toBe(OPTS.nodeH + 50);
+    expect(positions.db.y - positions.fn.y).toBe(OPTS.nodeH + ROW_GAP);
+  });
+
+  it("opens the gap an edge label has to sit in", () => {
+    const nodes = [node("bucket", "s3"), node("queue", "sqs")];
+    const labelled: ArchEdge = { id: "e", from: "bucket", to: "queue", kind: "async", label: "upload events from the ingest bucket" };
+    const plain = autoLayout(nodes, [edge("bucket", "queue")], [], OPTS);
+    const wide = autoLayout(nodes, [labelled], [], OPTS);
+    const gapOf = (p: Record<string, { x: number }>) => p.queue.x - p.bucket.x - OPTS.nodeW;
+    expect(gapOf(plain.positions)).toBe(COL_GAP);
+    expect(gapOf(wide.positions)).toBeGreaterThanOrEqual(textWidth(labelled.label!, 5.4));
+  });
+
+  it("widens a column for a name longer than the node", () => {
+    const long = node("a", "lambda");
+    long.name = "checkout-order-fulfilment-notification-handler";
+    const { positions } = autoLayout([long, node("b", "sqs")], [edge("a", "b")], [], OPTS);
+    expect(positions.b.x - positions.a.x).toBeGreaterThan(OPTS.nodeW + COL_GAP);
   });
 
   it("keeps every node inside its own frame and sibling frames apart", () => {

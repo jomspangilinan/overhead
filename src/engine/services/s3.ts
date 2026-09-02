@@ -1,6 +1,6 @@
 import { defineService } from "../defineService";
 import { price } from "../pricing";
-import { line, num } from "./util";
+import { defined, line, num } from "./util";
 
 export const s3 = defineService({
   id: "s3",
@@ -91,6 +91,60 @@ export const s3 = defineService({
 new s3.Bucket(this, "${varName}", {${lifecycle}
   encryption: s3.BucketEncryption.${enc},${bpa}${versioned}
 });`;
+  },
+  cfnTypes: ["AWS::S3::Bucket"],
+  cfn: (s, { resourceName }) => {
+    const props: Record<string, unknown> = {
+      BucketEncryption: {
+        ServerSideEncryptionConfiguration: [
+          {
+            ServerSideEncryptionByDefault: {
+              SSEAlgorithm: s.encryption === "sse-kms" ? "aws:kms" : "AES256",
+            },
+          },
+        ],
+      },
+    };
+    if (s.blockPublicAccess !== false) {
+      props.PublicAccessBlockConfiguration = {
+        BlockPublicAcls: true,
+        BlockPublicPolicy: true,
+        IgnorePublicAcls: true,
+        RestrictPublicBuckets: true,
+      };
+    }
+    if (s.versioning === true) props.VersioningConfiguration = { Status: "Enabled" };
+    if (s.lifecycleRules === true) {
+      props.LifecycleConfiguration = {
+        Rules: [
+          {
+            Id: "overhead-transition",
+            Status: "Enabled",
+            Transitions: [{ StorageClass: "STANDARD_IA", TransitionInDays: 90 }],
+          },
+        ],
+      };
+    }
+    return [
+      {
+        Type: "AWS::S3::Bucket",
+        Properties: props,
+        Metadata: {
+          Overhead: `Bucket "${resourceName}" · names are global, so CloudFormation generates one. Purpose on the canvas: ${String(s.purpose ?? "assets")}.`,
+        },
+      },
+    ];
+  },
+  fromCfn: (p) => {
+    const enc = (p.BucketEncryption as { ServerSideEncryptionConfiguration?: { ServerSideEncryptionByDefault?: { SSEAlgorithm?: string } }[] } | undefined)
+      ?.ServerSideEncryptionConfiguration?.[0]?.ServerSideEncryptionByDefault?.SSEAlgorithm;
+    const versioning = (p.VersioningConfiguration as { Status?: string } | undefined)?.Status;
+    return defined({
+      encryption: enc === "aws:kms" ? "sse-kms" : enc === "AES256" ? "sse-s3" : undefined,
+      blockPublicAccess: p.PublicAccessBlockConfiguration ? true : undefined,
+      versioning: versioning ? versioning === "Enabled" : undefined,
+      lifecycleRules: p.LifecycleConfiguration ? true : undefined,
+    });
   },
   price: (s, traffic, pricing) => {
     const storageGb = num(s.storageGb, 50);

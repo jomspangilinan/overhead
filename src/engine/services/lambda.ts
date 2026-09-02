@@ -1,6 +1,6 @@
 import { defineService } from "../defineService";
 import { price } from "../pricing";
-import { line, num } from "./util";
+import { defined, line, num, roleResource } from "./util";
 
 export const lambda = defineService({
   id: "lambda",
@@ -108,6 +108,66 @@ ${secNotes}
   // stub handler · replace with your code asset
   code: lambda.Code.fromInline("exports.handler = async () => ({ statusCode: 200 });"),
 });`;
+  },
+  cfnTypes: ["AWS::Lambda::Function"],
+  cfn: (s, { logicalId, resourceName }) => {
+    const broad = s.iamRole === "broad";
+    const role = roleResource(
+      "Role",
+      "lambda.amazonaws.com",
+      broad
+        ? ["arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole", "arn:aws:iam::aws:policy/PowerUserAccess"]
+        : ["arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"],
+    );
+    role.Metadata = {
+      Overhead: broad
+        ? "Execution role: a shared broad role was chosen on the canvas · scope this down before deploying."
+        : "Execution role: least-privilege · add the exact actions this function needs.",
+    };
+    const props: Record<string, unknown> = {
+      FunctionName: resourceName,
+      Runtime: "nodejs20.x",
+      Handler: "index.handler",
+      Architectures: [s.architecture === "x86_64" ? "x86_64" : "arm64"],
+      MemorySize: num(s.memoryMb, 512),
+      Timeout: num(s.timeoutSec, 3),
+      Role: { "Fn::GetAtt": [`${logicalId}Role`, "Arn"] },
+      Code: { ZipFile: "exports.handler = async () => ({ statusCode: 200 });" },
+    };
+    if (typeof s.reservedConcurrency === "number") props.ReservedConcurrentExecutions = s.reservedConcurrency;
+    if (s.envEncryption === "customer-managed") {
+      props.Environment = { Variables: {} };
+    }
+    return [
+      role,
+      {
+        Type: "AWS::Lambda::Function",
+        Properties: props,
+        DependsOn: [`${logicalId}Role`],
+        Metadata: {
+          Overhead: [
+            "Code is an inline stub · replace with your asset.",
+            s.vpcAttached === true ? "VpcConfig: attach subnets and a security group once the VPC exists." : null,
+            s.envEncryption === "customer-managed" ? "KmsKeyArn: point at your customer-managed key." : null,
+          ]
+            .filter(Boolean)
+            .join(" "),
+        },
+      },
+    ];
+  },
+  fromCfn: (p) => {
+    const arch = Array.isArray(p.Architectures) ? String(p.Architectures[0]) : undefined;
+    return defined({
+      architecture: arch === "x86_64" ? "x86_64" : arch === "arm64" ? "arm64" : undefined,
+      memoryMb: typeof p.MemorySize === "number" ? p.MemorySize : undefined,
+      timeoutSec: typeof p.Timeout === "number" ? p.Timeout : undefined,
+      reservedConcurrency:
+        typeof p.ReservedConcurrentExecutions === "number" ? p.ReservedConcurrentExecutions : undefined,
+      vpcAttached: p.VpcConfig ? true : undefined,
+      dlqConfigured: p.DeadLetterConfig ? true : undefined,
+      envEncryption: p.KmsKeyArn ? "customer-managed" : undefined,
+    });
   },
   price: (s, traffic, pricing) => {
     const invocations = num(s.invocationsPerMonth, traffic.requestsPerMonth);

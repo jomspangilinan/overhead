@@ -26,6 +26,7 @@ export function Sprite() {
   return (
     <div
       aria-hidden
+      data-oh-sprite
       style={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }}
       dangerouslySetInnerHTML={{ __html: markup }}
     />

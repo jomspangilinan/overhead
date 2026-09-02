@@ -1,6 +1,6 @@
 import { defineService } from "../defineService";
 import { price } from "../pricing";
-import { line, num } from "./util";
+import { defined, line, num } from "./util";
 
 export const apigateway = defineService({
   id: "apigateway",
@@ -65,6 +65,43 @@ ${varName}.root.addMethod("ANY", new apigateway.MockIntegration({
   requestTemplates: { "application/json": '{"statusCode": 200}' },
 }), { methodResponses: [{ statusCode: "200" }] }); // stub integration`
       : `new apigwv2.HttpApi(this, "${varName}", { apiName: "${resourceName}" });`,
+  cfnTypes: ["AWS::ApiGatewayV2::Api", "AWS::ApiGateway::RestApi"],
+  cfn: (s, { logicalId, resourceName }) => {
+    const authNote = `Auth on the canvas: ${String(s.auth ?? "none")}${s.wafAttached === true ? " · WAF attached (associate a WebACL)" : ""}.`;
+    if (s.apiType === "REST") {
+      return [
+        {
+          Type: "AWS::ApiGateway::RestApi",
+          Properties: { Name: resourceName, EndpointConfiguration: { Types: ["REGIONAL"] } },
+          Metadata: { Overhead: `Methods and integrations are not generated. ${authNote}` },
+        },
+        {
+          suffix: "Deployment",
+          Type: "AWS::ApiGateway::Deployment",
+          Properties: { RestApiId: { Ref: logicalId }, StageName: "prod" },
+          DependsOn: [logicalId],
+          Metadata: { Overhead: "Deploys the API once you have added a method." },
+        },
+      ];
+    }
+    return [
+      {
+        Type: "AWS::ApiGatewayV2::Api",
+        Properties: { Name: resourceName, ProtocolType: "HTTP" },
+        Metadata: { Overhead: `Routes and integrations are not generated. ${authNote}` },
+      },
+      {
+        suffix: "Stage",
+        Type: "AWS::ApiGatewayV2::Stage",
+        Properties: { ApiId: { Ref: logicalId }, StageName: "$default", AutoDeploy: true },
+        DependsOn: [logicalId],
+      },
+    ];
+  },
+  fromCfn: (p, type) =>
+    defined({
+      apiType: type === "AWS::ApiGateway::RestApi" ? "REST" : p.ProtocolType === "HTTP" ? "HTTP" : undefined,
+    }),
   price: (s, traffic, pricing) => {
     const requests = num(s.requestsPerMonth, traffic.requestsPerMonth);
     const key =

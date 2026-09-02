@@ -1,6 +1,6 @@
 import { defineService } from "../defineService";
 import { price } from "../pricing";
-import { line, num } from "./util";
+import { defined, line, num, roleResource } from "./util";
 
 export const stepfunctions = defineService({
   id: "stepfunctions",
@@ -67,6 +67,52 @@ export const stepfunctions = defineService({
   // stub definition · replace with your states
   definitionBody: sfn.DefinitionBody.fromChainable(new sfn.Pass(this, "${varName}Start")),
 });`,
+  cfnTypes: ["AWS::StepFunctions::StateMachine"],
+  cfn: (s, { logicalId, resourceName }) => {
+    const express = s.workflowType === "express";
+    const role = roleResource(
+      "Role",
+      "states.amazonaws.com",
+      s.iamRole === "broad" ? ["arn:aws:iam::aws:policy/PowerUserAccess"] : [],
+    );
+    role.Metadata = {
+      Overhead:
+        s.iamRole === "broad"
+          ? "Execution role: a broad role was chosen on the canvas · scope it to the states you invoke."
+          : "Execution role: least-privilege · grant only the actions your states call.",
+    };
+    return [
+      role,
+      {
+        Type: "AWS::StepFunctions::StateMachine",
+        Properties: {
+          StateMachineName: resourceName,
+          StateMachineType: express ? "EXPRESS" : "STANDARD",
+          RoleArn: { "Fn::GetAtt": [`${logicalId}Role`, "Arn"] },
+          DefinitionString: JSON.stringify({
+            StartAt: "Start",
+            States: { Start: { Type: "Pass", End: true } },
+          }),
+          ...(express
+            ? {
+                LoggingConfiguration: {
+                  Level: "ERROR",
+                  IncludeExecutionData: false,
+                  Destinations: [],
+                },
+              }
+            : {}),
+        },
+        DependsOn: [`${logicalId}Role`],
+        Metadata: { Overhead: "Definition is a single Pass state · replace it with your states." },
+      },
+    ];
+  },
+  fromCfn: (p) =>
+    defined({
+      workflowType:
+        p.StateMachineType === "EXPRESS" ? "express" : p.StateMachineType === "STANDARD" ? "standard" : undefined,
+    }),
   price: (s, traffic, pricing) => {
     const executions = num(s.executionsPerMonth, traffic.requestsPerMonth);
     if (s.workflowType === "express") {
