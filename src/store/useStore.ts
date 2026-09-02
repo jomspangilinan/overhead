@@ -15,7 +15,7 @@ import type {
 import { DEFAULT_TRAFFIC } from "@/engine/model";
 import type { PricingTable } from "@/engine/pricing";
 import type { BillSummary } from "@/engine/bill";
-import { autoLayout } from "@/engine/layout";
+import { autoLayout, laneOf, placeInLane } from "@/engine/layout";
 import { defaultSettings } from "@/engine/defineService";
 import { getService } from "@/engine/services";
 import use1 from "../../data/pricing.us-east-1.json";
@@ -56,7 +56,10 @@ export interface OverheadState {
     name: string,
     settings?: Record<string, unknown>,
     group?: string,
+    position?: { x: number; y: number },
   ) => string;
+  showLanes: boolean;
+  setShowLanes: (on: boolean) => void;
   removeNode: (id: string) => void;
   moveNode: (id: string, x: number, y: number) => void;
   setNodeSetting: (id: string, key: string, value: unknown) => void;
@@ -112,7 +115,7 @@ export const useStore = create<OverheadState>((set, get) => ({
       hoveredId: null,
     }),
 
-  addNode: (service, name, settings, group) => {
+  addNode: (service, name, settings, group, position) => {
     const def = getService(service);
     if (!def) throw new Error(`Unknown service "${service}"`);
     const id = newId(service);
@@ -124,13 +127,15 @@ export const useStore = create<OverheadState>((set, get) => ({
       group,
       position: { x: 0, y: 0 },
     };
-    const nodes = [...get().nodes, node];
-    const positions = autoLayout(nodes);
-    set({
-      nodes: nodes.map((n) => ({ ...n, position: positions[n.id] ?? n.position })),
-    });
+    // New node lands in its lane's next free row (or where it was dropped);
+    // existing nodes never move.
+    node.position = position ?? placeInLane(get().nodes, laneOf(node));
+    set((s) => ({ nodes: [...s.nodes, node] }));
     return id;
   },
+
+  showLanes: true,
+  setShowLanes: (on) => set({ showLanes: on }),
 
   removeNode: (id) =>
     set((s) => ({

@@ -21,8 +21,13 @@ export function Palette() {
       {Object.values(SERVICES).map((def) => (
         <button
           key={def.id}
-          title={`Add ${def.term}`}
-          className="flex flex-col items-center gap-0.5 rounded p-1.5 hover:bg-surface-2"
+          title={`${def.term} — click to add, or drag onto the canvas`}
+          draggable
+          onDragStart={(e) => {
+            e.dataTransfer.setData("application/overhead-service", def.id);
+            e.dataTransfer.effectAllowed = "copy";
+          }}
+          className="flex cursor-grab flex-col items-center gap-0.5 rounded p-1.5 hover:bg-surface-2 active:cursor-grabbing"
           onClick={() => {
             const id = addNode(def.id, `${def.id}-${count + 1}`);
             select(id);

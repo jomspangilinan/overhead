@@ -30,6 +30,17 @@ export function laneOf(node: ArchNode): Lane {
   return node.lane ?? getService(node.service)?.lane ?? "handlers";
 }
 
+/** Position for one new node: its lane column, first free row — nothing else moves. */
+export function placeInLane(nodes: ArchNode[], lane: Lane): { x: number; y: number } {
+  const inLane = nodes.filter((n) => laneOf(n) === lane);
+  return {
+    x: X0 + LANE_ORDER.indexOf(lane) * LANE_GAP,
+    y: inLane.length
+      ? Math.max(...inLane.map((n) => n.position.y)) + ROW_GAP
+      : Y0,
+  };
+}
+
 export function autoLayout(
   nodes: ArchNode[],
 ): Record<string, { x: number; y: number }> {

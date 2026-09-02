@@ -6,6 +6,7 @@ import {
   Background,
   BackgroundVariant,
   MarkerType,
+  useReactFlow,
   type Node,
   type Edge,
   type NodeTypes,
@@ -141,6 +142,23 @@ export function Canvas() {
     [setZoom],
   );
 
+  const { screenToFlowPosition } = useReactFlow();
+  const addNode = useStore((s) => s.addNode);
+  const showLanes = useStore((s) => s.showLanes);
+
+  const onDrop = useCallback(
+    (e: React.DragEvent) => {
+      const service = e.dataTransfer.getData("application/overhead-service");
+      if (!service) return;
+      e.preventDefault();
+      const pos = screenToFlowPosition({ x: e.clientX, y: e.clientY });
+      const count = useStore.getState().nodes.length;
+      const id = addNode(service, `${service}-${count + 1}`, undefined, undefined, pos);
+      select(id);
+    },
+    [screenToFlowPosition, addNode, select],
+  );
+
   return (
     <div
       className={`overhead-canvas h-full w-full ${hoveredId || traceIds?.length ? "hovering" : ""} ${cardMode ? "cards" : ""}`}
@@ -150,9 +168,19 @@ export function Canvas() {
         edges={rfEdges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
+        onNodeDrag={(_e, n) =>
+          moveNode(n.id, n.position.x + NODE_W / 2, n.position.y + NODE_H / 2)
+        }
         onNodeDragStop={(_e, n) =>
           moveNode(n.id, n.position.x + NODE_W / 2, n.position.y + NODE_H / 2)
         }
+        onDragOver={(e) => {
+          if (e.dataTransfer.types.includes("application/overhead-service")) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "copy";
+          }
+        }}
+        onDrop={onDrop}
         onNodeClick={(_e, n) => select(n.id)}
         onPaneClick={() => {
           select(null);
@@ -169,9 +197,9 @@ export function Canvas() {
         panOnScroll
         proOptions={{ hideAttribution: true }}
       >
-        <Background variant={BackgroundVariant.Lines} gap={24} color="var(--rule)" style={{ opacity: 0.35 }} />
+        <Background variant={BackgroundVariant.Dots} gap={22} size={1.2} color="var(--rule)" style={{ opacity: 0.5 }} />
         <GroupFrames />
-        <Lanes />
+        {showLanes ? <Lanes /> : null}
       </ReactFlow>
     </div>
   );

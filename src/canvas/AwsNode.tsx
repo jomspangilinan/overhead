@@ -4,8 +4,14 @@
 // the name beneath (default), or the 200×76 card housing the icon when
 // zoomed ≥125% / Cards / Cost. Constant 200×100 hit-box keeps edges stable.
 
-import { memo } from "react";
-import { Handle, Position, type NodeProps, type Node } from "@xyflow/react";
+import { memo, useEffect } from "react";
+import {
+  Handle,
+  Position,
+  useUpdateNodeInternals,
+  type NodeProps,
+  type Node,
+} from "@xyflow/react";
 import { useStore, cardModeOf, pricingOf, snapshotOf } from "@/store/useStore";
 import { getService } from "@/engine/services";
 import { nodeCost } from "@/engine/cost";
@@ -29,6 +35,15 @@ function settingText(value: unknown, unit?: string): string {
     return unit ? `${s} ${unit}` : s;
   }
   return String(value);
+}
+
+/** Re-measure handles when the icon/card mode flips, so edges re-anchor. */
+function ModeInternals({ nodeId, cardMode }: { nodeId: string; cardMode: boolean }) {
+  const updateNodeInternals = useUpdateNodeInternals();
+  useEffect(() => {
+    updateNodeInternals(nodeId);
+  }, [nodeId, cardMode, updateNodeInternals]);
+  return null;
 }
 
 export const AwsNode = memo(function AwsNode({ data }: NodeProps<AwsNodeType>) {
@@ -74,13 +89,23 @@ export const AwsNode = memo(function AwsNode({ data }: NodeProps<AwsNodeType>) {
     .filter(Boolean)
     .join(" · ");
 
+  // Icon-mode edges anchor at the 56px icon's rim, not the 200px hit-box —
+  // otherwise arrowheads float in empty space. Icon centre sits at y≈39.
+  const anchor = cardMode
+    ? { left: { top: NODE_H / 2, left: 0 }, right: { top: NODE_H / 2, right: 0 } }
+    : {
+        left: { top: 39, left: NODE_W / 2 - ICON / 2 - 6 },
+        right: { top: 39, right: NODE_W / 2 - ICON / 2 - 6 },
+      };
+
   return (
     <div
       className="overhead-node relative"
       style={{ width: NODE_W, height: NODE_H }}
     >
-      <Handle type="target" position={Position.Left} style={{ top: NODE_H / 2 }} />
-      <Handle type="source" position={Position.Right} style={{ top: NODE_H / 2 }} />
+      <ModeInternals nodeId={data.nodeId} cardMode={cardMode} />
+      <Handle type="target" position={Position.Left} style={anchor.left} />
+      <Handle type="source" position={Position.Right} style={anchor.right} />
       {cardMode ? (
         <div
           className="absolute overflow-hidden rounded-lg border bg-surface shadow-sm"

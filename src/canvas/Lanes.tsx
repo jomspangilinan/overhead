@@ -30,14 +30,16 @@ export function Lanes() {
               />
             ) : null}
             <div
-              className="pointer-events-none absolute text-[10px] font-semibold tracking-[0.14em]"
+              className="pointer-events-none absolute text-[9px] font-semibold tracking-[0.16em]"
               style={{
                 left: cx,
                 top: -24,
                 transform: "translateX(-50%)",
                 color: "var(--ink-3)",
+                opacity: 0.55,
                 fontFamily: "var(--font-archivo)",
               }}
+              title="Auto-layout columns — agents place services by role"
             >
               {LANE_LABELS[lane]}
             </div>

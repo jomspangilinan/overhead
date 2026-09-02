@@ -45,6 +45,8 @@ export function Toolbar() {
   const setLayer = useStore((s) => s.setLayer);
   const cardsForced = useStore((s) => s.cardsForced);
   const setCardsForced = useStore((s) => s.setCardsForced);
+  const showLanes = useStore((s) => s.showLanes);
+  const setShowLanes = useStore((s) => s.setShowLanes);
   const zoom = useStore((s) => s.zoom);
   const region = useStore((s) => s.region);
   const setRegion = useStore((s) => s.setRegion);
@@ -77,6 +79,11 @@ export function Toolbar() {
           <Toggle key={l} on={layers[l]} label={l} onClick={() => setLayer(l, !layers[l])} />
         ))}
         <Toggle on={cardsForced} label="cards" onClick={() => setCardsForced(!cardsForced)} />
+        <Toggle
+          on={showLanes}
+          label="lanes"
+          onClick={() => setShowLanes(!showLanes)}
+        />
       </div>
 
       <div className="ml-2 flex items-center gap-1">
