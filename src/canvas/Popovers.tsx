@@ -7,7 +7,7 @@
 // coordinates (store.popover), clamped to the canvas; closes on outside
 // click or Escape.
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useStore } from "@/store/useStore";
 import { getService } from "@/engine/services";
 import { validateSetting, settingsInGroup, defaultSettings, type SettingDef } from "@/engine/defineService";
@@ -288,6 +288,29 @@ export function Popovers() {
   const popover = useStore((s) => s.popover);
   const setPopover = useStore((s) => s.setPopover);
   const ref = useRef<HTMLDivElement>(null);
+  // Measured once the panel is in the DOM: how far to slide it back inside
+  // the canvas. Computed against its un-nudged rectangle, so re-opening
+  // never compounds an earlier correction.
+  const [nudge, setNudge] = useState({ dx: 0, dy: 0 });
+  const applied = useRef({ dx: 0, dy: 0 });
+  useLayoutEffect(() => {
+    const el = ref.current;
+    const host = el?.parentElement;
+    if (!el || !host) return;
+    const r = el.getBoundingClientRect();
+    const h = host.getBoundingClientRect();
+    const { dx: ax, dy: ay } = applied.current;
+    const l = r.left - ax;
+    const t = r.top - ay;
+    let dx = 0;
+    let dy = 0;
+    if (l < h.left + 8) dx = h.left + 8 - l;
+    else if (l + r.width > h.right - 8) dx = Math.min(0, h.right - 8 - (l + r.width));
+    if (t < h.top + 8) dy = h.top + 8 - t;
+    else if (t + r.height > h.bottom - 8) dy = Math.min(0, h.bottom - 8 - (t + r.height));
+    applied.current = { dx, dy };
+    setNudge((prev) => (prev.dx === dx && prev.dy === dy ? prev : { dx, dy }));
+  }, [popover?.kind, popover?.id, popover?.x, popover?.y]);
 
   useEffect(() => {
     if (!popover) return;
@@ -307,20 +330,26 @@ export function Popovers() {
   }, [popover, setPopover]);
 
   if (!popover) return null;
-  const host = ref.current?.parentElement;
+  // Anchored purely by transform: `top` is the anchor point and the panel
+  // grows up from it (View gear, above the toolbar) or down from it (a
+  // card gear). Nothing here reads the host's size · doing that during
+  // the first render, while the ref is still null, fell back to a guessed
+  // 800px height and opened the View panel far above the toolbar.
   const W = 280;
-  const H = 360;
-  const left = Math.max(8, Math.min((host?.clientWidth ?? 1200) - W - 8, popover.kind === "card" ? popover.x - W : popover.kind === "canvas" ? popover.x - W / 2 : popover.x));
   const up = popover.kind === "canvas";
-  const top = up ? undefined : Math.max(8, Math.min((host?.clientHeight ?? 800) - H - 8, popover.y));
-  const bottom = up ? Math.max(8, (host?.clientHeight ?? 800) - popover.y) : undefined;
+  const left = popover.kind === "card" ? popover.x - W : up ? popover.x - W / 2 : popover.x;
   return (
     <div
       ref={ref}
       role="dialog"
       aria-label="Settings"
       className="glass absolute z-[9] flex max-h-[420px] flex-col gap-2 overflow-auto rounded-xl p-3"
-      style={{ left, top, bottom, width: W }}
+      style={{
+        left,
+        top: popover.y,
+        width: W,
+        transform: `translate(${nudge.dx}px, ${nudge.dy}px)${up ? " translateY(-100%)" : ""}`,
+      }}
       onPointerDown={(e) => e.stopPropagation()}
     >
       {popover.kind === "card" && popover.id ? <CardPopover nodeId={popover.id} /> : null}

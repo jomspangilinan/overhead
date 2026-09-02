@@ -412,7 +412,12 @@ select and a held drag a move; ⇧/⌘-click adds to the selection, marquee sele
 and what every card shows, `cardShow` · Cost: period, decimals, where it shows, `costDisplay`); the card
 gear on a node (Security settings + this card's lines, cost, badge → `node.card`). **Frames have no
 gear** and `popover.kind` is only `card | canvas`: a frame's name, CIDR, appearance and collapse live in
-the Inspector, which selecting it already opens. The UI slice (`cardShow`,
+the Inspector, which selecting it already opens. **A popover is anchored by transform, never by the host's
+size**: `top` is the anchor point and the panel grows up from it (the View gear) or down from it (a card
+gear), then one `useLayoutEffect` measures it and nudges it back inside the canvas, against its
+un-nudged rectangle so re-opening never compounds. Reading `ref.current.parentElement` during the first
+render (when the ref is still null) fell back to a guessed 800px height and opened View far above the
+toolbar. The UI slice (`cardShow`,
 `costDisplay`) autosaves under `ui`. **Tooltip CSS lives in `@layer components`** so Tailwind's `absolute`
 still wins on the element.
 
