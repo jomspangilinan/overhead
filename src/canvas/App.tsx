@@ -13,6 +13,8 @@ import { Palette } from "./Palette";
 import { ScenarioBanner } from "./ScenarioBanner";
 import { ExportPanel } from "./ExportPanel";
 import { BillDrop } from "./BillDrop";
+import { Keyboard } from "./Keyboard";
+import { HowTo } from "./HowTo";
 import apiBackend from "../../samples/api-backend.json";
 import mediaPipeline from "../../samples/media-pipeline.json";
 import eventDriven from "../../samples/event-driven.json";
@@ -122,12 +124,14 @@ export function App() {
             <ScenarioBanner />
             <ExportPanel />
             <BillDrop />
+            <HowTo />
           </div>
           <Inspector />
         </div>
       </div>
       <Sprite />
       <Autosave />
+      <Keyboard />
     </ReactFlowProvider>
   );
 }
