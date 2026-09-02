@@ -56,13 +56,15 @@ function RailButton({
 
 const Sep = () => <div className="my-[5px] h-px w-5" style={{ background: "var(--line)" }} />;
 
-/** Pick a tool from the rail; picking the active one drops back to select. */
+/** Pick a tool from the rail; picking the active one drops back to select.
+ *  Add and Container open the floating palette (containers first for B);
+ *  Sections reveals the layer tree. */
 export function pickTool(t: Tool) {
   const s = useStore.getState();
   const next = s.tool === t ? "select" : t;
   s.setTool(next);
-  if (next === "add" || next === "container") s.setLeftTab("add");
-  if (next === "section") s.setLeftTab("structure");
+  s.setPalette(next === "add" || next === "container");
+  if (next === "section") s.setLeftDock(true);
 }
 
 export function Rail() {
@@ -72,6 +74,8 @@ export function Rail() {
   const cardsForced = useStore((s) => s.cardsForced);
   const setCardsForced = useStore((s) => s.setCardsForced);
   const applyAutoLayout = useStore((s) => s.applyAutoLayout);
+  const templatesOpen = useStore((s) => s.templatesOpen);
+  const setTemplatesOpen = useStore((s) => s.setTemplatesOpen);
 
   return (
     <nav
@@ -89,6 +93,8 @@ export function Rail() {
       <RailButton icon="trace" hint="T" title="Trace a request — then click a node · T" active={tool === "trace"} onClick={() => pickTool("trace")} />
       <RailButton icon="layout" hint="L" title="Auto-layout by role · L" onClick={applyAutoLayout} />
       <RailButton icon="cards" hint="K" title="Card view · K" active={cardsForced} onClick={() => setCardsForced(!cardsForced)} />
+      <Sep />
+      <RailButton icon="samples" title="Templates — load a seeded architecture" active={templatesOpen} onClick={() => setTemplatesOpen(!templatesOpen)} />
       <div className="flex-1" />
       <RailButton icon="grid" hint="⇧G" title="Grid · ⇧G" active={gridOn} onClick={() => setGridOn(!gridOn)} />
       <RailButton icon="undo" hint="⌘Z" title="Undo · ⌘Z" onClick={() => undo()} />

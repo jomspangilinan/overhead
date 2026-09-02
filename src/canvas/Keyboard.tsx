@@ -8,6 +8,7 @@ import { useEffect } from "react";
 import { useStore } from "@/store/useStore";
 import { initHistory, redo, undo } from "@/store/history";
 import { pickTool } from "./chrome/Rail";
+import { closePalette } from "./Palette";
 
 export function Keyboard() {
   useEffect(() => {
@@ -34,12 +35,16 @@ export function Keyboard() {
           s.selectEdge(null);
         } else if (s.selectedId) {
           e.preventDefault();
-          s.removeNode(s.selectedId);
+          if (s.containers.some((c) => c.id === s.selectedId)) s.removeContainer(s.selectedId);
+          else s.removeNode(s.selectedId);
+          s.select(null);
         }
         return;
       }
       if (e.key === "Escape") {
         if (s.exportPanel) s.setExportPanel(null);
+        else if (s.templatesOpen) s.setTemplatesOpen(false);
+        else if (s.palette) closePalette();
         else {
           s.select(null);
           s.selectEdge(null);
@@ -50,7 +55,7 @@ export function Keyboard() {
       }
       if (e.key === "/") {
         e.preventDefault();
-        s.setLeftTab("add");
+        s.setPalette(true);
         requestAnimationFrame(() =>
           (document.getElementById("palette-search") as HTMLInputElement | null)?.focus(),
         );

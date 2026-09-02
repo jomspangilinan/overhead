@@ -4,7 +4,7 @@
 // top bar and a bottom bar. Panels reserve space; only two small pills float
 // over the canvas.
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { ReactFlowProvider } from "@xyflow/react";
 import type { StateSnapshot } from "@/engine/model";
 import { autoLayout } from "@/engine/layout";
@@ -12,13 +12,14 @@ import { useStore } from "@/store/useStore";
 import { Sprite } from "./Sprite";
 import { Canvas } from "./Canvas";
 import { Inspector } from "./Inspector";
-import { Palette, PaletteSearch } from "./Palette";
-import { Templates } from "./Templates";
+import { PaletteFloat } from "./Palette";
+import { TemplatesDialog } from "./Templates";
 import { ScenarioBanner } from "./ScenarioBanner";
 import { ExportPanel } from "./ExportPanel";
 import { BillDrop } from "./BillDrop";
 import { Keyboard } from "./Keyboard";
 import { HowTo } from "./HowTo";
+import { Notice } from "./Notice";
 import { Rail } from "./chrome/Rail";
 import { Dock } from "./chrome/Dock";
 import { TopBar } from "./chrome/TopBar";
@@ -66,30 +67,12 @@ function Autosave() {
 function LeftDock() {
   const open = useStore((s) => s.leftDock);
   const setOpen = useStore((s) => s.setLeftDock);
-  const tab = useStore((s) => s.leftTab);
-  const setTab = useStore((s) => s.setLeftTab);
-  const [query, setQuery] = useState("");
+  const count = useStore((s) => `${s.containers.length}c · ${s.nodes.length}`);
 
   return (
     <div className="oh-left flex min-h-0">
-      <Dock
-        side="left"
-        width={248}
-        collapsed={!open}
-        onToggle={() => setOpen(!open)}
-        title={tab === "structure" ? "Structure" : tab === "add" ? "Add" : "Templates"}
-        tabs={[
-          { id: "structure", label: "Structure" },
-          { id: "add", label: "Add" },
-          { id: "templates", label: "Templates" },
-        ]}
-        activeTab={tab}
-        onTab={(id) => setTab(id as typeof tab)}
-        sticky={tab === "add" ? <PaletteSearch value={query} onChange={setQuery} /> : null}
-      >
-        {tab === "structure" ? <StructurePanel /> : null}
-        {tab === "add" ? <Palette query={query} /> : null}
-        {tab === "templates" ? <Templates samples={SAMPLES} /> : null}
+      <Dock side="left" width={248} collapsed={!open} onToggle={() => setOpen(!open)} title="Layers" count={count}>
+        <StructurePanel />
       </Dock>
     </div>
   );
@@ -167,6 +150,8 @@ export function App() {
           <ScenarioBanner />
           <BillDrop />
           <HowTo />
+          <PaletteFloat />
+          <Notice />
           <LayerSwitch />
           <ZoomPill />
         </div>
@@ -175,6 +160,7 @@ export function App() {
           <BottomBar />
         </div>
       </div>
+      <TemplatesDialog samples={SAMPLES} />
       <Sprite />
       <Autosave />
       <Keyboard />

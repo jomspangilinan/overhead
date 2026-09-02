@@ -27,8 +27,8 @@ export function HowTo() {
         <div className="text-[13px] leading-relaxed text-ink-2">
           {empty ? (
             <>
-              <strong className="text-ink">Empty canvas.</strong> Pick a template
-              or add a service from the left panel, drop a Cost Explorer CSV to
+              <strong className="text-ink">Empty canvas.</strong> Press A to add a
+              service, open Templates from the rail, drop a Cost Explorer CSV to
               price what you already run — or open this page in the ChatGPT
               desktop app and describe what to build.
             </>

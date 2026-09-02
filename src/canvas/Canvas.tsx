@@ -20,7 +20,12 @@ import { ContainerCard, CARD_W, CARD_H } from "./ContainerCard";
 import { TypedEdge } from "./TypedEdge";
 import { ContainerFrames } from "./ContainerFrames";
 import { SectionFrames } from "./SectionFrames";
-import { outermostCollapsedAncestor } from "@/engine/containers";
+import {
+  descendantIds,
+  outermostCollapsedAncestor,
+  validateNodePlacement,
+} from "@/engine/containers";
+import { frameBoxes, hitContainer } from "@/engine/frames";
 
 const nodeTypes: NodeTypes = { aws: AwsNode, container: ContainerCard };
 const edgeTypes: EdgeTypes = { typed: TypedEdge };
@@ -61,6 +66,10 @@ export function Canvas() {
   }, [hoveredId, edges, traceIds]);
 
   const containers = useStore((s) => s.containers);
+  const frameDrag = useStore((s) => s.frameDrag);
+  const setDragging = useStore((s) => s.setDragging);
+  const moveIntoContainer = useStore((s) => s.moveIntoContainer);
+  const notify = useStore((s) => s.notify);
 
   // Collapsed containers: members hide, one card appears at their centroid,
   // edges re-route to it, and edges wholly inside it are dropped.
@@ -73,16 +82,30 @@ export function Canvas() {
     return map;
   }, [containers, nodes]);
 
+  // A container frame mid-drag carries its members visually; the store
+  // moves them once, on release, so undo sees a single step.
+  const frameDragMembers = useMemo(() => {
+    if (!frameDrag) return null;
+    const ids = new Set([frameDrag.id, ...descendantIds(containers, frameDrag.id)]);
+    return new Set(nodes.filter((n) => n.container && ids.has(n.container)).map((n) => n.id));
+  }, [frameDrag, containers, nodes]);
+
   const rfNodes: Node[] = useMemo(() => {
     const visible: Node[] = nodes
       .filter((n) => !collapsedByNode.has(n.id))
-      .map((n) => ({
-        id: n.id,
-        type: "aws",
-        position: { x: n.position.x - NODE_W / 2, y: n.position.y - NODE_H / 2 },
-        data: { nodeId: n.id },
-        className: litIds?.has(n.id) ? "lit" : undefined,
-      }));
+      .map((n) => {
+        const carried = frameDrag && frameDragMembers?.has(n.id);
+        return {
+          id: n.id,
+          type: "aws",
+          position: {
+            x: n.position.x - NODE_W / 2 + (carried ? frameDrag.dx : 0),
+            y: n.position.y - NODE_H / 2 + (carried ? frameDrag.dy : 0),
+          },
+          data: { nodeId: n.id },
+          className: litIds?.has(n.id) ? "lit" : undefined,
+        };
+      });
     const hosts = new Set(collapsedByNode.values());
     for (const id of hosts) {
       const members = nodes.filter((n) => collapsedByNode.get(n.id) === id);
@@ -98,7 +121,7 @@ export function Canvas() {
       });
     }
     return visible;
-  }, [nodes, collapsedByNode, litIds]);
+  }, [nodes, collapsedByNode, litIds, frameDrag, frameDragMembers]);
 
   const rfEdges: Edge[] = useMemo(() => {
     const seen = new Set<string>();
@@ -139,6 +162,7 @@ export function Canvas() {
         tIdx: Math.max(0, tList.indexOf(e.id)),
         tCount: tList.length,
       };
+      const arrow = e.style?.arrow ?? e.kind !== "data";
       out.push({
         id: e.id,
         type: "typed",
@@ -150,6 +174,8 @@ export function Canvas() {
           kind: e.kind,
           volumePerMonth: rerouted ? undefined : e.volumePerMonth,
           label: rerouted ? undefined : e.label,
+          style: e.style,
+          route: rerouted ? undefined : e.route,
           fan,
         },
         className:
@@ -159,10 +185,14 @@ export function Canvas() {
             : e.from === hoveredId || e.to === hoveredId)
             ? "lit"
             : undefined,
-        markerEnd:
-          e.kind === "data"
-            ? undefined
-            : { type: MarkerType.ArrowClosed, width: 14, height: 14, color: "var(--edge)" },
+        markerEnd: arrow
+          ? {
+              type: MarkerType.ArrowClosed,
+              width: 14,
+              height: 14,
+              color: e.id === selectedEdgeId ? "var(--accent)" : "var(--edge)",
+            }
+          : undefined,
       });
     }
     return out;
@@ -221,21 +251,70 @@ export function Canvas() {
     [screenToFlowPosition, addNode, select],
   );
 
+  // Drag a node across a frame boundary and it re-parents on drop — the
+  // same validation move_into_container gives the agent; an illegal drop
+  // snaps back and says why.
+  const dragStart = useRef<{ x: number; y: number } | null>(null);
+  const onNodeDragStart = useCallback(
+    (_e: unknown, n: Node) => {
+      if (n.id.startsWith("container:")) return;
+      const cur = useStore.getState().nodes.find((x) => x.id === n.id);
+      dragStart.current = cur ? { ...cur.position } : null;
+      setDragging(n.id);
+    },
+    [setDragging],
+  );
+  const onNodeDragStop = useCallback(
+    (_e: unknown, n: Node) => {
+      const cx = n.position.x + NODE_W / 2;
+      const cy = n.position.y + NODE_H / 2;
+      moveNode(n.id, cx, cy);
+      setDragging(null);
+      if (n.id.startsWith("container:")) return;
+      const st = useStore.getState();
+      const node = st.nodes.find((x) => x.id === n.id);
+      if (!node) return;
+      const boxes = frameBoxes(st.nodes, st.containers, { nodeW: NODE_W, nodeH: NODE_H, exclude: n.id });
+      // The node's own frame vanished without it (it was the only content):
+      // it stays a member unless it landed inside something else.
+      const ownGone = !!node.container && !boxes.has(node.container);
+      const visible = (c: (typeof st.containers)[number]) =>
+        !c.collapsed && !outermostCollapsedAncestor(st.containers, c.id);
+      const hit = hitContainer(boxes, st.containers, { x: cx, y: cy }, visible);
+      const targetId = hit?.id ?? null;
+      if ((targetId ?? undefined) === node.container) return;
+      if (ownGone && !hit) return;
+      const err = validateNodePlacement(node.service, hit?.kind ?? null);
+      if (err) {
+        if (dragStart.current) moveNode(n.id, dragStart.current.x, dragStart.current.y);
+        notify(err.message, "warn");
+        return;
+      }
+      const res = moveIntoContainer([n.id], targetId);
+      if ("error" in res) {
+        if (dragStart.current) moveNode(n.id, dragStart.current.x, dragStart.current.y);
+        notify(res.error.message, "warn");
+        return;
+      }
+      notify(hit ? `${node.name} → ${hit.name}` : `${node.name} → canvas`);
+    },
+    [moveNode, setDragging, moveIntoContainer, notify],
+  );
+
   return (
     <div
-      className={`overhead-canvas h-full w-full ${hoveredId || traceIds?.length ? "hovering" : ""} ${cardMode ? "cards" : ""} ${tool === "connect" ? "connecting" : ""}`}
+      className={`overhead-canvas ${hoveredId || traceIds?.length ? "hovering" : ""} ${cardMode ? "cards" : ""} ${tool === "connect" ? "connecting" : ""}`}
     >
       <ReactFlow
         nodes={rfNodes}
         edges={rfEdges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
+        onNodeDragStart={onNodeDragStart}
         onNodeDrag={(_e, n) =>
           moveNode(n.id, n.position.x + NODE_W / 2, n.position.y + NODE_H / 2)
         }
-        onNodeDragStop={(_e, n) =>
-          moveNode(n.id, n.position.x + NODE_W / 2, n.position.y + NODE_H / 2)
-        }
+        onNodeDragStop={onNodeDragStop}
         onDragOver={(e) => {
           if (e.dataTransfer.types.includes("application/overhead-service")) {
             e.preventDefault();

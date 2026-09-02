@@ -16,18 +16,25 @@ import type {
 import { DEFAULT_TRAFFIC } from "@/engine/model";
 import type { PricingTable } from "@/engine/pricing";
 import type { BillSummary } from "@/engine/bill";
-import { autoLayout, autoLayoutWithSections, roleOf, placeInRole } from "@/engine/layout";
+import { autoLayoutWithSections, roleOf, placeInRole } from "@/engine/layout";
 import {
   validateContainerParent,
   validateNodePlacement,
-  wouldCycle,
-  descendantIds,
   type ContainerKind,
   type PlacementError,
 } from "@/engine/containers";
 import { migrateSnapshot } from "@/engine/migrate";
 import { defaultSettings } from "@/engine/defineService";
 import { getService } from "@/engine/services";
+import {
+  clampBounds,
+  contentBoxes,
+  frameBoxes,
+  placeNewFrame,
+  translateContainer,
+  type Bounds,
+} from "@/engine/frames";
+import { NODE_W, NODE_H } from "@/canvas/nodeMetrics";
 import use1 from "../../data/pricing.us-east-1.json";
 import aps1 from "../../data/pricing.ap-southeast-1.json";
 
@@ -44,7 +51,10 @@ export type Layer =
   | "cost"
   | "sections";
 
-export type LeftTab = "structure" | "add" | "templates";
+export interface Notice {
+  message: string;
+  tone: "info" | "warn" | "bad";
+}
 export type WebmcpOutcome =
   | "checking"
   | "registered"
@@ -103,10 +113,24 @@ export interface OverheadState {
   // shell
   leftDock: boolean;
   rightDock: boolean;
-  leftTab: LeftTab;
   setLeftDock: (open: boolean) => void;
   setRightDock: (open: boolean) => void;
-  setLeftTab: (tab: LeftTab) => void;
+  /** The floating Add palette (services + container kinds). */
+  palette: boolean;
+  setPalette: (open: boolean) => void;
+  /** The Templates dialog. */
+  templatesOpen: boolean;
+  setTemplatesOpen: (open: boolean) => void;
+  /** One transient message over the canvas — a refused drop, a created frame. */
+  notice: Notice | null;
+  notify: (message: string, tone?: Notice["tone"]) => void;
+  clearNotice: () => void;
+  /** The node currently being dragged on the canvas; frames leave it out. */
+  draggingId: string | null;
+  setDragging: (id: string | null) => void;
+  /** A container frame mid-drag: rendered with this offset, committed on release. */
+  frameDrag: { id: string; dx: number; dy: number } | null;
+  setFrameDrag: (d: OverheadState["frameDrag"]) => void;
   drawingName: string;
   setDrawingName: (name: string) => void;
   /** Published by WebMCPProvider (mounted at the root) for the agent strip. */
@@ -114,10 +138,7 @@ export interface OverheadState {
   setWebmcpOutcome: (o: WebmcpOutcome) => void;
   renameNode: (id: string, name: string) => void;
   renameContainer: (id: string, name: string, cidr?: string) => void;
-  setEdge: (
-    id: string,
-    patch: { kind?: EdgeKind; volumePerMonth?: number; label?: string },
-  ) => void;
+  setEdge: (id: string, patch: Partial<Omit<ArchEdge, "id" | "from" | "to">>) => void;
   removeNode: (id: string) => void;
   moveNode: (id: string, x: number, y: number) => void;
   setNodeSetting: (id: string, key: string, value: unknown) => void;
@@ -151,6 +172,10 @@ export interface OverheadState {
     containerId: string | null,
   ) => { moved: number } | { error: PlacementError };
   setContainerCollapsed: (containerId: string, collapsed: boolean) => void;
+  /** Translate a frame and everything inside it, one undo step. */
+  moveContainer: (containerId: string, dx: number, dy: number) => void;
+  /** Store explicit bounds (clamped to the content floor); `undefined` returns to derived. */
+  setContainerBounds: (containerId: string, bounds: Bounds | undefined) => void;
   removeContainer: (containerId: string) => void;
   addSection: (
     name: string,
@@ -232,10 +257,19 @@ export const useStore = create<OverheadState>((set, get) => ({
 
   leftDock: true,
   rightDock: true,
-  leftTab: "structure",
   setLeftDock: (open) => set({ leftDock: open }),
   setRightDock: (open) => set({ rightDock: open }),
-  setLeftTab: (tab) => set({ leftTab: tab, leftDock: true }),
+  palette: false,
+  setPalette: (open) => set({ palette: open }),
+  templatesOpen: false,
+  setTemplatesOpen: (open) => set({ templatesOpen: open }),
+  notice: null,
+  notify: (message, tone = "info") => set({ notice: { message, tone } }),
+  clearNotice: () => set({ notice: null }),
+  draggingId: null,
+  setDragging: (id) => set({ draggingId: id }),
+  frameDrag: null,
+  setFrameDrag: (d) => set({ frameDrag: d }),
   drawingName: "untitled",
   setDrawingName: (name) => set({ drawingName: name.trim() || "untitled" }),
   webmcpOutcome: "checking",
@@ -338,10 +372,29 @@ export const useStore = create<OverheadState>((set, get) => ({
     const err = validateContainerParent(kind, parentC?.kind ?? null);
     if (err) return { error: err };
     const id = newId(kind);
+    // An empty container has nothing to derive a frame from, so it gets a
+    // starting rectangle — otherwise "Add AWS Cloud" appears to do nothing.
+    const opts = { nodeW: NODE_W, nodeH: NODE_H };
+    const boxes = frameBoxes(s.nodes, s.containers, opts);
+    const parentBox = parentC ? boxes.get(parentC.id) ?? null : null;
+    const occupied = [
+      ...s.containers.filter((c) => !c.parent).map((c) => boxes.get(c.id)).filter((b): b is NonNullable<typeof b> => !!b),
+      ...s.nodes.map((n) => ({
+        l: n.position.x - NODE_W / 2,
+        t: n.position.y - NODE_H / 2,
+        r: n.position.x + NODE_W / 2,
+        b: n.position.y + NODE_H / 2,
+      })),
+    ];
+    const siblings = s.containers
+      .filter((c) => c.parent === parentC?.id && parentC)
+      .map((c) => boxes.get(c.id))
+      .filter((b): b is NonNullable<typeof b> => !!b);
+    const bounds = placeNewFrame(kind, parentBox, occupied, siblings);
     set((st) => ({
       containers: [
         ...st.containers,
-        { id, kind, name, cidr, parent, collapsed: false },
+        { id, kind, name, cidr, parent, collapsed: false, bounds },
       ],
     }));
     return { id };
@@ -380,6 +433,29 @@ export const useStore = create<OverheadState>((set, get) => ({
       ),
     })),
 
+  // Position is a lock, not a resize: members, child frames and stored
+  // bounds all move by the same delta. A derived frame simply follows its
+  // members, so auto-grow/shrink stays the default after a move.
+  moveContainer: (containerId, dx, dy) =>
+    set((s) =>
+      s.containers.some((c) => c.id === containerId)
+        ? translateContainer({ nodes: s.nodes, containers: s.containers }, containerId, dx, dy)
+        : {},
+    ),
+
+  setContainerBounds: (containerId, bounds) =>
+    set((s) => {
+      const floor =
+        contentBoxes(s.nodes, s.containers, { nodeW: NODE_W, nodeH: NODE_H }).get(containerId) ?? null;
+      return {
+        containers: s.containers.map((c) =>
+          c.id === containerId
+            ? { ...c, bounds: bounds ? clampBounds(bounds, floor) : undefined }
+            : c,
+        ),
+      };
+    }),
+
   /** Children and members re-parent upward — removing a frame never
    *  silently deletes what was inside it. */
   removeContainer: (containerId) =>
@@ -393,6 +469,7 @@ export const useStore = create<OverheadState>((set, get) => ({
         nodes: s.nodes.map((n) =>
           n.container === containerId ? { ...n, container: up } : n,
         ),
+        selectedId: s.selectedId === containerId ? null : s.selectedId,
       };
     }),
 

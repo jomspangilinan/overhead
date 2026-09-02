@@ -1,11 +1,12 @@
 "use client";
 
-// The Add tab: a sticky search (rendered by the Dock), the ten services with
-// their names, and the container kinds — real buttons that create, with the
-// validator's own verdict as the tooltip when a kind can't go where the
+// The Add palette: a floating, searchable panel over the canvas (A, or /),
+// not a dock tab competing with the layer tree. Services add on click or
+// drag onto the canvas; container kinds are real buttons that create, with
+// the validator's own verdict as the tooltip when a kind can't go where the
 // selection is.
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { SERVICES } from "@/engine/services";
 import { useStore } from "@/store/useStore";
 import {
@@ -17,70 +18,63 @@ import {
 } from "@/engine/containers";
 import { Icon } from "./Icon";
 
-export function PaletteSearch({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <label
-      className="mx-2.5 my-2 flex items-center gap-2 rounded-lg px-[9px] py-1.5 text-[11.5px]"
-      style={{ background: "var(--panel-2)", border: "1px solid var(--line)", color: "var(--ink-4)" }}
-    >
-      <Icon name="search" size={13} />
-      <input
-        id="palette-search"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="Search services"
-        className="w-full bg-transparent outline-none"
-        style={{ color: "var(--ink-2)" }}
-      />
-      <kbd
-        className="rounded px-1 text-[9px]"
-        style={{ fontFamily: "var(--font-mono-jb)", border: "1px solid var(--line-2)" }}
-      >
-        /
-      </kbd>
-    </label>
-  );
-}
-
 function Caption({ children }: { children: React.ReactNode }) {
   return (
-    <div
-      className="col-span-full px-[3px] pb-[3px] pt-2 text-[9px] uppercase tracking-[0.13em]"
-      style={{ color: "var(--ink-4)" }}
-    >
+    <div className="col-span-full px-[3px] pb-[3px] pt-2 text-[9px] uppercase tracking-[0.13em]" style={{ color: "var(--ink-4)" }}>
       {children}
     </div>
   );
 }
 
-export function Palette({ query }: { query: string }) {
+export function closePalette() {
+  const s = useStore.getState();
+  s.setPalette(false);
+  if (s.tool === "add" || s.tool === "container") s.setTool("select");
+}
+
+export function PaletteFloat() {
+  const open = useStore((s) => s.palette);
+  const tool = useStore((s) => s.tool);
   const addNode = useStore((s) => s.addNode);
   const addContainer = useStore((s) => s.addContainer);
   const select = useStore((s) => s.select);
+  const notify = useStore((s) => s.notify);
   const count = useStore((s) => s.nodes.length);
   const selectedId = useStore((s) => s.selectedId);
   const nodes = useStore((s) => s.nodes);
   const containers = useStore((s) => s.containers);
+  const [query, setQuery] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  // click outside closes; the rail's own buttons toggle it themselves
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => {
+      const t = e.target as HTMLElement;
+      if (ref.current?.contains(t) || t.closest(".oh-rail")) return;
+      closePalette();
+    };
+    document.addEventListener("pointerdown", onDown);
+    return () => document.removeEventListener("pointerdown", onDown);
+  }, [open]);
+
+  useEffect(() => {
+    if (open) requestAnimationFrame(() => document.getElementById("palette-search")?.focus());
+    else setQuery("");
+  }, [open]);
 
   const services = Object.values(SERVICES).filter((def) =>
-    query ? def.term.toLowerCase().includes(query.toLowerCase()) : true,
+    query ? def.term.toLowerCase().includes(query.toLowerCase()) || def.id.includes(query.toLowerCase()) : true,
   );
 
   // A new container goes under the deepest legal ancestor of the selection —
-  // the selected node's own container, walking up until the kind fits.
+  // a selected frame itself, or the selected node's container, walking up
+  // until the kind fits; otherwise the deepest existing legal container.
   const parentFor = useMemo(() => {
-    const selected = nodes.find((n) => n.id === selectedId);
-    const own = selected?.container
-      ? containers.find((c) => c.id === selected.container)
-      : undefined;
+    const selectedC = containers.find((c) => c.id === selectedId);
+    const selectedN = nodes.find((n) => n.id === selectedId);
+    const own = selectedC ?? (selectedN?.container ? containers.find((c) => c.id === selectedN.container) : undefined);
     const chain = own ? [own, ...ancestorsOf(containers, own.id)] : [];
-    // otherwise the deepest existing container that can legally hold the kind
     const fallback = [
       ...containers.filter((c) => c.kind === "subnetpri" || c.kind === "subnetpub"),
       ...containers.filter((c) => c.kind === "vpc"),
@@ -95,9 +89,17 @@ export function Palette({ query }: { query: string }) {
     };
   }, [nodes, containers, selectedId]);
 
-  return (
-    <div className="grid grid-cols-4 gap-0.5 px-2 pb-2.5">
+  if (!open) return null;
+  const containersFirst = tool === "container";
+
+  const serviceGrid = (
+    <>
       <Caption>Services</Caption>
+      {services.length === 0 ? (
+        <div className="col-span-full px-1 pb-2 text-[11px]" style={{ color: "var(--ink-4)" }}>
+          No service matches “{query}”.
+        </div>
+      ) : null}
       {services.map((def) => (
         <button
           key={def.id}
@@ -108,7 +110,11 @@ export function Palette({ query }: { query: string }) {
             e.dataTransfer.effectAllowed = "copy";
           }}
           className="flex cursor-grab flex-col items-center gap-1 rounded-[9px] px-1 py-2 hover:bg-[var(--hover)] active:cursor-grabbing"
-          onClick={() => select(addNode(def.id, `${def.id}-${count + 1}`))}
+          onClick={() => {
+            const selectedC = containers.find((c) => c.id === selectedId);
+            const id = addNode(def.id, `${def.id}-${count + 1}`, undefined, selectedC && (selectedC.kind === "region" || selectedC.kind === "cloud") ? selectedC.id : undefined);
+            select(id);
+          }}
         >
           <svg width="26" height="26">
             <use href={`#${def.icon}`} width="26" height="26" />
@@ -118,7 +124,11 @@ export function Palette({ query }: { query: string }) {
           </span>
         </button>
       ))}
+    </>
+  );
 
+  const containerList = (
+    <>
       <Caption>Containers</Caption>
       {CONTAINER_KINDS.map((kind) => {
         const meta = KIND_META[kind];
@@ -139,7 +149,11 @@ export function Palette({ query }: { query: string }) {
             onClick={() => {
               const n = containers.filter((c) => c.kind === kind).length + 1;
               const res = addContainer(kind, `${meta.label.toLowerCase().replace(" ", "-")}-${n}`, undefined, parent?.id);
-              if ("error" in res) window.alert(res.error.message);
+              if ("error" in res) notify(res.error.message, "warn");
+              else {
+                select(res.id);
+                notify(parent ? `${meta.label} added inside ${parent.name}` : `${meta.label} added`);
+              }
             }}
           >
             {meta.icon ? (
@@ -156,6 +170,44 @@ export function Palette({ query }: { query: string }) {
           </button>
         );
       })}
+    </>
+  );
+
+  return (
+    <div
+      ref={ref}
+      className="glass absolute z-[8] flex max-h-[calc(100%-28px)] w-[292px] flex-col rounded-xl"
+      style={{ left: 14, top: 14 }}
+      role="dialog"
+      aria-label="Add"
+    >
+      <label
+        className="mx-2.5 mt-2.5 flex items-center gap-2 rounded-lg px-[9px] py-1.5 text-[11.5px]"
+        style={{ background: "var(--panel-2)", border: "1px solid var(--line)", color: "var(--ink-4)" }}
+      >
+        <Icon name="search" size={13} />
+        <input
+          id="palette-search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search services"
+          className="w-full bg-transparent outline-none"
+          style={{ color: "var(--ink-2)" }}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") closePalette();
+            if (e.key === "Enter" && services[0]) {
+              select(addNode(services[0].id, `${services[0].id}-${count + 1}`));
+            }
+          }}
+        />
+        <kbd className="rounded px-1 text-[9px]" style={{ fontFamily: "var(--font-mono-jb)", border: "1px solid var(--line-2)" }}>
+          esc
+        </kbd>
+      </label>
+      <div className="grid min-h-0 grid-cols-4 gap-0.5 overflow-auto px-2 pb-2.5">
+        {containersFirst ? containerList : serviceGrid}
+        {containersFirst ? serviceGrid : containerList}
+      </div>
     </div>
   );
 }
