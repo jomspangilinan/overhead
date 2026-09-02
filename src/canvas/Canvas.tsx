@@ -84,11 +84,15 @@ export function Canvas() {
 
   // A container frame mid-drag carries its members visually; the store
   // moves them once, on release, so undo sees a single step.
+  const sections = useStore((s) => s.sections);
   const frameDragMembers = useMemo(() => {
     if (!frameDrag) return null;
+    if (frameDrag.kind === "section") {
+      return new Set(sections.find((x) => x.id === frameDrag.id)?.nodeIds ?? []);
+    }
     const ids = new Set([frameDrag.id, ...descendantIds(containers, frameDrag.id)]);
     return new Set(nodes.filter((n) => n.container && ids.has(n.container)).map((n) => n.id));
-  }, [frameDrag, containers, nodes]);
+  }, [frameDrag, containers, nodes, sections]);
 
   const rfNodes: Node[] = useMemo(() => {
     const visible: Node[] = nodes
@@ -104,6 +108,13 @@ export function Canvas() {
           },
           data: { nodeId: n.id },
           className: litIds?.has(n.id) ? "lit" : undefined,
+          // The hit-box is constant by design (nodeMetrics). Passing it as
+          // `measured` keeps React Flow's drag maths initialised even though we
+          // never apply its dimension changes (controlled nodes, no
+          // onNodesChange) — otherwise every drag frame logs error #015.
+          width: NODE_W,
+          height: NODE_H,
+          measured: { width: NODE_W, height: NODE_H },
         };
       });
     const hosts = new Set(collapsedByNode.values());
@@ -118,6 +129,9 @@ export function Canvas() {
         position: { x: cx - CARD_W / 2, y: cy - CARD_H / 2 },
         data: { containerId: id },
         draggable: false,
+        width: CARD_W,
+        height: CARD_H,
+        measured: { width: CARD_W, height: CARD_H },
       });
     }
     return visible;

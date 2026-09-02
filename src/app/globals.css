@@ -206,6 +206,22 @@ body {
   color: var(--ink-3);
 }
 
+/* Everything painted through ViewportPortal inherits React Flow's
+   `.react-flow__viewport { pointer-events: none }`. The decorative parts stay
+   inert; the handles opt back in — without this no frame ever saw a pointer. */
+.react-flow__viewport-portal {
+  pointer-events: none;
+}
+.oh-frame-head,
+.oh-frame-name,
+.oh-frame-grip,
+.oh-collapse,
+.oh-section-chip,
+.oh-section-grip,
+.oh-frame-input {
+  pointer-events: auto;
+}
+
 /* Container frames: header band is the drag handle, corner grip resizes. */
 .oh-frame-head {
   cursor: grab;
@@ -213,14 +229,23 @@ body {
 .oh-frame-head:active {
   cursor: grabbing;
 }
-.oh-frame-grip {
+.oh-frame-grip,
+.oh-section-grip {
   opacity: 0;
   transition: opacity 0.12s;
   cursor: nwse-resize;
 }
-.react-flow__viewport:hover .oh-frame-grip,
-.oh-frame-grip:hover {
+.overhead-canvas:hover .oh-frame-grip,
+.overhead-canvas:hover .oh-section-grip,
+.oh-frame-grip:hover,
+.oh-section-grip:hover {
   opacity: 0.85;
+}
+.oh-section-chip {
+  cursor: grab;
+}
+.oh-section-chip:active {
+  cursor: grabbing;
 }
 
 /* Edge route handle: visible when the edge is selected */
@@ -258,7 +283,7 @@ body {
   transition: opacity 0.12s;
 }
 .oh-collapse:hover,
-.react-flow__viewport:hover .oh-collapse {
+.overhead-canvas:hover .oh-collapse {
   opacity: 0.85;
 }
 

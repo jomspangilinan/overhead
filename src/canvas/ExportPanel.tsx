@@ -44,14 +44,24 @@ export function ExportPanel() {
   const panel = useStore((s) => s.exportPanel);
   const setExportPanel = useStore((s) => s.setExportPanel);
   const drawingName = useStore((s) => s.drawingName);
-  const content = useStore((s) => {
-    if (!s.exportPanel || s.exportPanel === "svg") return "";
+  // Derived in useMemo, not in the selector: the JSON exporter stamps a
+  // timestamp, so two getSnapshot() calls would never be equal (React #185).
+  const nodes = useStore((s) => s.nodes);
+  const edges = useStore((s) => s.edges);
+  const containers = useStore((s) => s.containers);
+  const sections = useStore((s) => s.sections);
+  const traffic = useStore((s) => s.traffic);
+  const region = useStore((s) => s.region);
+  const content = useMemo(() => {
+    if (!panel || panel === "svg") return "";
     try {
-      return exportAs(s.exportPanel, snapshotOf(s), pricingOf(s), s.drawingName);
+      const s = useStore.getState();
+      return exportAs(panel, snapshotOf(s), pricingOf(s), drawingName);
     } catch (err) {
       return `// export failed: ${err instanceof Error ? err.message : err}`;
     }
-  });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [panel, drawingName, nodes, edges, containers, sections, traffic, region]);
   const [copied, setCopied] = useState(false);
 
   const tabs = useMemo(() => [...EXPORT_FORMATS, "svg" as const], []);

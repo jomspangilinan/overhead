@@ -129,7 +129,8 @@ export interface OverheadState {
   draggingId: string | null;
   setDragging: (id: string | null) => void;
   /** A container frame mid-drag: rendered with this offset, committed on release. */
-  frameDrag: { id: string; dx: number; dy: number } | null;
+  /** A frame (container or section) mid-drag: preview offset, committed once on release. */
+  frameDrag: { kind: "container" | "section"; id: string; dx: number; dy: number } | null;
   setFrameDrag: (d: OverheadState["frameDrag"]) => void;
   drawingName: string;
   setDrawingName: (name: string) => void;
@@ -187,6 +188,7 @@ export interface OverheadState {
   setSectionNodes: (id: string, nodeIds: string[]) => void;
   removeSection: (id: string) => void;
   moveSection: (id: string, dx: number, dy: number) => void;
+  setSectionBounds: (id: string, bounds: Section["bounds"] | undefined) => void;
   openScenario: (name: string) => void;
   commitScenario: () => void;
   discardScenario: () => void;
@@ -504,6 +506,11 @@ export const useStore = create<OverheadState>((set, get) => ({
 
   removeSection: (id) =>
     set((s) => ({ sections: s.sections.filter((x) => x.id !== id) })),
+
+  setSectionBounds: (id, bounds) =>
+    set((s) => ({
+      sections: s.sections.map((x) => (x.id === id ? { ...x, bounds } : x)),
+    })),
 
   /** One action so undo captures the frame and its members as a single step. */
   moveSection: (id, dx, dy) =>

@@ -59,7 +59,7 @@ export function ContainerFrames() {
   // frame mid-drag (and its subtree) is shifted by the pending offset.
   const boxes = useMemo(() => {
     const out = frameBoxes(nodes, containers, { nodeW: NODE_W, nodeH: NODE_H, exclude: draggingId });
-    if (frameDrag) {
+    if (frameDrag && frameDrag.kind === "container") {
       const ids = new Set([frameDrag.id, ...descendantIds(containers, frameDrag.id)]);
       for (const id of ids) {
         const b = out.get(id);
@@ -108,7 +108,7 @@ export function ContainerFrames() {
     if (!g.moved && Math.abs(dx) + Math.abs(dy) < 2) return;
     g.moved = true;
     if (g.mode === "move") {
-      setFrameDrag({ id: g.id, dx, dy });
+      setFrameDrag({ kind: "container", id: g.id, dx, dy });
     } else {
       setResize({
         id: g.id,
@@ -163,7 +163,7 @@ export function ContainerFrames() {
             />
             {/* header band: the drag handle */}
             <div
-              className="oh-frame-head absolute rounded-t-lg"
+              className="oh-frame-head nopan nodrag absolute rounded-t-lg"
               style={{ left: box.l, top: box.t, width: box.r - box.l, height: HEAD_H }}
               title={`${meta.label} — drag to move with its contents · click to select`}
               onPointerDown={(e) => begin(e, c, "move", box)}
@@ -191,7 +191,7 @@ export function ContainerFrames() {
               <input
                 autoFocus
                 defaultValue={c.cidr ? `${c.name} · ${c.cidr}` : c.name}
-                className="nodrag absolute rounded bg-panel-2 px-1 text-[11.5px] font-medium outline-none"
+                className="oh-frame-input nodrag nopan absolute rounded bg-panel-2 px-1 text-[11.5px] font-medium outline-none"
                 style={{ left: labelLeft, top: box.t + 17, width: 220, border: "1px solid var(--accent)", color: "var(--ink-15)" }}
                 title="name · cidr"
                 onBlur={(e) => {
@@ -207,12 +207,13 @@ export function ContainerFrames() {
               />
             ) : (
               <div
-                className="absolute cursor-text select-none whitespace-nowrap text-[11.5px] font-medium"
+                className="oh-frame-name nopan nodrag absolute cursor-text select-none whitespace-nowrap text-[11.5px] font-medium"
                 style={{ left: labelLeft, top: box.t + 19, color: "var(--ink-15)" }}
                 title="Double-click to rename (name · cidr)"
                 onPointerDown={(e) => begin(e, c, "move", box)}
                 onPointerMove={move}
                 onPointerUp={end}
+                onPointerCancel={end}
                 onDoubleClick={(e) => {
                   e.stopPropagation();
                   setEditing(c.id);
@@ -237,7 +238,7 @@ export function ContainerFrames() {
               </div>
             ) : null}
             <button
-              className="oh-collapse absolute text-[12px] leading-none"
+              className="oh-collapse nopan nodrag absolute text-[12px] leading-none"
               style={{ left: box.r - 36, top: box.b - 18, color: "var(--ink-4)" }}
               title={`Collapse ${c.name}`}
               onClick={() => setContainerCollapsed(c.id, true)}
@@ -246,7 +247,7 @@ export function ContainerFrames() {
             </button>
             {/* corner grip: resize, floored at the content */}
             <div
-              className="oh-frame-grip absolute"
+              className="oh-frame-grip nopan nodrag absolute"
               style={{ left: box.r - 14, top: box.b - 14, width: 14, height: 14 }}
               title="Drag to resize — never smaller than what's inside"
               onPointerDown={(e) => begin(e, c, "resize", box)}
