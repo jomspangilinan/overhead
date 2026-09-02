@@ -13,7 +13,6 @@ import { Sprite } from "./Sprite";
 import { Canvas } from "./Canvas";
 import { Inspector } from "./Inspector";
 import { PaletteFloat } from "./Palette";
-import { TemplatesDialog } from "./Templates";
 import { ScenarioBanner } from "./ScenarioBanner";
 import { ExportPanel } from "./ExportPanel";
 import { ImportPanel } from "./ImportPanel";
@@ -166,11 +165,10 @@ export function App() {
           <BottomBar />
         </div>
       </div>
-      <TemplatesDialog samples={SAMPLES} />
       {/* a dialog, not an overlay inside the right dock · Export used to do
           nothing at all while that dock was collapsed */}
       <ExportPanel />
-      <ImportPanel />
+      <ImportPanel samples={SAMPLES} />
       <Sprite />
       <Autosave />
       <Keyboard />

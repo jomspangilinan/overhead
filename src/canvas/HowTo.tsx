@@ -32,7 +32,7 @@ export function HowTo() {
           {empty ? (
             <>
               <strong className="text-ink">Empty canvas.</strong> Press A to add a
-              service, open Templates from the rail, drop a Cost Explorer CSV to
+              service, open Import for a seeded template, drop a Cost Explorer CSV to
               price what you already run · or open this page in the ChatGPT
               desktop app and describe what to build.
             </>

@@ -101,9 +101,19 @@ export interface OverheadState {
   traceIds: string[] | null;
   scenario: { name: string; base: StateSnapshot } | null;
   exportPanel: "json" | "markdown" | "mermaid" | "cdk" | "cloudformation" | "png" | "svg" | "pdf" | null;
-  /** A template waiting to be reconciled with the drawing. The diff itself
-   *  is derived in the dialog · only the text the user handed us is state. */
-  importPanel: { fileName: string; template: string } | null;
+  /** A file waiting to be reconciled with the drawing. The diff itself is
+   *  derived in the dialog · only the text the user handed us is state.
+   *  `format` is the pinned entry in the dialog's list; absent = read the
+   *  file as whatever it turns out to be. */
+  importPanel: {
+    fileName: string;
+    template: string;
+    format?: "cloudformation" | "overhead";
+    /** The entry lit in the dialog's list · a format, or `sample:<name>`. */
+    source?: string;
+    /** The drawing name to adopt on replace (a sample brings its own). */
+    drawingName?: string;
+  } | null;
   bill: BillSummary | null;
 
   // mutations (synchronous — tools depend on it)
@@ -127,9 +137,6 @@ export interface OverheadState {
   /** The floating Add palette (services + container kinds). */
   palette: boolean;
   setPalette: (open: boolean) => void;
-  /** The Templates dialog. */
-  templatesOpen: boolean;
-  setTemplatesOpen: (open: boolean) => void;
   /** One transient message over the canvas — a refused drop, a created frame. */
   notice: Notice | null;
   notify: (message: string, tone?: Notice["tone"]) => void;
@@ -326,8 +333,6 @@ export const useStore = create<OverheadState>((set, get) => ({
   setRightDock: (open) => set({ rightDock: open }),
   palette: false,
   setPalette: (open) => set({ palette: open }),
-  templatesOpen: false,
-  setTemplatesOpen: (open) => set({ templatesOpen: open }),
   notice: null,
   notify: (message, tone = "info") => set({ notice: { message, tone } }),
   clearNotice: () => set({ notice: null }),

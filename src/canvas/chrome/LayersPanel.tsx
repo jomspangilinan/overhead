@@ -270,7 +270,7 @@ export function LayersPanel() {
       </div>
       {rows.length === 0 ? (
         <p className="px-[11px] pb-2 text-[10.5px]" style={{ color: "var(--ink-4)" }}>
-          Nothing yet · press A to add a service, or open Templates from the top bar.
+          Nothing yet · press A to add a service, or open Import for a seeded template.
         </p>
       ) : null}
       {rows.map((r) => {

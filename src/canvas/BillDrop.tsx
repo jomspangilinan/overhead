@@ -11,7 +11,8 @@ import { summarizeBill } from "@/engine/bill";
 import { useStore } from "@/store/useStore";
 
 const CSV = /\.csv$/i;
-const TEMPLATE = /\.(ya?ml|json|template)$/i;
+/** A template or a saved drawing · the dialog works out which from the content. */
+const IMPORTABLE = /\.(ya?ml|json|template)$/i;
 
 export function BillDrop() {
   const [dragging, setDragging] = useState(false);
@@ -47,7 +48,7 @@ export function BillDrop() {
       if (CSV.test(file.name)) {
         e.preventDefault();
         onFile(file);
-      } else if (TEMPLATE.test(file.name)) {
+      } else if (IMPORTABLE.test(file.name)) {
         e.preventDefault();
         void file.text().then((template) => setImportPanel({ fileName: file.name, template }));
       }
@@ -67,7 +68,7 @@ export function BillDrop() {
       {dragging ? (
         <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center border-4 border-dashed border-accent bg-panel/70">
           <div className="rounded-lg bg-panel px-6 py-4 text-[15px] font-medium shadow-lg">
-            Drop a Cost Explorer CSV or a CloudFormation template · read here, never uploaded
+            Drop a Cost Explorer CSV, a CloudFormation template or an Overhead file · read here, never uploaded
           </div>
         </div>
       ) : null}

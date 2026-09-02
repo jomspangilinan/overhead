@@ -29,6 +29,7 @@ import {
   type ContainerKind,
 } from "@/engine/containers";
 import { importCloudFormation } from "@/engine/iac/cloudformation";
+import { importOverheadState } from "@/engine/iac/import";
 import {
   applyReconciliation,
   placeNewNodes,
@@ -189,7 +190,7 @@ export function coreTools(): ToolSpec[] {
     {
       name: "list_services",
       description:
-        "The ten supported AWS services with their setting names and price drivers. Call before add_service or set_property.",
+        "Every supported AWS service with its setting names and price drivers. Call before add_service or set_property.",
       inputSchema: {
         type: "object",
         properties: {
@@ -983,40 +984,19 @@ export function coreTools(): ToolSpec[] {
         required: ["json"],
         additionalProperties: false,
       },
+      // Same reader the Import dialog uses, so a file that loads in one
+      // cannot fail in the other.
       execute: ({ json }) => {
-        let parsed: unknown;
-        try {
-          parsed = JSON.parse(String(json));
-        } catch {
-          return errorResult("invalid_json", "The json argument is not valid JSON.");
-        }
-        const snap = parsed as {
-          nodes?: unknown[];
-          edges?: unknown[];
-          containers?: unknown[];
-          sections?: unknown[];
-          traffic?: unknown;
-        };
-        if (!Array.isArray(snap.nodes) || !Array.isArray(snap.edges))
-          return errorResult("invalid_state", "Expected { nodes: [], edges: [], groups: [], traffic: {} }.");
-        for (const n of snap.nodes as { service?: string }[]) {
-          if (!n.service || !getService(n.service))
-            return errorResult("invalid_state", `Node with unknown service "${String(n?.service)}".`, {
-              services: Object.keys(SERVICES),
-            });
-        }
-        useStore.getState().loadSnapshot({
-          nodes: (snap.nodes ?? []) as never,
-          edges: (snap.edges ?? []) as never,
-          containers: (snap.containers ?? []) as never,
-          sections: (snap.sections ?? []) as never,
-          traffic: (snap.traffic ?? useStore.getState().traffic) as never,
-        });
-        useStore.getState().applyAutoLayout();
+        const parsed = importOverheadState(String(json));
+        if (!parsed.ok)
+          return errorResult("invalid_state", parsed.message, { services: Object.keys(SERVICES) });
+        // A saved drawing brings its own positions · never rearrange it.
+        useStore.getState().loadSnapshot(parsed.snapshot);
         const s = useStore.getState();
         return text({
           nodes: s.nodes.length,
           edges: s.edges.length,
+          containers: s.containers.length,
           monthlyTotal: money(monthlyTotal(snapshotOf(s), pricingOf(s))),
         });
       },

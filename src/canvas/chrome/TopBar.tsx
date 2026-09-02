@@ -27,8 +27,6 @@ export function TopBar() {
   const setImportPanel = useStore((s) => s.setImportPanel);
   const drawingName = useStore((s) => s.drawingName);
   const setDrawingName = useStore((s) => s.setDrawingName);
-  const templatesOpen = useStore((s) => s.templatesOpen);
-  const setTemplatesOpen = useStore((s) => s.setTemplatesOpen);
 
   const total = useMemo(() => {
     try {
@@ -122,26 +120,12 @@ export function TopBar() {
           Scenario
         </button>
       )}
-      {/* Templates and Import are the two ways a drawing arrives · a seeded
-          one, or your own template. They sit together, next to Export. */}
-      <button
-        className="flex items-center gap-[7px] rounded-lg px-3 py-[7px] text-[12px] font-medium hover:bg-[var(--hover)]"
-        style={{
-          border: "1px solid var(--line-2)",
-          background: templatesOpen ? "var(--accent-bg)" : "var(--panel)",
-          color: "var(--ink-15)",
-        }}
-        data-tip="Templates · load a seeded architecture"
-        aria-label="Templates"
-        onClick={() => setTemplatesOpen(!templatesOpen)}
-      >
-        <Icon name="samples" size={14} />
-        Templates
-      </button>
+      {/* One door in · the seeded templates are a source inside it, because
+          a template is an import too: our JSON instead of your YAML. */}
       <button
         className="flex items-center gap-[7px] rounded-lg px-3 py-[7px] text-[12px] font-medium hover:bg-[var(--hover)]"
         style={{ border: "1px solid var(--line-2)", background: "var(--panel)", color: "var(--ink-15)" }}
-        data-tip="Import · a CloudFormation template becomes the drawing, priced"
+        data-tip="Import · a template, a saved drawing, or one of the samples"
         aria-label="Import"
         onClick={() => setImportPanel({ fileName: "", template: "" })}
       >

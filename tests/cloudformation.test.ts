@@ -5,10 +5,11 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { exportCloudFormation } from "../src/engine/exporters";
+import { exportCloudFormation, exportJson } from "../src/engine/exporters";
 import { cloudFormationTemplate } from "../src/engine/exporters/cloudformation";
 import { parseYaml } from "../src/engine/iac/yaml";
 import { importCloudFormation } from "../src/engine/iac/cloudformation";
+import { detectFormat, importAny, importOverheadState } from "../src/engine/iac/import";
 import { applyReconciliation, reconcile } from "../src/engine/iac/reconcile";
 import { migrateSnapshot } from "../src/engine/migrate";
 import { DEFAULT_TRAFFIC, type StateSnapshot } from "../src/engine/model";
@@ -24,9 +25,9 @@ const pricing = JSON.parse(
 const sample = (name: string): StateSnapshot =>
   migrateSnapshot(JSON.parse(readFileSync(join(__dirname, "..", "samples", `${name}.json`), "utf8")));
 
-const ok = (r: ReturnType<typeof importCloudFormation>) => {
-  if (!r.ok) throw new Error(`import failed: ${r.code} ${r.message}`);
-  return r;
+const ok = <T extends { ok: boolean }>(r: T) => {
+  if (!r.ok) throw new Error(`import failed: ${JSON.stringify(r)}`);
+  return r as Extract<T, { ok: true }>;
 };
 
 describe("CloudFormation export", () => {
@@ -209,6 +210,40 @@ describe("importing somebody else's template", () => {
     const r = importCloudFormation('{"hello":"world"}');
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.code).toBe("not_a_template");
+  });
+});
+
+describe("telling the two importable formats apart", () => {
+  const drawing = sample("api-backend");
+  const saved = exportJson(drawing, pricing);
+
+  it("reads content, not the extension · both are .json", () => {
+    expect(detectFormat(saved)).toBe("overhead");
+    expect(detectFormat(JSON.stringify(cloudFormationTemplate(drawing, pricing, "x")))).toBe("cloudformation");
+    expect(detectFormat(exportCloudFormation(drawing, pricing, "x"))).toBe("cloudformation");
+    expect(detectFormat('{"hello":1}')).toBe(null);
+    expect(detectFormat("not json at all")).toBe(null);
+  });
+
+  it("an Overhead file comes back exactly, positions included", () => {
+    const back = ok(importOverheadState(saved));
+    expect(back.snapshot.nodes.map((n) => n.id)).toEqual(drawing.nodes.map((n) => n.id));
+    expect(back.snapshot.nodes.map((n) => n.position)).toEqual(drawing.nodes.map((n) => n.position));
+    expect(back.snapshot.nodes.map((n) => n.settings)).toEqual(drawing.nodes.map((n) => n.settings));
+    expect(monthlyTotal(back.snapshot, pricing)).toBeCloseTo(monthlyTotal(drawing, pricing), 6);
+  });
+
+  it("refuses a file whose services this build does not have", () => {
+    const r = importOverheadState(JSON.stringify({ nodes: [{ id: "a", service: "quantum", settings: {} }] }));
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.message).toMatch(/quantum/);
+  });
+
+  it("says so when the pinned format is not what the file is", () => {
+    const r = importAny(saved, { format: "cloudformation" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.message).toMatch(/Overhead file/);
+    expect(ok(importAny(saved)).format).toBe("overhead");
   });
 });
 

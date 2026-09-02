@@ -61,7 +61,7 @@ export function Keyboard() {
           s.setPendingConnection(null);
           closePalette();
         } else if (s.exportPanel) s.setExportPanel(null);
-        else if (s.templatesOpen) s.setTemplatesOpen(false);
+        else if (s.importPanel) s.setImportPanel(null);
         else if (s.palette) closePalette();
         else {
           s.select(null);

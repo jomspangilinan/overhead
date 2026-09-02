@@ -394,9 +394,9 @@ the palette at bottom-centre, never `display: none`.
   appears only while the tool is armed, so `ModeInternals` calls `updateNodeInternals` on that flip as
   well as the card flip. Without it the handle rendered, took the pointerdown, and did nothing.
 - **Top bar** (`chrome/TopBar.tsx`): brand · editable **drawing name** · price-list pill with the region
-  select · monthly total (23 px mono — the one loud number) · Scenario · **Templates · Import** · Export.
-  Templates and Import sit together because they are the two ways a drawing arrives: a seeded one, or
-  your own template.
+  select · monthly total (23 px mono — the one loud number) · Scenario · **Import** · Export.
+  There is no Templates button: a template is an import too (our JSON instead of your YAML), so the
+  three seeded architectures are a **source inside the Import dialog** and `Templates.tsx` is gone.
   Import opens `ImportPanel.tsx` (§12b); dropping a template on the canvas opens the same dialog.
 - **Scenario** forks on the click (`openScenarioFromUi("what-if")`, so the tool count ticks) and **asks
   nothing**: a `window.prompt` was the one modal dialog left in the app and it blocked the page to
@@ -429,7 +429,6 @@ the palette at bottom-centre, never `display: none`.
   validator's verdict as tooltip, select the new frame and **pan to it when it lands off-screen** (a second
   AWS Cloud is placed clear of everything, to the right). With a `pendingConnection` it opens at that point
   as "Connect from …": the picked service lands beside the source, in its container, already connected.
-- **Templates** (`Templates.tsx`): a modal dialog from the rail with the three samples.
 - **Right dock** (300 px): the **Inspector** (`Inspector.tsx`) in named, independently collapsible sections
   (state remembered in `localStorage`): node → Position · Settings (schema, `group !== 'security'`) ·
   **Security** (schema, `group: 'security'`, drives the badge and CDK) · Cost · Findings; container →
@@ -549,7 +548,7 @@ Read tools: `readOnlyHint`. Mutations update the store before returning. `text()
 | `get_bill_summary` | read, untrusted | |
 | `reconstruct_from_bill` | write | |
 | `export` / `get_export_chunk` | read | json / markdown / mermaid / cdk / svg; ~1.2K chunks |
-| `import_state` | write | migrated through `migrateSnapshot` |
+| `import_state` | write | the same reader the Import dialog uses (`importOverheadState`) · positions kept, never re-laid-out |
 | `diff_cloudformation` | read | what a template would add, drop and change · nothing is applied |
 | `import_cloudformation` | write | YAML or JSON → the drawing, priced. `mode` replace or merge (§12b) |
 | `overhead_ping` | read | the raw brief-shape registration |
@@ -631,9 +630,17 @@ TypeScript.
   template lacks stay, positions and sections stay, and settings outside `stated` are never reset · a
   template says a Lambda is 512 MB and says nothing about how often it runs, and resetting that would
   quietly rewrite the estimate. `placeNewNodes` gives merged-in resources a column to the right.
-- UI: **Import** in the top bar, or drop a `.yaml` / `.yml` / `.json` / `.template` on the canvas
-  (`BillDrop` routes by extension · a `.csv` is still the bill). `ImportPanel.tsx` shows the resources, the
-  estimate, and the full diff **before** anything happens, then Replace or Merge.
+- UI: `ImportPanel.tsx`, built as **the mirror of `ExportPanel.tsx`** · the same dialog, the same named
+  list down the left (Samples · Build · Project) with a line each, the same view of the artefact in the
+  middle, the same action bar. Three differences, each earned: the middle box is **editable**, because a
+  document does not have to be a file to be worth reading (paste from a terminal, drop a file anywhere in
+  the pane, type it, pick a file, or pick a sample · every path ends at the same text); a side pane says
+  what it would do to this drawing **before** anything happens; and the two buttons are Replace and Merge.
+  The **seeded architectures are sources in that list**, not a dialog of their own. What a document *is*
+  comes from its content, not its extension (`detectFormat` · both formats are commonly `.json`), and the
+  lit entry follows; picking an entry yourself pins it, so a mismatch is reported rather than guessed,
+  while typing over a sample releases the pin. Dropping a file on the canvas opens the same dialog
+  (`BillDrop` routes by extension · a `.csv` is still the bill).
 - Not built, and named as not built in `SCRIPT.md`: a live sync. Nothing watches a repo and nothing writes
   to one.
 
@@ -648,7 +655,8 @@ src/
                     pricing, cost, findings, delta, bill, services/*.ts (defineService), rules/*.ts,
                     exporters/{json,markdown,mermaid,cdk,cloudformation,index}.ts
   engine/iac/       yaml.ts (writer + reader, short-form intrinsics) · cloudformation.ts (import, ours and
-                    foreign) · reconcile.ts (diff + replace/merge · what stands in for a sync)
+                    foreign) · import.ts (detectFormat + the Overhead JSON reader, shared by the dialog
+                    and import_state) · reconcile.ts (diff + replace/merge · what stands in for a sync)
   webmcp/           register.ts · tools.ts · scenario.ts · toolRegistry.ts · provider.tsx
   store/            useStore.ts · history.ts (undo/redo)
   engine/layers.ts  layerRows() — the Layers tree as rows (positional nesting of sections/groups)
@@ -660,8 +668,9 @@ src/
                     TypedEdge (waypoints, + mids, styling toolbar, label edit) · EdgeStylePicker ·
                     edgeGeometry.ts · edgeStyle.ts · nodeMetrics.ts · Inspector (node/container/section/edge)
                     · Popovers (view + card gears only) · Palette (floating, connect-from) ·
-                    Templates (dialog) · Notice · TracePill · ExportPanel (dialog) + exportImage.ts
-                    (PNG/SVG/PDF of the whole drawing) · ScenarioBanner (delta + change list) ·
+                    Notice · TracePill · ExportPanel (dialog) + exportImage.ts
+                    (PNG/SVG/PDF of the whole drawing) · ImportPanel (its mirror: samples, formats,
+                    an editable document box, the diff) · ScenarioBanner (delta + change list) ·
                     BillDrop · HowTo · Keyboard · Icon · Sprite
     chrome/         Toolbar (bottom-centre, View gear) · Dock · TopBar · BottomBar · Floats (zoom) · LayersPanel
   app/              layout.tsx (fonts, provider) · page.tsx · globals.css (tokens, shell grid)
