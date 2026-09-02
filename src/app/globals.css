@@ -176,6 +176,16 @@ body.nogrid .oh-grid {
   display: none;
 }
 
+/* Container collapse handle: only on hover of the frame's corner region */
+.oh-collapse {
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.oh-collapse:hover,
+.react-flow__viewport:hover .oh-collapse {
+  opacity: 0.85;
+}
+
 /* Hover isolation: everything not lit dims */
 .overhead-canvas.hovering .react-flow__node:not(.lit),
 .overhead-canvas.hovering .react-flow__edge:not(.lit) {

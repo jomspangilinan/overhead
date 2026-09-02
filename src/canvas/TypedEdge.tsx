@@ -23,7 +23,19 @@ export type TypedEdgeData = {
   kind: EdgeKind;
   volumePerMonth?: number;
   label?: string;
+  /** This edge's slot among the edges leaving its source / entering its target. */
+  fan?: { sIdx: number; sCount: number; tIdx: number; tCount: number };
 };
+
+/** Spread the anchors so arrowheads meeting one node don't stack; keep the
+ *  whole fan inside the icon (icon mode) or card (card mode). */
+function fanOffset(idx: number, count: number, cardMode: boolean): number {
+  if (count <= 1) return 0;
+  const base = cardMode ? 16 : 14;
+  const maxSpread = cardMode ? 48 : 40;
+  const spacing = Math.min(base, maxSpread / (count - 1));
+  return (idx - (count - 1) / 2) * spacing;
+}
 export type TypedEdgeType = Edge<TypedEdgeData, "typed">;
 
 /** Stroke width follows volume on a log scale, 1.2 → 3.5 px. */
@@ -73,7 +85,12 @@ export const TypedEdge = memo(function TypedEdge({
     cardMode || targetNode.type === "awsGroup",
   );
   const outwardK = (s.cx + t.cx) / 2 >= graphCx ? (1 as const) : (-1 as const);
-  const geo = edgeGeometry(s, t, { outwardK });
+  const fan = data?.fan;
+  const geo = edgeGeometry(s, t, {
+    outwardK,
+    sourceOffset: fan ? fanOffset(fan.sIdx, fan.sCount, cardMode) : 0,
+    targetOffset: fan ? fanOffset(fan.tIdx, fan.tCount, cardMode) : 0,
+  });
 
   const label = data?.label ?? volumeLabel(data?.volumePerMonth);
 

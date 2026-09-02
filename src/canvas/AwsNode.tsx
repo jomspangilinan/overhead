@@ -18,9 +18,8 @@ import { nodeCost } from "@/engine/cost";
 import { findingsForNode } from "@/engine/findings";
 import { toMoney, type Severity } from "@/engine/model";
 
-export const NODE_W = 200;
-export const NODE_H = 100;
-export const ICON = 56;
+import { NODE_W, NODE_H, ICON } from "./nodeMetrics";
+export { NODE_W, NODE_H, ICON };
 
 // Security is a node property, not an edge — shown as a badge when the
 // security layer is on.

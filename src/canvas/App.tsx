@@ -59,17 +59,10 @@ function Autosave() {
   return null;
 }
 
-/** The grid is screen-fixed like the mock's, so ⇧G is a class flip. */
+/** The radial stage behind everything; the grid itself lives inside React
+ *  Flow so it pans and zooms with the drawing. */
 function Stage() {
-  const gridOn = useStore((s) => s.gridOn);
-  useEffect(() => {
-    document.body.classList.toggle("nogrid", !gridOn);
-  }, [gridOn]);
-  return (
-    <div className="oh-stage">
-      <div className="oh-grid" />
-    </div>
-  );
+  return <div className="oh-stage" />;
 }
 
 export function App() {

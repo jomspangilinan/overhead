@@ -3,6 +3,9 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   ReactFlow,
+  Background,
+  BackgroundVariant,
+  ConnectionMode,
   MarkerType,
   useReactFlow,
   type Node,
@@ -41,6 +44,7 @@ export function Canvas() {
 
   const traceIds = useStore((s) => s.traceIds);
   const tool = useStore((s) => s.tool);
+  const gridOn = useStore((s) => s.gridOn);
   const selectedEdgeId = useStore((s) => s.selectedEdgeId);
   const selectEdge = useStore((s) => s.selectEdge);
   const storeAddEdge = useStore((s) => s.addEdge);
@@ -98,7 +102,8 @@ export function Canvas() {
 
   const rfEdges: Edge[] = useMemo(() => {
     const seen = new Set<string>();
-    const out: Edge[] = [];
+    // First pass: resolve endpoints (collapsed hosts) and drop duplicates.
+    const resolved: { e: (typeof edges)[number]; from: string; to: string; rerouted: boolean }[] = [];
     for (const e of edges) {
       const from = collapsedByNode.has(e.from)
         ? `container:${collapsedByNode.get(e.from)}`
@@ -113,6 +118,27 @@ export function Canvas() {
         if (seen.has(key)) continue;
         seen.add(key);
       }
+      resolved.push({ e, from, to, rerouted });
+    }
+    // Fan slots: which of the edges leaving `from` / entering `to` is this one.
+    // Hidden layers are excluded so a toggle doesn't leave gaps in the fan.
+    const outs = new Map<string, string[]>();
+    const ins = new Map<string, string[]>();
+    for (const { e, from, to } of resolved) {
+      if (!layers[KIND_LAYER[e.kind]]) continue;
+      outs.set(from, [...(outs.get(from) ?? []), e.id]);
+      ins.set(to, [...(ins.get(to) ?? []), e.id]);
+    }
+    const out: Edge[] = [];
+    for (const { e, from, to, rerouted } of resolved) {
+      const sList = outs.get(from) ?? [e.id];
+      const tList = ins.get(to) ?? [e.id];
+      const fan = {
+        sIdx: Math.max(0, sList.indexOf(e.id)),
+        sCount: sList.length,
+        tIdx: Math.max(0, tList.indexOf(e.id)),
+        tCount: tList.length,
+      };
       out.push({
         id: e.id,
         type: "typed",
@@ -124,6 +150,7 @@ export function Canvas() {
           kind: e.kind,
           volumePerMonth: rerouted ? undefined : e.volumePerMonth,
           label: rerouted ? undefined : e.label,
+          fan,
         },
         className:
           litIds &&
@@ -240,6 +267,7 @@ export function Canvas() {
             .edges.some((e) => e.from === c.source && e.to === c.target)
         }
         connectionRadius={90}
+        connectionMode={ConnectionMode.Loose}
         deleteKeyCode={null}
         onNodeMouseEnter={(_e, n) => hover(n.id)}
         onNodeMouseLeave={() => hover(null)}
@@ -255,6 +283,14 @@ export function Canvas() {
         zoomOnPinch
         panOnScroll
       >
+        {gridOn ? (
+          <Background
+            variant={BackgroundVariant.Dots}
+            gap={26}
+            size={1.5}
+            color="#2A3441"
+          />
+        ) : null}
         <ContainerFrames />
         <SectionFrames />
       </ReactFlow>

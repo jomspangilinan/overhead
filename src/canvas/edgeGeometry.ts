@@ -6,7 +6,7 @@
 //   back     — S-curve leaving source LEFT, entering target RIGHT
 //   bracket  — same column: out one side and back in
 
-import { NODE_H, ICON } from "./AwsNode";
+import { NODE_H, ICON } from "./nodeMetrics";
 
 /** Rim inset from centre in icon mode (icon half-width + breathing room). */
 const RIM = ICON / 2 + 6;
@@ -52,10 +52,19 @@ export interface EdgeGeo {
 }
 
 export function edgeGeometry(
-  s: Shape,
-  t: Shape,
-  opts: { outwardK?: 1 | -1 } = {},
+  source: Shape,
+  target: Shape,
+  opts: {
+    outwardK?: 1 | -1;
+    /** Vertical nudge so edges meeting the same node don't stack. */
+    sourceOffset?: number;
+    targetOffset?: number;
+  } = {},
 ): EdgeGeo {
+  // Offsets shift the anchors before the case is picked, so a fanned edge
+  // still routes sensibly. Zero by default — a lone edge is unchanged.
+  const s: Shape = { ...source, ay: source.ay + (opts.sourceOffset ?? 0) };
+  const t: Shape = { ...target, ay: target.ay + (opts.targetOffset ?? 0) };
   const dy = t.ay - s.ay;
   const fwdGap = t.cx - t.hw - (s.cx + s.hw);
   const backGap = s.cx - s.hw - (t.cx + t.hw);

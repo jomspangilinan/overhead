@@ -65,3 +65,21 @@ describe("edge geometry", () => {
     expect(p3[1]).not.toBe(p0[1]); // tangent nudge applied
   });
 });
+
+describe("edge fan", () => {
+  it("a lone edge is unchanged by zero offsets", () => {
+    const a = edgeGeometry(icon(0, 0), icon(260, 0));
+    const b = edgeGeometry(icon(0, 0), icon(260, 0), { sourceOffset: 0, targetOffset: 0 });
+    expect(b.d).toBe(a.d);
+  });
+
+  it("offsets move the anchors so converging arrowheads stay distinct", () => {
+    const up = edgeGeometry(icon(0, 0), icon(260, 0), { targetOffset: -14 });
+    const down = edgeGeometry(icon(0, 0), icon(260, 0), { targetOffset: 14 });
+    const [, , , upEnd] = points(up.d);
+    const [, , , downEnd] = points(down.d);
+    expect(upEnd[1]).toBe(39 - 14);
+    expect(downEnd[1]).toBe(39 + 14);
+    expect(upEnd[0]).toBe(downEnd[0]); // same rim x, different y
+  });
+});
