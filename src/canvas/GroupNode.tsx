@@ -50,7 +50,7 @@ export const GroupNode = memo(function GroupNode({
       <Handle type="target" position={Position.Left} style={{ top: NODE_H / 2 }} />
       <Handle type="source" position={Position.Right} style={{ top: NODE_H / 2 }} />
       <div
-        className="absolute cursor-pointer rounded-lg border-2 bg-surface shadow-sm"
+        className="absolute cursor-pointer rounded-lg border-2 bg-panel shadow-sm"
         style={{
           left: 0,
           top: (NODE_H - 76) / 2,
@@ -80,14 +80,14 @@ export const GroupNode = memo(function GroupNode({
           </div>
           <div
             className="truncate text-[9.5px] opacity-70"
-            style={{ fontFamily: "var(--font-plex-mono)" }}
+            style={{ fontFamily: "var(--font-mono-jb)" }}
           >
             {members.length} resources
           </div>
         </div>
         <div
           className="absolute bottom-1.5 right-2.5 text-[11px] font-semibold"
-          style={{ fontFamily: "var(--font-plex-mono)" }}
+          style={{ fontFamily: "var(--font-mono-jb)" }}
         >
           ${toMoney(sum).toFixed(2)}
         </div>

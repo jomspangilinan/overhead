@@ -97,7 +97,7 @@ export const TypedEdge = memo(function TypedEdge({
             style={{
               transform: `translate(-50%, -50%) translate(${geo.label.x}px, ${geo.label.y}px)`,
               color: "var(--ink-2)",
-              background: "var(--ground)",
+              background: "var(--bg)",
             }}
           >
             {label}

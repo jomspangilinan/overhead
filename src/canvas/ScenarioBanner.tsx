@@ -35,7 +35,7 @@ export function ScenarioBanner() {
         style={{ borderColor: "var(--accent)" }}
       />
       <div
-        className="absolute left-1/2 top-2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-full border bg-surface px-4 py-1.5 shadow-md"
+        className="absolute left-1/2 top-2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-full border bg-panel px-4 py-1.5 shadow-md"
         style={{ borderColor: "var(--accent)" }}
       >
         <span
@@ -47,13 +47,13 @@ export function ScenarioBanner() {
         <span className="text-[12.5px] font-medium">{scenario.name}</span>
         <span
           className="text-[12px] tabular-nums"
-          style={{ fontFamily: "var(--font-plex-mono)" }}
+          style={{ fontFamily: "var(--font-mono-jb)" }}
         >
           ${delta.baseTotal.toFixed(2)} → ${delta.forkTotal.toFixed(2)}
           <span
             className="ml-1.5 font-semibold"
             style={{
-              color: delta.delta > 0 ? "var(--critical)" : "var(--saving)",
+              color: delta.delta > 0 ? "var(--bad)" : "var(--good)",
             }}
           >
             {sign}
@@ -67,7 +67,7 @@ export function ScenarioBanner() {
           Commit
         </button>
         <button
-          className="rounded-full border border-rule px-2.5 py-0.5 text-[11px] hover:bg-surface-2"
+          className="rounded-full border border-line px-2.5 py-0.5 text-[11px] hover:bg-panel-2"
           onClick={() => closeScenarioFromUi("discard")}
         >
           Discard

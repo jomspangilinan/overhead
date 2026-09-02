@@ -56,17 +56,17 @@ export function BillDrop() {
   return (
     <>
       {dragging ? (
-        <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center border-4 border-dashed border-accent bg-surface/70">
-          <div className="rounded-lg bg-surface px-6 py-4 text-[15px] font-medium shadow-lg">
+        <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center border-4 border-dashed border-accent bg-panel/70">
+          <div className="rounded-lg bg-panel px-6 py-4 text-[15px] font-medium shadow-lg">
             Drop a Cost Explorer CSV — parsed here, never uploaded
           </div>
         </div>
       ) : null}
       {bill ? (
-        <div className="absolute bottom-4 left-4 z-40 flex items-center gap-3 rounded-lg border border-rule bg-surface px-3 py-2 text-[12px] shadow-md">
+        <div className="absolute bottom-4 left-4 z-40 flex items-center gap-3 rounded-lg border border-line bg-panel px-3 py-2 text-[12px] shadow-md">
           <span
             className="font-semibold"
-            style={{ fontFamily: "var(--font-plex-mono)" }}
+            style={{ fontFamily: "var(--font-mono-jb)" }}
           >
             Bill: ${bill.total.toFixed(2)}
           </span>
@@ -74,7 +74,7 @@ export function BillDrop() {
             {bill.lines.length} services · ${bill.mappedTotal.toFixed(2)} mappable
           </span>
           <button
-            className="rounded border border-rule px-2 py-0.5 hover:bg-surface-2"
+            className="rounded border border-line px-2 py-0.5 hover:bg-panel-2"
             onClick={() => setBill(null)}
           >
             Clear

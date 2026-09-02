@@ -48,7 +48,7 @@ function Field({
       </span>
       {def.type === "enum" ? (
         <select
-          className="w-full rounded border border-rule bg-surface-2 px-2 py-1 text-[12.5px]"
+          className="w-full rounded border border-line bg-panel-2 px-2 py-1 text-[12.5px]"
           value={String(value ?? def.default)}
           onChange={(e) => apply(e.target.value)}
         >
@@ -67,8 +67,8 @@ function Field({
       ) : (
         <input
           type="number"
-          className="w-full rounded border border-rule bg-surface-2 px-2 py-1 text-[12.5px]"
-          style={{ fontFamily: "var(--font-plex-mono)" }}
+          className="w-full rounded border border-line bg-panel-2 px-2 py-1 text-[12.5px]"
+          style={{ fontFamily: "var(--font-mono-jb)" }}
           value={value === undefined ? "" : Number(value)}
           min={def.min}
           max={def.max}
@@ -84,7 +84,7 @@ function Field({
         />
       )}
       {error ? (
-        <span className="mt-0.5 block text-[10.5px] text-critical">{error}</span>
+        <span className="mt-0.5 block text-[10.5px] text-bad">{error}</span>
       ) : null}
     </label>
   );
@@ -126,7 +126,7 @@ export function Inspector() {
   if (!def) return null;
 
   return (
-    <aside className="flex w-[290px] shrink-0 flex-col gap-4 overflow-y-auto border-l border-rule bg-surface p-4">
+    <aside className="flex w-[290px] shrink-0 flex-col gap-4 overflow-y-auto border-l border-line bg-panel p-4">
       <header>
         <div
           className="text-[10px] font-semibold uppercase tracking-wider text-ink-3"
@@ -139,7 +139,7 @@ export function Inspector() {
           {cost ? (
             <span
               className="text-[13px] font-semibold"
-              style={{ fontFamily: "var(--font-plex-mono)" }}
+              style={{ fontFamily: "var(--font-mono-jb)" }}
             >
               ${toMoney(cost.monthly).toFixed(2)}/mo
             </span>
@@ -167,7 +167,7 @@ export function Inspector() {
           <table className="w-full text-[11px]">
             <tbody>
               {cost.lines.map((l, i) => (
-                <tr key={i} className="border-t border-rule">
+                <tr key={i} className="border-t border-line">
                   <td className="py-1 pr-2">
                     <a
                       className="text-accent underline decoration-dotted"
@@ -181,7 +181,7 @@ export function Inspector() {
                   </td>
                   <td
                     className="py-1 text-right"
-                    style={{ fontFamily: "var(--font-plex-mono)" }}
+                    style={{ fontFamily: "var(--font-mono-jb)" }}
                   >
                     ${toMoney(l.monthly).toFixed(2)}
                   </td>
@@ -199,13 +199,13 @@ export function Inspector() {
             {findings.map((f, i) => (
               <div
                 key={i}
-                className="rounded border-l-2 bg-surface-2 p-2 text-[11px] leading-snug"
+                className="rounded border-l-2 bg-panel-2 p-2 text-[11px] leading-snug"
                 style={{
                   borderColor:
                     f.severity === "critical"
-                      ? "var(--critical)"
+                      ? "var(--bad)"
                       : f.severity === "warn"
-                        ? "var(--finding)"
+                        ? "var(--warn)"
                         : "var(--accent)",
                 }}
               >
@@ -221,8 +221,8 @@ export function Inspector() {
                   </a>
                   {f.estimatedSaving ? (
                     <span
-                      className="font-semibold text-saving"
-                      style={{ fontFamily: "var(--font-plex-mono)" }}
+                      className="font-semibold text-good"
+                      style={{ fontFamily: "var(--font-mono-jb)" }}
                     >
                       −${f.estimatedSaving.toFixed(2)}/mo
                     </span>
@@ -235,7 +235,7 @@ export function Inspector() {
       ) : null}
 
       <button
-        className="mt-auto rounded border border-rule px-3 py-1.5 text-[12px] text-critical hover:bg-surface-2"
+        className="mt-auto rounded border border-line px-3 py-1.5 text-[12px] text-bad hover:bg-panel-2"
         onClick={() => {
           removeNode(node.id);
           select(null);

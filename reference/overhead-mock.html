@@ -5,8 +5,8 @@
   --bg:#0B0D10;--panel:#111620;--panel-2:#0D121A;--line:#1D2531;--line-2:#222A36;
   --ink:#E8ECF2;--ink-2:#9AA6B7;--ink-3:#66738A;--ink-4:#4E5A6B;
   --accent:#3B82F6;--accent-ink:#8FB8FF;--accent-bg:#1B2534;
-  --good:#6FE3B0;--warn:#F0B34E;--warn-bg:#1E1A0E;--warn-line:#2E2713;--bad:#F0796A;
-  --edge:#5C6B7F;--edge-lab:#7C8CA0;
+  --good:#6FE3B0;--warn:#F0B34E;--warn-bg:#1E1A0E;--warn-line:#2E2713;
+  --shadow:0 2px 6px rgba(0,0,0,.35),0 16px 44px rgba(0,0,0,.45);
 }
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -18,123 +18,133 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .lab,.label{font-size:9.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
 svg.i{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 
-/* ---------- stage ---------- */
-.stage{position:fixed;inset:0;background:radial-gradient(1200px 700px at 60% 40%,#141922 0%,var(--bg) 68%)}
-.grid{position:absolute;inset:0;opacity:.55;transition:opacity .18s;
+.stage{position:fixed;inset:0;background:radial-gradient(1300px 760px at 58% 42%,#141922 0%,var(--bg) 70%)}
+.grid{position:absolute;inset:0;opacity:.5;transition:opacity .18s;
   background-image:radial-gradient(circle at 1px 1px,#1E2530 1px,transparent 0);background-size:26px 26px}
 body.nogrid .grid{opacity:0}
 
-/* ---------- left rail ---------- */
-.rail{position:fixed;left:16px;top:16px;bottom:16px;width:54px;border-radius:14px;background:var(--panel);
-  border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:9px 0;gap:3px;z-index:5}
-.rail .t{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;color:var(--ink-3);position:relative}
+/* ---- rail ---- */
+.rail{position:fixed;left:16px;top:16px;bottom:16px;width:52px;border-radius:15px;background:var(--panel);
+  border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:8px 0;gap:3px;z-index:8}
+.rail .t{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;color:var(--ink-3);position:relative}
 .rail .t:hover{background:#161C27;color:var(--ink-2)}
 .rail .t[aria-pressed="true"]{background:var(--accent-bg);color:var(--accent-ink)}
-.rail .t[aria-pressed="true"]::before{content:"";position:absolute;left:-9px;top:10px;width:2.5px;height:18px;
-  border-radius:2px;background:var(--accent)}
-.rail .k{position:absolute;bottom:2px;right:4px;font-size:7.5px;color:var(--ink-4);font-family:"JetBrains Mono",monospace}
-.rail .sep{width:20px;height:1px;background:var(--line);margin:6px 0}
+.rail .t[aria-pressed="true"]::before{content:"";position:absolute;left:-8px;top:9px;width:2.5px;height:18px;border-radius:2px;background:var(--accent)}
+.rail .k{position:absolute;bottom:1px;right:3px;font-size:7.5px;color:var(--ink-4);font-family:"JetBrains Mono",monospace}
+.rail .sep{width:20px;height:1px;background:var(--line);margin:5px 0}
 .rail .sp{flex:1}
 
-/* ---------- top bar ---------- */
-.top{position:fixed;left:86px;right:20px;top:16px;height:40px;display:flex;align-items:center;gap:13px;z-index:4}
+/* ---- top ---- */
+.top{position:fixed;left:80px;right:16px;top:16px;height:38px;display:flex;align-items:center;gap:12px;z-index:7}
 .brand{font-weight:700;font-size:15px;letter-spacing:-.025em}
 .crumb{display:flex;align-items:center;gap:7px;color:var(--ink-2);font-size:12.5px}
 .crumb .s{color:#3A4454}.crumb b{color:#C7D0DC;font-weight:500}
 .src{display:flex;align-items:center;gap:7px;padding:5px 10px;border-radius:7px;background:var(--panel);
   border:1px solid var(--line-2);color:var(--ink-3);font-size:11px}
 .src .d{width:5px;height:5px;border-radius:50%;background:var(--good)}
-.src a{color:var(--accent-ink);text-decoration:none}
 .spend{margin-left:auto;display:flex;align-items:baseline;gap:8px}
-.spend .v{font-family:"JetBrains Mono",monospace;font-size:24px;font-weight:600;letter-spacing:-.03em}
+.spend .v{font-family:"JetBrains Mono",monospace;font-size:23px;font-weight:600;letter-spacing:-.03em}
 .spend .u{font-size:11px;color:var(--ink-3)}
-.delta{padding:4px 9px;border-radius:6px;background:#10281E;color:var(--good);border:1px solid #1B3A2C;
-  font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:600}
-.btn{display:flex;align-items:center;gap:7px;padding:8px 12px;border-radius:8px;border:1px solid var(--line-2);
+.btn{display:flex;align-items:center;gap:7px;padding:7px 12px;border-radius:8px;border:1px solid var(--line-2);
   background:var(--panel);color:#C7D0DC;font-size:12px;font-weight:500}
 .btn:hover{background:#161C27}
-.btn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
 .btn.p{background:var(--accent);border-color:var(--accent);color:#fff}
 
-/* ---------- palette drawer ---------- */
-.drawer{position:fixed;left:82px;top:66px;bottom:60px;width:190px;border-radius:14px;background:var(--panel);
-  border:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;z-index:4}
-.drawer .h{padding:11px 12px 8px;display:flex;align-items:center;justify-content:space-between}
-.sr{margin:0 10px 8px;display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:8px;background:var(--panel-2);
+/* ---- floating, movable, collapsible panels (the Studio part) ---- */
+.pan{position:fixed;border-radius:15px;background:#111620F2;border:1px solid var(--line);box-shadow:var(--shadow);
+  backdrop-filter:blur(12px);display:flex;flex-direction:column;overflow:hidden;z-index:6;transition:height .16s ease}
+.pan>.ph{height:38px;flex:none;display:flex;align-items:center;gap:8px;padding:0 8px 0 13px;cursor:grab;
+  border-bottom:1px solid var(--line)}
+.pan>.ph .ttl{font-size:11.5px;font-weight:600;color:#C7D0DC}
+.pan>.ph .n{font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--ink-4)}
+.pan>.ph .x{margin-left:auto;display:flex;gap:2px}
+.pan>.ph .x button{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;color:var(--ink-3)}
+.pan>.ph .x button:hover{background:#1A212C;color:var(--ink-2)}
+.pan>.bd{flex:1;overflow:auto;min-height:0}
+.pan.min{height:38px!important}
+.pan.min>.bd{display:none}
+.pan.min>.ph{border-bottom:0}
+
+#pTree{left:80px;top:66px;width:238px;height:472px}
+#pPal{left:80px;top:552px;width:238px;height:300px}
+#pInsp{right:16px;top:66px;width:320px;height:640px}
+#pBlock{left:344px;bottom:112px;width:auto}
+#pBlock>.bd{display:flex}
+
+/* ---- structure tree ---- */
+.th{padding:9px 11px 5px;font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-4);
+  display:flex;align-items:center;justify-content:space-between}
+.th .add{color:var(--ink-3);font-size:13px;cursor:pointer}
+.tr{display:flex;align-items:center;gap:7px;padding:4px 10px 4px 8px;cursor:pointer;font-size:11.5px}
+.tr:hover{background:#161C27}
+.tr.on{background:var(--accent-bg)}
+.tr .ti{width:16px;height:16px;flex:none}
+.tr .tdot{width:8px;height:8px;border-radius:2px;flex:none;margin:0 4px}
+.tr .tl{color:#C7D0DC;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tr .tm{margin-left:auto;font-family:"JetBrains Mono",monospace;font-size:9.5px;color:var(--ink-4)}
+.tr .tc{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--ink-4);padding-left:5px}
+
+/* ---- palette ---- */
+.sr{margin:8px 10px;display:flex;align-items:center;gap:8px;padding:6px 9px;border-radius:8px;background:var(--panel-2);
   border:1px solid var(--line);color:var(--ink-4);font-size:11.5px}
-.sr .kb{margin-left:auto;font-family:"JetBrains Mono",monospace;font-size:9px;color:var(--ink-4);
-  border:1px solid var(--line-2);border-radius:4px;padding:1px 4px}
-.plist{padding:0 7px 10px;display:flex;flex-direction:column;gap:1px;overflow:auto}
-.pg{padding:8px 6px 3px;font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-4)}
-.sv{display:flex;align-items:center;gap:9px;padding:5px 7px;border-radius:8px;cursor:grab}
-.sv:hover{background:#161C27}
-.sv svg{width:23px;height:23px;flex:none}
-.sv .n{font-size:11.5px;color:#C7D0DC}
-.sv .c{margin-left:auto;font-family:"JetBrains Mono",monospace;font-size:9px;color:var(--ink-4)}
+.sr .kb{margin-left:auto;font-family:"JetBrains Mono",monospace;font-size:9px;border:1px solid var(--line-2);border-radius:4px;padding:1px 4px}
+.pgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;padding:0 8px 10px}
+.pgrid .s{aspect-ratio:1;border-radius:9px;display:grid;place-items:center;cursor:grab}
+.pgrid .s:hover{background:#161C27}
+.pgrid .s svg{width:24px;height:24px}
+.pgrid .c{grid-column:1/-1;padding:8px 3px 3px;font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-4)}
+.pgrid .g{aspect-ratio:auto;padding:6px;display:flex;align-items:center;gap:7px;font-size:10.5px;color:var(--ink-2);border-radius:8px}
+.pgrid .g svg{width:18px;height:18px}
+.pgrid .g .sw{width:14px;height:14px;border-radius:3px;border:1.4px dashed currentColor;flex:none}
 
-/* ---------- canvas ---------- */
-.viewport{position:fixed;left:286px;right:344px;top:66px;bottom:104px;overflow:auto;z-index:2;display:grid;place-items:center}
-.viewport svg{display:block;height:auto;color:var(--ink);font-family:Archivo,sans-serif}
-.steps{position:fixed;left:290px;top:70px;display:flex;flex-wrap:wrap;gap:4px 14px;z-index:3;
-  font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--ink-4);pointer-events:none}
-.steps span{opacity:.35}.steps span.on{opacity:1;color:var(--accent-ink)}
-
-/* diagram behaviour */
-#after .edge,#after .node{transition:opacity .15s}
-#after:not(.l-request) .edge[data-layer="request"]{display:none}
-#after:not(.l-events)  .edge[data-layer="events"]{display:none}
-#after:not(.l-data)    .edge[data-layer="data"]{display:none}
-#after:not(.l-cost)    .cost{display:none}
-#after:not(.l-security) .sec{display:none}
-#after.hover .node:not(.lit),#after.hover .edge:not(.lit){opacity:.16}
-#after .node .ring{stroke:transparent;stroke-width:3;fill:none}
-#after .node.lit .ring{stroke:var(--accent)}
-#after .node .ring.warn{stroke:var(--warn)}
-#after .node.card .frame{transition:stroke .12s}
-#after .node.card.lit .frame{stroke:var(--accent);stroke-width:1.8}
-#after .node.sel .ring{stroke:var(--accent)}
-#after .node.sel.card .frame{stroke:var(--accent);stroke-width:1.8}
-#after .gear{opacity:0;transition:opacity .12s}
-#after .node:hover .gear,#after .node.lit .gear,#after .node.sel .gear{opacity:.85}
-#after .gframe text{pointer-events:none}
-#after:not(.l-cost) .gframe .cost{display:none}
+/* ---- canvas ---- */
+.viewport{position:fixed;left:76px;right:12px;top:60px;bottom:56px;overflow:auto;z-index:2;display:grid;place-items:center}
+.viewport svg{display:block;height:auto;color:var(--ink)}
+#cv .cont .col,#cv .cont .exp{opacity:0;transition:opacity .12s}
+#cv .cont:hover .col,#cv .cont:hover .exp{opacity:1}
+#cv .edge,#cv .node{transition:opacity .15s}
+#cv.hover .node:not(.lit),#cv.hover .edge:not(.lit){opacity:.16}
+#cv .node .ring{stroke:transparent;stroke-width:3;fill:none}
+#cv .node.lit .ring{stroke:var(--accent)}
+#cv .node .ring.warn{stroke:var(--warn)}
+#cv .node.sel .ring{stroke:var(--accent)}
+#cv .node.card.sel .frame,#cv .node.card.lit .frame{stroke:var(--accent);stroke-width:1.8}
+#cv .node.ghost{opacity:.55}
+#cv .gear{opacity:0;transition:opacity .12s}
+#cv .node:hover .gear,#cv .node.sel .gear{opacity:.85}
+#cv:not(.l-sec) .sec{display:none}
+#cv .sect{transition:opacity .15s}
+body.nosect #cv .sects{display:none}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
-/* ---------- floating chrome ---------- */
-.float{position:fixed;display:flex;align-items:center;gap:2px;padding:4px;border-radius:11px;
-  background:#111620E6;border:1px solid var(--line);backdrop-filter:blur(10px);z-index:4}
-.layers{left:292px;bottom:62px}
-.zoom{right:352px;bottom:62px}
-.float button{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:8px;font-size:11px;
-  font-weight:500;color:var(--ink-3)}
-.float button:hover{background:#161C27;color:var(--ink-2)}
+/* ---- floating controls ---- */
+.float{position:fixed;display:flex;align-items:center;gap:2px;padding:4px;border-radius:12px;
+  background:#111620F2;border:1px solid var(--line);backdrop-filter:blur(12px);box-shadow:var(--shadow);z-index:7}
+.float button{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:8px;font-size:11px;font-weight:500;color:var(--ink-3)}
+.float button:hover{background:#1A212C;color:var(--ink-2)}
 .float button[aria-pressed="true"]{background:var(--accent-bg);color:#C7D0DC}
-.float button:disabled{opacity:.35;cursor:default}
-.float .dv{width:1px;align-self:stretch;background:var(--line);margin:3px 3px}
-.zoom button.sq{width:28px;height:26px;padding:0;justify-content:center}
+.float .dv{width:1px;align-self:stretch;background:var(--line);margin:3px}
+.float button.sq{width:28px;height:26px;padding:0;justify-content:center}
+.zoom{right:352px;bottom:60px}
 .zoom .pc{font-family:"JetBrains Mono",monospace;font-size:11px;color:#C7D0DC;min-width:42px;text-align:center}
+.layers{left:344px;bottom:60px}
 
-/* ---------- title block (stolen from Blueprint) ---------- */
-.tblock{position:fixed;left:292px;bottom:106px;display:flex;border-radius:9px;overflow:hidden;
-  background:#111620E6;border:1px solid var(--line);backdrop-filter:blur(10px);z-index:3}
-.tblock div{padding:6px 13px;border-right:1px solid var(--line)}
-.tblock div:last-child{border-right:0}
-.tblock .k{display:block;font-size:8px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-4)}
-.tblock .v{font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:500;color:#C7D0DC}
-.tblock .v.g{color:var(--good)}
+/* ---- title block ---- */
+#pBlock .cell{padding:7px 13px;border-right:1px solid var(--line)}
+#pBlock .cell:last-child{border-right:0}
+#pBlock .k{display:block;font-size:8px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-4)}
+#pBlock .v{font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:500;color:#C7D0DC}
+#pBlock .v.g{color:var(--good)}
 
-/* ---------- inspector ---------- */
-.insp{position:fixed;right:16px;top:66px;bottom:60px;width:318px;border-radius:14px;background:var(--panel);
-  border:1px solid var(--line);display:flex;flex-direction:column;overflow:auto;z-index:4}
-.ihead{padding:15px 16px 13px;display:flex;gap:12px;align-items:center;border-bottom:1px solid #1A2130}
-.ihead svg{width:42px;height:42px;flex:none}
-.ihead .t{min-width:0}
-.ihead .t .term{display:block;font-size:10px;color:var(--ink-3);letter-spacing:.01em}
-.ihead .t .name{display:block;font-size:15px;font-weight:500;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ihead .cost{margin-left:auto;font-family:"JetBrains Mono",monospace;font-size:15px;font-weight:600}
-.isec{padding:13px 16px;border-bottom:1px solid #1A2130}
-.isec .lab,.isec .label{display:block;margin-bottom:10px}
-.field{display:grid;grid-template-columns:1fr 122px;align-items:center;gap:9px;padding:3px 0}
+/* ---- inspector ---- */
+.ihead{padding:14px 15px 12px;display:flex;gap:11px;align-items:center;border-bottom:1px solid #1A2130}
+.ihead svg{width:40px;height:40px;flex:none}
+.ihead .term{display:block;font-size:10px;color:var(--ink-3)}
+.ihead .name{display:block;font-size:14.5px;font-weight:500;margin-top:1px}
+.ihead .cost{margin-left:auto;font-family:"JetBrains Mono",monospace;font-size:14.5px;font-weight:600}
+.isec{padding:12px 15px;border-bottom:1px solid #1A2130}
+.isec .label{display:block;margin-bottom:9px}
+.field{display:grid;grid-template-columns:1fr 118px;align-items:center;gap:9px;padding:3px 0}
 .field .k{font-size:12px;color:var(--ink-2)}
 .field .k small{display:block;font-size:9.5px;color:#556274;font-family:"JetBrains Mono",monospace}
 .ctl{font:inherit;font-size:11.5px;font-family:"JetBrains Mono",monospace;padding:5px 9px;border-radius:7px;
@@ -143,34 +153,30 @@ body.nogrid .grid{opacity:0}
 .seg button{flex:1;min-width:0;padding:5px 2px;font-size:10px;font-family:"JetBrains Mono",monospace;color:var(--ink-3);
   background:var(--panel-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .seg button[aria-pressed="true"]{background:var(--accent);color:#fff}
+.where{display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:10.5px;font-family:"JetBrains Mono",monospace}
+.where span{padding:2px 7px;border-radius:5px;background:var(--panel-2);border:1px solid var(--line-2);color:var(--ink-2)}
+.where i{font-style:normal;color:var(--ink-4)}
 .line{display:grid;grid-template-columns:1fr auto;gap:10px;padding:5px 0;font-size:12px}
 .line+.line{border-top:1px solid #171D29}
 .line .k{color:var(--ink-2)}
 .line .k small{display:block;font-size:9.5px;color:#556274;font-family:"JetBrains Mono",monospace}
-.line .v{font-family:"JetBrains Mono",monospace;font-weight:600;text-align:right;white-space:nowrap}
-.line.sum{margin-top:3px;border-top:1px solid var(--line-2)}
-.line.sum .k{color:var(--ink)}
-.finding{display:flex;gap:10px;padding:11px;border-radius:9px;background:var(--warn-bg);border:1px solid var(--warn-line);margin-bottom:8px}
-.finding.info{background:#0F1A26;border-color:#182739}
+.line .v{font-family:"JetBrains Mono",monospace;font-weight:600;text-align:right}
+.finding{display:flex;gap:9px;padding:10px;border-radius:9px;background:var(--warn-bg);border:1px solid var(--warn-line)}
 .finding .sev{width:3px;border-radius:2px;background:var(--warn);flex:none}
-.finding.info .sev{background:var(--accent)}
-.finding .b{font-size:12px;line-height:1.45}
-.finding .b b{color:var(--warn);font-family:"JetBrains Mono",monospace;font-size:11px}
-.finding.info .b b{color:var(--accent-ink)}
-.finding .b .m{display:block;color:var(--ink-2);margin-top:3px}
-.finding .b .s{display:flex;gap:11px;margin-top:6px;font-size:10.5px}
-.finding .b .s a{color:var(--accent-ink);text-decoration:none}
-.finding .b .s .save{font-family:"JetBrains Mono",monospace;color:var(--good);font-weight:600}
-.empty{padding:20px 16px;color:var(--ink-3);font-size:12.5px}
+.finding b{color:var(--warn);font-family:"JetBrains Mono",monospace;font-size:11px}
+.finding .m{display:block;color:var(--ink-2);margin-top:3px;font-size:12px}
+.finding .r{display:flex;gap:11px;margin-top:6px;font-size:10.5px}
+.finding .r a{color:var(--accent-ink);text-decoration:none}
+.finding .r .s{font-family:"JetBrains Mono",monospace;color:var(--good);font-weight:600}
 
-/* ---------- agent strip ---------- */
-.agent{position:fixed;left:82px;right:16px;bottom:16px;height:34px;display:flex;align-items:center;gap:12px;
-  padding:0 14px;border-radius:10px;background:var(--panel);border:1px solid var(--line);font-size:11.5px;
-  color:var(--ink-2);z-index:4;overflow:hidden}
+/* ---- agent ---- */
+.agent{position:fixed;left:80px;right:16px;bottom:16px;height:32px;display:flex;align-items:center;gap:11px;
+  padding:0 13px;border-radius:10px;background:#111620F2;border:1px solid var(--line);font-size:11.5px;
+  color:var(--ink-2);z-index:5;overflow:hidden;backdrop-filter:blur(12px)}
 .agent .pulse{width:7px;height:7px;border-radius:50%;background:var(--good);box-shadow:0 0 0 3px #6FE3B024;flex:none}
 .agent b{color:#C7D0DC;font-weight:500}
 .agent .count{font-family:"JetBrains Mono",monospace;color:var(--accent-ink);font-weight:600}
-.agent .log{margin-left:auto;display:flex;gap:16px;font-family:"JetBrains Mono",monospace;font-size:10.5px;
+.agent .log{margin-left:auto;display:flex;gap:15px;font-family:"JetBrains Mono",monospace;font-size:10.5px;
   color:var(--ink-4);white-space:nowrap}
 .agent .log i{font-style:normal;color:var(--good)}
 </style>
@@ -182,556 +188,551 @@ body.nogrid .grid{opacity:0}
 <g>
 <path fill-rule="evenodd" clip-rule="evenodd" d="M34.065 55.6324H37V53.6153H34.065V55.6324ZM39 55.6324H42V53.6153H39V55.6324ZM27 14.6295L14 21.0821V61.1934L27 65.5896V14.6295ZM29 27.3934V53.6153H32V55.6324H29V66.9915C29 67.3162 28.845 67.6208 28.584 67.8104C28.412 67.9355 28.207 68 28 68C27.894 68 27.786 67.9829 27.682 67.9476L12.682 62.8756C12.274 62.7375 12 62.3522 12 61.9196V20.4537C12 20.0705 12.217 19.7185 12.559 19.5491L27.559 12.1041C27.868 11.9498 28.235 11.9679 28.528 12.1525C28.821 12.3361 29 12.6598 29 13.0087V25.3764H32V27.3934H29ZM44 55.6324H47V53.6153H44V55.6324ZM44.065 27.3934H47V25.3764H44.065V27.3934ZM39.065 27.3934H42V25.3764H39.065V27.3934ZM34.065 27.3934H37V25.3764H34.065V27.3934ZM66 21.0821L53 14.6295V65.5896L66 61.1934V21.0821ZM68 61.9196C68 62.3522 67.726 62.7375 67.318 62.8756L52.318 67.9476C52.214 67.9829 52.106 68 52 68C51.793 68 51.588 67.9355 51.416 67.8104C51.155 67.6208 51 67.3162 51 66.9915V55.6324H49.065V53.6153H51V27.3934H49.065V25.3764H51V13.0087C51 12.6598 51.179 12.3361 51.472 12.1525C51.765 11.9679 52.131 11.9498 52.441 12.1041L67.441 19.5491C67.783 19.7185 68 20.0705 68 20.4537V61.9196ZM42.934 33.8067L41.066 33.0826L36.066 46.1935L37.934 46.9176L42.934 33.8067ZM49.707 40.2089C50.098 39.8145 50.098 39.1761 49.707 38.7828L45.707 34.7487L44.293 36.1747L47.586 39.4958L44.293 42.8169L45.707 44.243L49.707 40.2089ZM34.293 44.243L30.293 40.2089C29.902 39.8145 29.902 39.1761 30.293 38.7828L34.293 34.7487L35.707 36.1747L32.414 39.4958L35.707 42.8169L34.293 44.243Z" fill="white"/>
 </g>
-</g></symbol><symbol id="aws-cloudfront" viewBox="0 0 80 80"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <g fill="#8C4FFF"> <rect x="0" y="0" width="80" height="80"></rect> </g> <path d="M55.122,52.123 C55.122,50.469 53.776,49.123 52.122,49.123 C50.468,49.123 49.122,50.469 49.122,52.123 C49.122,53.777 50.468,55.123 52.122,55.123 C53.776,55.123 55.122,53.777 55.122,52.123 L55.122,52.123 Z M57.122,52.123 C57.122,54.88 54.879,57.123 52.122,57.123 C49.365,57.123 47.122,54.88 47.122,52.123 C47.122,49.366 49.365,47.123 52.122,47.123 C54.879,47.123 57.122,49.366 57.122,52.123 L57.122,52.123 Z M30.392,37.692 C30.392,36.038 29.046,34.692 27.392,34.692 C25.737,34.692 24.392,36.038 24.392,37.692 C24.392,39.346 25.737,40.692 27.392,40.692 C29.046,40.692 30.392,39.346 30.392,37.692 L30.392,37.692 Z M32.392,37.692 C32.392,40.449 30.148,42.692 27.392,42.692 C24.635,42.692 22.392,40.449 22.392,37.692 C22.392,34.935 24.635,32.692 27.392,32.692 C30.148,32.692 32.392,34.935 32.392,37.692 L32.392,37.692 Z M39.73,22.007 C39.73,23.661 41.076,25.007 42.73,25.007 C44.385,25.007 45.73,23.661 45.73,22.007 C45.73,20.352 44.385,19.007 42.73,19.007 C41.076,19.007 39.73,20.352 39.73,22.007 L39.73,22.007 Z M37.73,22.007 C37.73,19.25 39.974,17.007 42.73,17.007 C45.487,17.007 47.73,19.25 47.73,22.007 C47.73,24.764 45.487,27.007 42.73,27.007 C39.974,27.007 37.73,24.764 37.73,22.007 L37.73,22.007 Z M66,40 C66,30.727 61.028,22.148 53.012,17.509 C51.575,17.799 50.185,18.196 48.451,18.823 L47.771,16.942 C48.676,16.616 49.486,16.352 50.266,16.126 C47.046,14.737 43.548,14 40,14 C38.311,14 36.649,14.175 35.025,14.492 C36.201,15.18 37.244,15.866 38.257,16.634 L37.048,18.227 C35.62,17.145 34.14,16.228 32.197,15.21 C22.378,18.298 15.306,26.958 14.183,37.128 C16.242,36.711 18.219,36.484 20.414,36.43 L20.463,38.429 C18.163,38.486 16.187,38.73 14.027,39.205 C14.018,39.47 14,39.738 14,40 C14,48.658 18.283,56.636 25.327,61.447 C24.074,57.716 23.45,54.19 23.45,50.746 C23.45,48.782 23.788,47.169 24.145,45.462 C24.228,45.067 24.312,44.665 24.394,44.248 L26.357,44.635 C26.273,45.059 26.187,45.47 26.103,45.873 C25.753,47.545 25.45,48.989 25.45,50.746 C25.45,54.654 26.308,58.695 28.054,63.083 C31.773,65.014 35.789,66 40,66 C42.756,66 45.446,65.56 48.012,64.714 C49.019,62.727 49.766,60.852 50.39,58.699 L52.311,59.256 C51.855,60.826 51.332,62.253 50.709,63.677 C52.323,62.951 53.85,62.053 55.283,61.005 C54.938,60.159 54.568,59.318 54.159,58.499 L55.948,57.604 C56.296,58.3 56.615,59.012 56.92,59.728 C62.705,54.775 66,47.66 66,40 L66,40 Z M68,40 C68,48.727 64.034,56.799 57.121,62.149 C55.409,63.479 53.552,64.583 51.589,65.472 C50.756,65.85 49.908,66.2 49.036,66.494 C46.156,67.493 43.113,68 40,68 C35.4,68 30.832,66.854 26.788,64.686 C17.667,59.806 12,50.347 12,40 C12,39.314 12.018,38.792 12.059,38.309 C12.74,26.625 20.756,16.512 32.001,13.166 C34.562,12.393 37.255,12 40,12 C44.808,12 49.539,13.238 53.684,15.579 C62.513,20.525 68,29.884 68,40 L68,40 Z M37.314,25.463 L36,23.956 C33.758,25.912 32.014,27.989 29.977,31.126 L31.655,32.215 C33.583,29.244 35.223,27.288 37.314,25.463 L37.314,25.463 Z M34.275,38.427 L33.625,40.318 C38.218,41.895 42.225,44.411 46.234,48.236 L47.615,46.789 C43.389,42.758 39.15,40.101 34.275,38.427 L34.275,38.427 Z M47.646,26.668 C51.398,32.39 53.511,38.671 53.925,45.338 L51.929,45.462 C51.536,39.146 49.533,33.192 45.975,27.765 L47.646,26.668 Z" fill="#FFFFFF"></path> </g></symbol><symbol id="aws-lambda" viewBox="0 0 80 80"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <g fill="#ED7100"> <rect x="0" y="0" width="80" height="80"></rect> </g> <path d="M28.0075352,66 L15.5907274,66 L29.3235885,37.296 L35.5460249,50.106 L28.0075352,66 Z M30.2196674,34.553 C30.0512768,34.208 29.7004629,33.989 29.3175745,33.989 L29.3145676,33.989 C28.9286723,33.99 28.5778583,34.211 28.4124746,34.558 L13.097944,66.569 C12.9495999,66.879 12.9706487,67.243 13.1550766,67.534 C13.3374998,67.824 13.6582439,68 14.0020416,68 L28.6420072,68 C29.0299071,68 29.3817234,67.777 29.5481094,67.428 L37.563706,50.528 C37.693006,50.254 37.6920037,49.937 37.5586944,49.665 L30.2196674,34.553 Z M64.9953491,66 L52.6587274,66 L32.866809,24.57 C32.7014253,24.222 32.3486067,24 31.9617091,24 L23.8899822,24 L23.8990031,14 L39.7197081,14 L59.4204149,55.429 C59.5857986,55.777 59.9386172,56 60.3255148,56 L64.9953491,56 L64.9953491,66 Z M65.9976745,54 L60.9599868,54 L41.25928,12.571 C41.0938963,12.223 40.7410777,12 40.3531778,12 L22.89768,12 C22.3453987,12 21.8963569,12.447 21.8953545,12.999 L21.884329,24.999 C21.884329,25.265 21.9885708,25.519 22.1780103,25.707 C22.3654452,25.895 22.6200358,26 22.8866544,26 L31.3292417,26 L51.1221625,67.43 C51.2885485,67.778 51.6393624,68 52.02626,68 L65.9976745,68 C66.5519605,68 67,67.552 67,67 L67,55 C67,54.448 66.5519605,54 65.9976745,54 L65.9976745,54 Z" fill="#FFFFFF"></path> </g></symbol><symbol id="aws-cloudwatch" viewBox="0 0 80 80"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <g fill="#E7157B"> <rect x="0" y="0" width="80" height="80"></rect> </g> <path d="M55.0592315,46.7773707 C55.0592315,42.8680281 51.8575588,39.6876305 47.9220646,39.6876305 C43.9865705,39.6876305 40.785903,42.8680281 40.785903,46.7773707 C40.785903,50.6867133 43.9865705,53.8671108 47.9220646,53.8671108 C51.8575588,53.8671108 55.0592315,50.6867133 55.0592315,46.7773707 M57.0697011,46.7773707 C57.0697011,51.7881194 52.9663327,55.8642207 47.9220646,55.8642207 C42.8788018,55.8642207 38.7754334,51.7881194 38.7754334,46.7773707 C38.7754334,41.7666219 42.8788018,37.6905206 47.9220646,37.6905206 C52.9663327,37.6905206 57.0697011,41.7666219 57.0697011,46.7773707 M65.5096522,60.4735504 L58.5011554,54.2026253 C57.9352082,54.9944794 57.2808004,55.7174332 56.5540156,56.3634982 L63.5524601,62.6334248 C64.1495696,63.1686502 65.0784065,63.1187225 65.6182176,62.5255808 C66.155013,61.9324392 66.1067617,61.010773 65.5096522,60.4735504 M47.9220646,57.6616197 C53.9645309,57.6616197 58.8801289,52.7786859 58.8801289,46.7773707 C58.8801289,40.7750569 53.9645309,35.8931217 47.9220646,35.8931217 C41.8806036,35.8931217 36.9650056,40.7750569 36.9650056,46.7773707 C36.9650056,52.7786859 41.8806036,57.6616197 47.9220646,57.6616197 M67.1119965,63.8626459 C66.4264264,64.6165549 65.47849,65 64.5285431,65 C63.7002296,65 62.8699057,64.708422 62.207456,64.1172774 L54.9305615,57.5987107 C52.9070239,58.8968321 50.505518,59.6587296 47.9220646,59.6587296 C40.7718297,59.6587296 34.9545361,53.8800921 34.9545361,46.7773707 C34.9545361,39.6746493 40.7718297,33.8960118 47.9220646,33.8960118 C55.0733048,33.8960118 60.8905985,39.6746493 60.8905985,46.7773707 C60.8905985,48.8154213 60.3990387,50.7366411 59.5465996,52.4511599 L66.8556616,58.9906963 C68.2750531,60.265851 68.3896499,62.4496907 67.1119965,63.8626459 M21.2803274,29.392529 C21.2803274,29.9117776 21.3124949,30.429029 21.3738143,30.9293051 C21.4089975,31.2138932 21.3205368,31.4984814 21.1295422,31.7131707 C20.9777518,31.8839236 20.7736891,31.9967603 20.550527,32.0347054 C18.0786547,32.6687878 14.0104695,34.5880104 14.0104695,40.3456782 C14.0104695,44.6933865 16.4240382,47.0929141 18.4495863,48.3411077 C19.1411878,48.7744806 19.9594489,49.0051468 20.8229456,49.0141338 L32.9450717,49.0251179 L32.9430613,51.0222278 L20.811888,51.0112437 C19.5664021,50.9982625 18.384246,50.6607509 17.3840374,50.0346569 C15.3765836,48.7974474 12,45.8896553 12,40.3456782 C12,33.66235 16.5999543,31.191925 19.3000149,30.319188 C19.2799102,30.0116331 19.2698579,29.702081 19.2698579,29.392529 C19.2698579,23.9324305 22.9982737,18.2696254 27.9420183,16.2215892 C33.7241287,13.8150717 39.8500294,15.0083449 44.3263399,19.4109737 C45.7135638,20.7749998 46.8545053,22.4316024 47.7300648,24.3478294 C48.9061895,23.3802296 50.355738,22.8460027 51.8836949,22.8460027 C54.8863312,22.8460027 58.2659305,25.1097268 58.8680661,30.0605622 C61.6797078,30.7046302 67.6206453,32.9553731 67.6206453,40.422567 C67.6206453,43.4042521 66.6797455,45.8666886 64.8230769,47.7419748 L63.3896121,46.3410022 C64.8632863,44.8531553 65.6101757,42.8620367 65.6101757,40.422567 C65.6101757,33.891019 60.1055101,32.2663701 57.737177,31.8719409 C57.4677741,31.827006 57.2295334,31.6752256 57.0757325,31.4515493 C56.9259525,31.2358614 56.8686541,30.9712444 56.9138897,30.7146157 C56.5851779,26.6604826 54.1605516,24.8431126 51.8836949,24.8431126 C50.4472144,24.8431126 49.1001998,25.5381069 48.1874466,26.7503526 C47.9652897,27.0439277 47.6044105,27.193711 47.2344841,27.139789 C46.8695838,27.085867 46.5629872,26.8362283 46.4373329,26.4917268 C45.6140456,24.2260057 44.4278686,22.3207628 42.9119745,20.8309188 C39.0327735,17.0154404 33.7281496,15.9809374 28.7170543,18.0649216 C24.5463352,19.7924217 21.2803274,24.7672224 21.2803274,29.392529" fill="#FFFFFF"></path> </g></symbol><symbol id="aws-dynamodb" viewBox="0 0 80 80"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <g fill="#C925D1"> <rect x="0" y="0" width="80" height="80"></rect> </g> <path d="M52.0859525,54.8502506 C48.7479569,57.5490338 41.7449661,58.9752927 35.0439749,58.9752927 C28.3419838,58.9752927 21.336993,57.548042 17.9999974,54.8492588 L17.9999974,60.284515 L18.0009974,60.284515 C18.0009974,62.9952002 24.9999974,66.0163299 35.0439749,66.0163299 C45.0799617,66.0163299 52.0749525,62.9991676 52.0859525,60.290466 L52.0859525,54.8502506 Z M52.0869525,44.522272 L54.0869499,44.5113618 L54.0869499,44.522272 C54.0869499,45.7303271 53.4819507,46.8580436 52.3039522,47.8905439 C53.7319503,49.147199 54.0869499,50.3800499 54.0869499,51.257824 C54.0869499,51.263775 54.0859499,51.2687342 54.0859499,51.2746852 L54.0859499,60.284515 L54.0869499,60.284515 C54.0869499,65.2952658 44.2749628,68 35.0439749,68 C25.8349871,68 16.0499999,65.3071678 16.003,60.3192292 C16.003,60.31427 16,60.3093109 16,60.3043517 L16,51.2548485 C16,51.2528648 16.002,51.2498893 16.002,51.2469138 C16.005,50.3691398 16.3609995,49.1412479 17.7869976,47.8875684 C16.3699995,46.6358725 16.01,45.4149236 16.001,44.5440924 L16.002,44.5440924 C16.002,44.540125 16,44.5371495 16,44.5331822 L16,35.483679 C16,35.4807035 16.002,35.477728 16.002,35.4747525 C16.005,34.5969784 16.3619995,33.3690866 17.7879976,32.1173908 C16.3699995,30.8647031 16.01,29.6427623 16.001,28.7729229 L16.002,28.7729229 C16.002,28.7689556 16,28.7649882 16,28.7610209 L16,19.7125095 C16,19.709534 16.002,19.7065585 16.002,19.703583 C16.019,14.6997751 25.8199871,12 35.0439749,12 C40.2549681,12 45.2609615,12.8281823 48.7779569,14.2722941 L48.0129579,16.1052054 C44.7299622,14.7573015 40.0029684,13.9836701 35.0439749,13.9836701 C24.9999882,13.9836701 18.0009974,17.0047998 18.0009974,19.7174687 C18.0009974,22.4291458 24.9999882,25.4502754 35.0439749,25.4502754 C35.3149746,25.4532509 35.5799742,25.4502754 35.8479739,25.4403571 L35.9319738,27.4220435 C35.6359742,27.4339456 35.3399745,27.4339456 35.0439749,27.4339456 C28.3419838,27.4339456 21.336993,26.0066949 18,23.3079117 L18,28.7401923 L18.0009974,28.7401923 L18.0009974,28.7630046 C18.0109974,29.8034395 19.0779959,30.7119605 19.9719948,31.2892085 C22.6619912,33.0040913 27.4819849,34.1754485 32.8569778,34.4184481 L32.7659779,36.4001346 C27.3209851,36.1531677 22.5529914,35.0234675 19.4839954,33.2917235 C18.7279964,33.8570695 18.0009974,34.6217743 18.0009974,35.4886382 C18.0009974,38.2003153 24.9999882,41.2214449 35.0439749,41.2214449 C36.0289736,41.2214449 37.0069723,41.1887143 37.9519711,41.1232532 L38.0909709,43.1019642 C37.1009722,43.1704008 36.0749736,43.205115 35.0439749,43.205115 C28.3419838,43.205115 21.336993,41.7778644 18,39.0790811 L18,44.5113618 L18.0009974,44.5113618 C18.0109974,45.574609 19.0779959,46.4821381 19.9719948,47.060378 C23.0479907,49.0232196 28.8239831,50.2451604 35.0439749,50.2451604 L35.4839744,50.2451604 L35.4839744,52.2288305 L35.0439749,52.2288305 C28.7249832,52.2288305 22.9819908,51.0554896 19.4699954,49.0728113 C18.7179964,49.6371655 18.0009974,50.397903 18.0009974,51.257824 C18.0009974,53.9695011 24.9999882,56.9916225 35.0439749,56.9916225 C45.0799617,56.9916225 52.0749525,53.9744602 52.0859525,51.2647668 L52.0859525,51.2548485 L52.0859525,51.2538566 C52.0839525,50.391952 51.3639534,49.6312145 50.6099544,49.0668603 C50.1219551,49.3435823 49.5989558,49.6103859 49.0039566,49.8553692 L48.2379576,48.022458 C48.9639566,47.7239156 49.5939558,47.4015692 50.1109551,47.0623616 C51.0129539,46.4742034 52.0869525,45.5547723 52.0869525,44.522272 L52.0869525,44.522272 Z M60.6529412,30.0166841 L55.0489486,30.0166841 C54.717949,30.0166841 54.4069494,29.8540231 54.2219497,29.5822603 C54.0349499,29.3104975 53.99695,28.9643471 54.1189498,28.6598537 L57.5279453,20.1380068 L44.6189702,20.1380068 L38.6189702,32.0400276 L45.0009618,32.0400276 C45.3199614,32.0400276 45.619961,32.1917784 45.8089608,32.44668 C45.9959605,32.7025735 46.0509604,33.0308709 45.9539606,33.3333806 L40.2579681,51.089212 L60.6529412,30.0166841 Z M63.7219372,29.7121907 L38.7229701,55.539576 C38.5279703,55.7399267 38.2659707,55.8440694 38.000971,55.8440694 C37.8249713,55.8440694 37.6479715,55.7994368 37.4899717,55.7052124 C37.0899722,55.4691557 36.9069725,54.992083 37.0479723,54.5517083 L43.6339636,34.0236978 L37.0009724,34.0236978 C36.6539728,34.0236978 36.3329732,33.8461593 36.1499735,33.5535679 C35.9679737,33.2609766 35.9509737,32.8959813 36.1069735,32.5885124 L43.1069643,18.7028214 C43.2759641,18.3665893 43.6219636,18.1543366 44.0009631,18.1543366 L59.0009434,18.1543366 C59.331943,18.1543366 59.6429425,18.3179894 59.8279423,18.5887604 C60.0149421,18.861515 60.052942,19.2066736 59.9309422,19.5121588 L56.5219467,28.0330139 L62.9999381,28.0330139 C63.3999376,28.0330139 63.7629371,28.2710544 63.9199369,28.6360497 C64.0769367,29.0020368 63.9989368,29.4255504 63.7219372,29.7121907 L63.7219372,29.7121907 Z M19.4549955,60.6743062 C20.8719936,61.4727334 22.6559912,62.1442057 24.7569885,62.6678947 L25.2449878,60.7437346 C23.3459903,60.2706293 21.6859925,59.6497405 20.4429942,58.949505 L19.4549955,60.6743062 Z M24.7569885,46.7985335 L25.2449878,44.8753653 C23.3459903,44.4012681 21.6859925,43.7803794 20.4429942,43.0801438 L19.4549955,44.804945 C20.8719936,45.6033722 22.6549912,46.2748446 24.7569885,46.7985335 L24.7569885,46.7985335 Z M19.4549955,28.9355839 L20.4429942,27.2107827 C21.6839925,27.9110182 23.3449903,28.5309151 25.2449878,29.0060041 L24.7569885,30.9291723 C22.6529912,30.4044916 20.8699936,29.7330193 19.4549955,28.9355839 L19.4549955,28.9355839 Z" fill="#FFFFFF"></path> </g></symbol><symbol id="aws-group-cloud" viewBox="0 0 40 40"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <rect fill="#242F3E" x="0" y="0" width="40" height="40"></rect> <path d="M28.993,27.9952689 L11.487,27.9762689 C9.121,27.9742689 7.154,26.1292689 7.012,23.7752689 C7.004,23.6522689 7,23.5262689 7,23.3972689 C7,20.2992689 9.091,19.2872689 10.337,18.9592689 C10.577,18.8962689 10.735,18.6662689 10.707,18.4192689 C10.676,18.1492689 10.659,17.8752689 10.659,17.5962689 C10.659,15.1322689 12.308,12.4822689 14.415,11.5632689 C15.359,11.1502689 16.232,10.9862689 17.023,10.9862689 C19.276,10.9862689 20.867,12.3152689 21.561,13.0332689 C22.329,13.8262689 22.927,14.8382689 23.34,16.0422689 C23.4,16.2192689 23.555,16.3472689 23.74,16.3742689 C23.918,16.4012689 24.109,16.3232689 24.219,16.1712689 C24.807,15.3502689 25.766,14.9822689 26.659,15.2392689 C27.782,15.5602689 28.516,16.7272689 28.62,18.3072689 C28.578,18.5762689 28.759,18.8292689 29.027,18.8772689 C30.222,19.0892689 33,19.9572689 33,23.4402689 C33,27.5892689 29.114,27.9822689 28.993,27.9952689 M29.594,17.9742689 C29.379,16.0672689 28.4,14.6962689 26.934,14.2782689 C25.899,13.9822689 24.811,14.2452689 23.989,14.9502689 C23.553,13.9362689 22.979,13.0602689 22.28,12.3382689 C20.023,10.0052689 16.933,9.37226889 14.014,10.6462689 C11.531,11.7302689 9.659,14.7182689 9.659,17.5962689 C9.659,17.7702689 9.665,17.9432689 9.676,18.1142689 C8.319,18.5732689 6,19.8752689 6,23.3972689 C6,23.5492689 6.004,23.6962689 6.014,23.8382689 C6.188,26.7162689 8.593,28.9732689 11.486,28.9762689 L29.034,28.9932689 C29.084,28.9892689 34,28.5192689 34,23.4402689 C34,19.5022689 31.003,18.3142689 29.594,17.9742689" fill="#FFFFFF"></path> </g></symbol><symbol id="aws-group-vpc" viewBox="0 0 40 40"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <rect fill="#8C4FFF" x="0" y="0" width="40" height="40"></rect> <path d="M30.9707,21.0293596 L28.0267,19.7663596 L28.0267,30.2553596 C30.5717,29.9033596 30.9587,27.2873596 30.9747,27.1683596 L30.9707,21.0293596 Z M27.0267,30.2693596 L27.0267,19.7593596 L23.9917,21.0323596 L23.9917,27.2333596 C24.0047,27.2873596 24.4367,30.0003596 27.0267,30.2693596 L27.0267,30.2693596 Z M27.3327,18.5473596 C27.4567,18.4943596 27.5987,18.4953596 27.7237,18.5483596 L31.6677,20.2403596 C31.8517,20.3193596 31.9707,20.4993596 31.9707,20.6993596 L31.9707,27.2333596 C31.7877,28.6803596 30.6137,31.2963596 27.4437,31.2963596 C24.3687,31.2963596 23.1897,28.6843596 22.9957,27.3023596 L22.9917,20.6993596 C22.9917,20.4983596 23.1127,20.3163596 23.2977,20.2383596 L27.3327,18.5473596 Z M32.9827022,19.1843596 L27.5217,16.7783596 L21.9917,19.1053596 L21.9917,26.2333596 C21.9907,26.2753596 21.9377,29.1013596 23.6487,30.8563596 C24.5657,31.7973596 25.8427,32.2753596 27.4437,32.2753596 C29.0457,32.2753596 30.3307,31.7963596 31.2627,30.8533596 C32.9977,29.0953596 32.9827022,26.2683596 32.9827022,26.2403596 L32.9827022,19.1843596 Z M31.9797,31.5503596 C30.8527,32.6943596 29.3257,33.2753596 27.4437,33.2753596 C25.5597,33.2753596 24.0397,32.6943596 22.9267,31.5483596 C20.9217,29.4853596 20.9877,26.3513596 20.9917,26.2193596 L20.9917,18.7733596 C20.9917,18.5723596 21.1117,18.3903596 21.2967,18.3123596 L27.3317,15.7723596 C27.4587,15.7203596 27.6027,15.7193596 27.7277,15.7763596 L33.6837,18.4013596 C33.8657,18.4813596 33.9827,18.6603596 33.9827,18.8583596 L33.9827,26.2333596 C33.9847,26.3583596 34.0097,29.4883596 31.9797,31.5503596 L31.9797,31.5503596 Z M10.9917,24.2363596 L18.9917,24.2363596 L18.9917,25.2363596 L10.9917,25.2363596 C8.1807,25.2363596 6.1807,23.2203596 6.0127,20.2203596 C6.0007,20.1093596 5.9997,19.9753596 5.9997,19.8413596 C5.9997,17.3323596 7.3177,15.6183596 9.8167,14.8623596 C9.7977,14.6353596 9.7847,14.3963596 9.7847,14.2153596 C9.7847,11.2993596 11.3617,8.77035958 13.8017,7.77035958 C17.0997,6.42235958 20.8437,6.87635958 22.9077,8.87435958 C23.6527,9.59835958 24.2317,10.4163596 24.6677,11.3593596 C25.2767,10.9093596 26.0677,10.6983596 27.0167,10.7453596 C28.7967,10.8353596 30.1657,12.4583596 30.4497,14.7523596 C31.9477,14.8763596 32.9347,15.6353596 33.4597,17.0603596 L32.5227,17.4063596 C32.0947,16.2493596 31.3147,15.7333596 29.9917,15.7333596 C29.7267,15.7333596 29.5077,15.5273596 29.4917,15.2633596 C29.3537,12.9253596 28.0857,11.8003596 26.9657,11.7443596 C26.0207,11.6913596 25.3207,11.9633596 24.8867,12.5353596 C24.7757,12.6803596 24.6017,12.7523596 24.4137,12.7283596 C24.2337,12.7003596 24.0817,12.5773596 24.0187,12.4053596 C23.6147,11.3023596 23.0237,10.3823596 22.2117,9.59135958 C20.4237,7.86135958 17.1217,7.49235958 14.1807,8.69635958 C12.1177,9.54135958 10.7847,11.7073596 10.7847,14.2153596 C10.7847,14.4883596 10.8197,14.9113596 10.8507,15.1743596 C10.8807,15.4253596 10.7197,15.6583596 10.4747,15.7183596 C8.1687,16.2903596 6.9997,17.6773596 6.9997,19.8413596 C6.9997,19.9423596 6.9987,20.0423596 7.0087,20.1433596 C7.1497,22.6383596 8.7117,24.2363596 10.9917,24.2363596 L10.9917,24.2363596 Z" fill="#FFFFFF"></path> </g></symbol><symbol id="aws-group-public" viewBox="0 0 40 40"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <rect fill="#7AA116" x="0" y="0" width="40" height="40"></rect> <path d="M19.536,22.049 C20.642,22.049 21.542,22.948 21.542,24.054 C21.542,25.16 20.642,26.06 19.536,26.06 C18.43,26.06 17.53,25.16 17.53,24.054 C17.53,22.948 18.43,22.049 19.536,22.049 L19.536,22.049 Z M19.012,27.007 L19.012,30.501 L20.012,30.501 L20.012,27.012 C21.442,26.782 22.542,25.549 22.542,24.054 C22.542,22.397 21.193,21.049 19.536,21.049 C17.879,21.049 16.53,22.397 16.53,24.054 C16.53,25.532 17.604,26.757 19.012,27.007 L19.012,27.007 Z M10,33.014 L29.012,33.014 L29.012,18 L10,18 L10,33.014 Z M14.046,12.484 C14.046,9.46 16.506,7 19.529,7 C22.553,7 25.012,9.46 25.012,12.484 L25.012,17 L14.046,17 L14.046,12.484 Z M29.512,17 L26.012,17 L26.012,12.484 C26.012,8.908 23.103,6 19.529,6 C15.954,6 13.046,8.908 13.046,12.484 L13.046,17 L9.5,17 C9.223,17 9,17.224 9,17.5 L9,33.514 C9,33.79 9.223,34.014 9.5,34.014 L29.512,34.014 C29.788,34.014 30.012,33.79 30.012,33.514 L30.012,17.5 C30.012,17.224 29.788,17 29.512,17 L29.512,17 Z" fill="#FFFFFF"></path> </g></symbol><symbol id="aws-group-private" viewBox="0 0 40 40"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <rect fill="#00A4A6" x="0" y="0" width="40" height="40"></rect> <path d="M19.536,22.049 C20.642,22.049 21.542,22.948 21.542,24.054 C21.542,25.16 20.642,26.06 19.536,26.06 C18.43,26.06 17.53,25.16 17.53,24.054 C17.53,22.948 18.43,22.049 19.536,22.049 L19.536,22.049 Z M19.012,27.007 L19.012,30.501 L20.012,30.501 L20.012,27.012 C21.442,26.782 22.542,25.549 22.542,24.054 C22.542,22.397 21.193,21.049 19.536,21.049 C17.879,21.049 16.53,22.397 16.53,24.054 C16.53,25.532 17.604,26.757 19.012,27.007 L19.012,27.007 Z M10,33.014 L29.012,33.014 L29.012,18 L10,18 L10,33.014 Z M14.046,12.484 C14.046,9.46 16.506,7 19.529,7 C22.553,7 25.012,9.46 25.012,12.484 L25.012,17 L14.046,17 L14.046,12.484 Z M29.512,17 L26.012,17 L26.012,12.484 C26.012,8.908 23.103,6 19.529,6 C15.954,6 13.046,8.908 13.046,12.484 L13.046,17 L9.5,17 C9.223,17 9,17.224 9,17.5 L9,33.514 C9,33.79 9.223,34.014 9.5,34.014 L29.512,34.014 C29.788,34.014 30.012,33.79 30.012,33.514 L30.012,17.5 C30.012,17.224 29.788,17 29.512,17 L29.512,17 Z" fill="#FFFFFF"></path> </g></symbol><symbol id="aws-elb" viewBox="0 0 80 80"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <g fill="#8C4FFF"> <rect x="0" y="0" width="80" height="80"></rect> </g> <path d="M30,53 C22.832,53 17,47.168 17,40 C17,32.832 22.832,27 30,27 C37.168,27 43,32.832 43,40 C43,47.168 37.168,53 30,53 M60,59 C60,61.206 58.206,63 56,63 C53.794,63 52,61.206 52,59 C52,56.794 53.794,55 56,55 C58.206,55 60,56.794 60,59 M56,17 C58.206,17 60,18.794 60,21 C60,23.206 58.206,25 56,25 C53.794,25 52,23.206 52,21 C52,18.794 53.794,17 56,17 M59,36 C61.206,36 63,37.794 63,40 C63,42.206 61.206,44 59,44 C56.794,44 55,42.206 55,40 C55,37.794 56.794,36 59,36 M44.949,41 L53.09,41 C53.568,43.833 56.033,46 59,46 C62.309,46 65,43.309 65,40 C65,36.691 62.309,34 59,34 C56.033,34 53.568,36.167 53.09,39 L44.949,39 C44.823,37.099 44.344,35.297 43.572,33.654 L52.446,25.823 C53.442,26.559 54.669,27 56,27 C59.309,27 62,24.309 62,21 C62,17.691 59.309,15 56,15 C52.691,15 50,17.691 50,21 C50,22.256 50.389,23.421 51.051,24.386 L42.581,31.859 C39.904,27.738 35.271,25 30,25 C21.729,25 15,31.729 15,40 C15,48.271 21.729,55 30,55 C35.271,55 39.904,52.262 42.581,48.141 L51.051,55.614 C50.389,56.579 50,57.744 50,59 C50,62.309 52.691,65 56,65 C59.309,65 62,62.309 62,59 C62,55.691 59.309,53 56,53 C54.669,53 53.442,53.441 52.446,54.177 L43.572,46.346 C44.344,44.703 44.823,42.901 44.949,41" fill="#FFFFFF"></path> </g></symbol><symbol id="aws-rds" viewBox="0 0 80 80"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <g fill="#C925D1"> <rect x="0" y="0" width="80" height="80"></rect> </g> <path d="M15.414,14 L24.707,23.293 L23.293,24.707 L14,15.414 L14,23 L12,23 L12,13 C12,12.448 12.447,12 13,12 L23,12 L23,14 L15.414,14 Z M68,13 L68,23 L66,23 L66,15.414 L56.707,24.707 L55.293,23.293 L64.586,14 L57,14 L57,12 L67,12 C67.553,12 68,12.448 68,13 L68,13 Z M66,57 L68,57 L68,67 C68,67.552 67.553,68 67,68 L57,68 L57,66 L64.586,66 L55.293,56.707 L56.707,55.293 L66,64.586 L66,57 Z M65.5,39.213 C65.5,35.894 61.668,32.615 55.25,30.442 L55.891,28.548 C63.268,31.045 67.5,34.932 67.5,39.213 C67.5,43.495 63.268,47.383 55.89,49.879 L55.249,47.984 C61.668,45.812 65.5,42.534 65.5,39.213 L65.5,39.213 Z M14.556,39.213 C14.556,42.393 18.143,45.585 24.152,47.753 L23.473,49.634 C16.535,47.131 12.556,43.333 12.556,39.213 C12.556,35.094 16.535,31.296 23.473,28.792 L24.152,30.673 C18.143,32.842 14.556,36.034 14.556,39.213 L14.556,39.213 Z M24.707,56.707 L15.414,66 L23,66 L23,68 L13,68 C12.447,68 12,67.552 12,67 L12,57 L14,57 L14,64.586 L23.293,55.293 L24.707,56.707 Z M40,31.286 C32.854,31.286 29,29.44 29,28.686 C29,27.931 32.854,26.086 40,26.086 C47.145,26.086 51,27.931 51,28.686 C51,29.44 47.145,31.286 40,31.286 L40,31.286 Z M40.029,39.031 C33.187,39.031 29,37.162 29,36.145 L29,31.284 C31.463,32.643 35.832,33.286 40,33.286 C44.168,33.286 48.537,32.643 51,31.284 L51,36.145 C51,37.163 46.835,39.031 40.029,39.031 L40.029,39.031 Z M40.029,46.667 C33.187,46.667 29,44.798 29,43.781 L29,38.862 C31.431,40.291 35.742,41.031 40.029,41.031 C44.292,41.031 48.578,40.292 51,38.867 L51,43.781 C51,44.799 46.835,46.667 40.029,46.667 L40.029,46.667 Z M40,53.518 C32.883,53.518 29,51.605 29,50.622 L29,46.498 C31.431,47.927 35.742,48.667 40.029,48.667 C44.292,48.667 48.578,47.929 51,46.503 L51,50.622 C51,51.605 47.117,53.518 40,53.518 L40,53.518 Z M40,24.086 C33.739,24.086 27,25.525 27,28.686 L27,50.622 C27,53.836 33.54,55.518 40,55.518 C46.46,55.518 53,53.836 53,50.622 L53,28.686 C53,25.525 46.261,24.086 40,24.086 L40,24.086 Z" fill="#FFFFFF"></path> </g></symbol><symbol id="aws-ecs" viewBox="0 0 80 80"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <g fill="#ED7100"> <rect x="0" y="0" width="80" height="80"></rect> </g> <path d="M64,48.2340095 L56,43.4330117 L56,32.0000169 C56,31.6440171 55.812,31.3150172 55.504,31.1360173 L44,24.4260204 L44,14.7520248 L64,26.5710194 L64,48.2340095 Z M65.509,25.13902 L43.509,12.139026 C43.199,11.9560261 42.818,11.9540261 42.504,12.131026 C42.193,12.3090259 42,12.6410257 42,13.0000256 L42,25.0000201 C42,25.3550199 42.189,25.6840198 42.496,25.8640197 L54,32.5740166 L54,44.0000114 C54,44.3510113 54.185,44.6770111 54.486,44.857011 L64.486,50.8570083 C64.644,50.9520082 64.822,51 65,51 C65.17,51 65.34,50.9570082 65.493,50.8700083 C65.807,50.6930084 66,50.3600085 66,50 L66,26.0000196 C66,25.6460198 65.814,25.31902 65.509,25.13902 L65.509,25.13902 Z M40.445,66.863001 L17,54.3990067 L17,26.5710194 L37,14.7520248 L37,24.4510204 L26.463,31.1560173 C26.175,31.3400172 26,31.6580171 26,32.0000169 L26,49.0000091 C26,49.373009 26.208,49.7150088 26.538,49.8870087 L39.991,56.8870055 C40.28,57.0370055 40.624,57.0380055 40.912,56.8880055 L53.964,50.1440086 L61.996,54.9640064 L40.445,66.863001 Z M64.515,54.1420068 L54.515,48.1420095 C54.217,47.9640096 53.849,47.9520096 53.541,48.1120095 L40.455,54.8730065 L28,48.3930094 L28,32.5490167 L38.537,25.8440197 C38.825,25.6600198 39,25.3420199 39,25.0000201 L39,13.0000256 C39,12.6410257 38.808,12.3090259 38.496,12.131026 C38.184,11.9540261 37.802,11.9560261 37.491,12.139026 L15.491,25.13902 C15.187,25.31902 15,25.6460198 15,26.0000196 L15,55 C15,55.3690062 15.204,55.7090061 15.53,55.883006 L39.984,68.8830001 C40.131,68.961 40.292,69 40.453,69 C40.62,69 40.786,68.958 40.937,68.8750001 L64.484,55.875006 C64.797,55.7020061 64.993,55.3750062 65.0001416,55.0180064 C65.006,54.6600066 64.821,54.3260067 64.515,54.1420068 L64.515,54.1420068 Z" fill="#FFFFFF"></path> </g></symbol><symbol id="aws-vpc" viewBox="0 0 80 80"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <g fill="#8C4FFF"> <rect x="0" y="0" width="80" height="80"></rect> </g> <path d="M61,41.3717025 L55.5,39.1717025 L55.5,59.1227025 C57.106,58.9627025 58.401,58.4347025 59.321,57.5007025 C61.021,55.7727025 61.001,53.2397025 61,53.2147025 L61,41.3717025 Z M53.5,59.1357025 L53.5,39.1717025 L48,41.3717025 L48,53.1947025 C48.007,53.4017025 48.234,58.5517025 53.5,59.1357025 L53.5,59.1357025 Z M63,53.1947025 C63.003,53.3077025 63.053,56.5417025 60.765,58.8847025 C59.269,60.4177025 57.16,61.1947025 54.5,61.1947025 C47.927,61.1947025 46.065,55.9767025 46,53.2187025 L46,40.6947025 C46,40.2857025 46.249,39.9177025 46.629,39.7657025 L54.129,36.7657025 C54.367,36.6707025 54.633,36.6707025 54.871,36.7657025 L62.371,39.7657025 C62.751,39.9177025 63,40.2857025 63,40.6947025 L63,53.1947025 Z M66.001,51.2287025 L66,37.8717025 L54.5,33.2717025 L43,37.8717025 L43,51.1947025 C42.998,51.2857025 42.865,57.4227025 46.534,61.1987025 C48.466,63.1867025 51.146,64.1947025 54.5,64.1947025 C57.877,64.1947025 60.57,63.1797025 62.504,61.1787025 C66.168,57.3867025 66.003,51.2897025 66.001,51.2287025 L66.001,51.2287025 Z M63.942,62.5677025 C61.617,64.9747025 58.44,66.1947025 54.5,66.1947025 C50.579,66.1947025 47.413,64.9787025 45.09,62.5807025 C40.831,58.1877025 40.991,51.4477025 41,51.1637025 L41,37.1947025 C41,36.7857025 41.249,36.4177025 41.629,36.2657025 L54.129,31.2657025 C54.367,31.1707025 54.633,31.1707025 54.871,31.2657025 L67.371,36.2657025 C67.751,36.4177025 68,36.7857025 68,37.1947025 L68,51.1947025 C68.009,51.4447025 68.189,58.1727025 63.942,62.5677025 L63.942,62.5677025 Z M23.055,47.1947025 L38,47.1947025 L38,49.1947025 L23.055,49.1947025 C16.977,49.1947025 12.337,45.1427025 12.024,39.5597025 C12.002,39.3317025 12,39.0657025 12,38.7997025 C12,31.9307025 16.803,29.4017025 19.604,28.5117025 C19.584,28.1907025 19.574,27.8657025 19.574,27.5387025 C19.574,22.0857025 23.464,16.3807025 28.621,14.2687025 C34.677,11.7887025 41.062,12.9897025 45.695,17.4757025 C47.256,18.9967025 48.446,20.6207025 49.307,22.4097025 C50.513,21.3747025 51.969,20.8187025 53.529,20.8187025 C56.834,20.8187025 60.33,23.4127025 60.931,28.3817025 C63.114,28.9317025 65.854,30.0997025 67.788,32.5797025 L66.212,33.8097025 C64.43,31.5237025 61.741,30.5717025 59.8,30.1737025 C59.355,30.0837025 59.028,29.7057025 59.002,29.2537025 C58.741,24.8327025 55.982,22.8187025 53.529,22.8187025 C52.067,22.8187025 50.771,23.5087025 49.78,24.8137025 C49.559,25.1057025 49.199,25.2567025 48.835,25.1987025 C48.474,25.1437025 48.17,24.8967025 48.045,24.5537025 C47.278,22.4637025 46.054,20.6177025 44.302,18.9107025 C40.258,14.9967025 34.676,13.9517025 29.379,16.1197025 C24.93,17.9417025 21.574,22.8507025 21.574,27.5387025 C21.574,28.0797025 21.605,28.6147025 21.668,29.1277025 C21.729,29.6287025 21.405,30.0967025 20.915,30.2187025 C18.333,30.8577025 14,32.8237025 14,38.7997025 C14,39.0017025 13.998,39.2047025 14.018,39.4077025 C14.272,43.9357025 18.072,47.1947025 23.055,47.1947025 L23.055,47.1947025 Z" fill="#FFFFFF"></path> </g></symbol><symbol id="aws-nat" viewBox="0 0 48 48"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <path d="M13.6255,35.9209 L13.6255,33.0829 L15.3995,34.5019 L13.6255,35.9209 Z M13.2505,30.2209 C12.9495,29.9799 12.5365,29.9329 12.1915,30.1009 C11.8465,30.2679 11.6255,30.6169 11.6255,31.0019 L11.6255,38.0019 C11.6255,38.3869 11.8465,38.7359 12.1915,38.9029 C12.3305,38.9699 12.4785,39.0019 12.6255,39.0019 C12.8485,39.0019 13.0695,38.9279 13.2505,38.7829 L17.6255,35.2829 C17.8625,35.0929 18.0005,34.8059 18.0005,34.5019 C18.0005,34.1979 17.8625,33.9109 17.6255,33.7209 L13.2505,30.2209 Z M37.2515,26.8369 L37.2515,22.9149 L39.2125,24.8759 L37.2515,26.8369 Z M41.3335,24.1689 L36.9585,19.7939 C36.6725,19.5079 36.2445,19.4219 35.8685,19.5769 C35.4945,19.7319 35.2515,20.0969 35.2515,20.5009 L35.2515,23.8759 L27.6255,23.8759 L27.6255,14.3759 C27.6255,13.8229 27.1785,13.3759 26.6255,13.3759 L18.9315,13.3759 L18.9315,15.3759 L25.6255,15.3759 L25.6255,23.8759 L18.7505,23.8759 L18.7505,25.8759 L25.6255,25.8759 L25.6255,34.3769 L18.9315,34.3769 L18.9315,36.3769 L26.6255,36.3769 C27.1785,36.3769 27.6255,35.9299 27.6255,35.3769 L27.6255,25.8759 L35.2515,25.8759 L35.2515,29.2519 C35.2515,29.6559 35.4955,30.0219 35.8685,30.1759 C35.9925,30.2279 36.1225,30.2519 36.2515,30.2519 C36.5115,30.2519 36.7675,30.1499 36.9585,29.9589 L41.3335,25.5829 C41.7245,25.1919 41.7245,24.5599 41.3335,24.1689 L41.3335,24.1689 Z M13.6255,26.2959 L13.6255,23.4569 L15.3995,24.8759 L13.6255,26.2959 Z M13.2505,20.5949 C12.9495,20.3539 12.5365,20.3079 12.1915,20.4749 C11.8465,20.6419 11.6255,20.9909 11.6255,21.3759 L11.6255,28.3769 C11.6255,28.7619 11.8465,29.1109 12.1915,29.2779 C12.3305,29.3449 12.4785,29.3769 12.6255,29.3769 C12.8485,29.3769 13.0695,29.3029 13.2505,29.1579 L17.6255,25.6569 C17.8625,25.4669 18.0005,25.1799 18.0005,24.8759 C18.0005,24.5719 17.8625,24.2849 17.6255,24.0949 L13.2505,20.5949 Z M13.6255,15.7949 L13.6255,12.9569 L15.3995,14.3759 L13.6255,15.7949 Z M13.2505,10.0949 C12.9495,9.8539 12.5365,9.8069 12.1915,9.9749 C11.8465,10.1419 11.6255,10.4909 11.6255,10.8759 L11.6255,17.8759 C11.6255,18.2609 11.8465,18.6099 12.1915,18.7769 C12.3305,18.8439 12.4785,18.8759 12.6255,18.8759 C12.8485,18.8759 13.0695,18.8019 13.2505,18.6569 L17.6255,15.1569 C17.8625,14.9669 18.0005,14.6799 18.0005,14.3759 C18.0005,14.0719 17.8625,13.7849 17.6255,13.5949 L13.2505,10.0949 Z M24.0005,44.0029 C12.9725,44.0029 3.9995,35.0299 3.9995,24.0009 C3.9995,12.9729 12.9725,3.9999 24.0005,3.9999 C35.0295,3.9999 44.0025,12.9729 44.0025,24.0009 C44.0025,35.0299 35.0295,44.0029 24.0005,44.0029 L24.0005,44.0029 Z M24.0005,1.9999 C11.8685,1.9999 1.9995,11.8689 1.9995,24.0009 C1.9995,36.1329 11.8685,46.0029 24.0005,46.0029 C36.1325,46.0029 46.0025,36.1329 46.0025,24.0009 C46.0025,11.8689 36.1325,1.9999 24.0005,1.9999 L24.0005,1.9999 Z" fill="#8C4FFF"></path> </g></symbol></defs></svg>
+</g></symbol><symbol id="aws-cloudfront" viewBox="0 0 80 80"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <g fill="#8C4FFF"> <rect x="0" y="0" width="80" height="80"></rect> </g> <path d="M55.122,52.123 C55.122,50.469 53.776,49.123 52.122,49.123 C50.468,49.123 49.122,50.469 49.122,52.123 C49.122,53.777 50.468,55.123 52.122,55.123 C53.776,55.123 55.122,53.777 55.122,52.123 L55.122,52.123 Z M57.122,52.123 C57.122,54.88 54.879,57.123 52.122,57.123 C49.365,57.123 47.122,54.88 47.122,52.123 C47.122,49.366 49.365,47.123 52.122,47.123 C54.879,47.123 57.122,49.366 57.122,52.123 L57.122,52.123 Z M30.392,37.692 C30.392,36.038 29.046,34.692 27.392,34.692 C25.737,34.692 24.392,36.038 24.392,37.692 C24.392,39.346 25.737,40.692 27.392,40.692 C29.046,40.692 30.392,39.346 30.392,37.692 L30.392,37.692 Z M32.392,37.692 C32.392,40.449 30.148,42.692 27.392,42.692 C24.635,42.692 22.392,40.449 22.392,37.692 C22.392,34.935 24.635,32.692 27.392,32.692 C30.148,32.692 32.392,34.935 32.392,37.692 L32.392,37.692 Z M39.73,22.007 C39.73,23.661 41.076,25.007 42.73,25.007 C44.385,25.007 45.73,23.661 45.73,22.007 C45.73,20.352 44.385,19.007 42.73,19.007 C41.076,19.007 39.73,20.352 39.73,22.007 L39.73,22.007 Z M37.73,22.007 C37.73,19.25 39.974,17.007 42.73,17.007 C45.487,17.007 47.73,19.25 47.73,22.007 C47.73,24.764 45.487,27.007 42.73,27.007 C39.974,27.007 37.73,24.764 37.73,22.007 L37.73,22.007 Z M66,40 C66,30.727 61.028,22.148 53.012,17.509 C51.575,17.799 50.185,18.196 48.451,18.823 L47.771,16.942 C48.676,16.616 49.486,16.352 50.266,16.126 C47.046,14.737 43.548,14 40,14 C38.311,14 36.649,14.175 35.025,14.492 C36.201,15.18 37.244,15.866 38.257,16.634 L37.048,18.227 C35.62,17.145 34.14,16.228 32.197,15.21 C22.378,18.298 15.306,26.958 14.183,37.128 C16.242,36.711 18.219,36.484 20.414,36.43 L20.463,38.429 C18.163,38.486 16.187,38.73 14.027,39.205 C14.018,39.47 14,39.738 14,40 C14,48.658 18.283,56.636 25.327,61.447 C24.074,57.716 23.45,54.19 23.45,50.746 C23.45,48.782 23.788,47.169 24.145,45.462 C24.228,45.067 24.312,44.665 24.394,44.248 L26.357,44.635 C26.273,45.059 26.187,45.47 26.103,45.873 C25.753,47.545 25.45,48.989 25.45,50.746 C25.45,54.654 26.308,58.695 28.054,63.083 C31.773,65.014 35.789,66 40,66 C42.756,66 45.446,65.56 48.012,64.714 C49.019,62.727 49.766,60.852 50.39,58.699 L52.311,59.256 C51.855,60.826 51.332,62.253 50.709,63.677 C52.323,62.951 53.85,62.053 55.283,61.005 C54.938,60.159 54.568,59.318 54.159,58.499 L55.948,57.604 C56.296,58.3 56.615,59.012 56.92,59.728 C62.705,54.775 66,47.66 66,40 L66,40 Z M68,40 C68,48.727 64.034,56.799 57.121,62.149 C55.409,63.479 53.552,64.583 51.589,65.472 C50.756,65.85 49.908,66.2 49.036,66.494 C46.156,67.493 43.113,68 40,68 C35.4,68 30.832,66.854 26.788,64.686 C17.667,59.806 12,50.347 12,40 C12,39.314 12.018,38.792 12.059,38.309 C12.74,26.625 20.756,16.512 32.001,13.166 C34.562,12.393 37.255,12 40,12 C44.808,12 49.539,13.238 53.684,15.579 C62.513,20.525 68,29.884 68,40 L68,40 Z M37.314,25.463 L36,23.956 C33.758,25.912 32.014,27.989 29.977,31.126 L31.655,32.215 C33.583,29.244 35.223,27.288 37.314,25.463 L37.314,25.463 Z M34.275,38.427 L33.625,40.318 C38.218,41.895 42.225,44.411 46.234,48.236 L47.615,46.789 C43.389,42.758 39.15,40.101 34.275,38.427 L34.275,38.427 Z M47.646,26.668 C51.398,32.39 53.511,38.671 53.925,45.338 L51.929,45.462 C51.536,39.146 49.533,33.192 45.975,27.765 L47.646,26.668 Z" fill="#FFFFFF"></path> </g></symbol><symbol id="aws-lambda" viewBox="0 0 80 80"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <g fill="#ED7100"> <rect x="0" y="0" width="80" height="80"></rect> </g> <path d="M28.0075352,66 L15.5907274,66 L29.3235885,37.296 L35.5460249,50.106 L28.0075352,66 Z M30.2196674,34.553 C30.0512768,34.208 29.7004629,33.989 29.3175745,33.989 L29.3145676,33.989 C28.9286723,33.99 28.5778583,34.211 28.4124746,34.558 L13.097944,66.569 C12.9495999,66.879 12.9706487,67.243 13.1550766,67.534 C13.3374998,67.824 13.6582439,68 14.0020416,68 L28.6420072,68 C29.0299071,68 29.3817234,67.777 29.5481094,67.428 L37.563706,50.528 C37.693006,50.254 37.6920037,49.937 37.5586944,49.665 L30.2196674,34.553 Z M64.9953491,66 L52.6587274,66 L32.866809,24.57 C32.7014253,24.222 32.3486067,24 31.9617091,24 L23.8899822,24 L23.8990031,14 L39.7197081,14 L59.4204149,55.429 C59.5857986,55.777 59.9386172,56 60.3255148,56 L64.9953491,56 L64.9953491,66 Z M65.9976745,54 L60.9599868,54 L41.25928,12.571 C41.0938963,12.223 40.7410777,12 40.3531778,12 L22.89768,12 C22.3453987,12 21.8963569,12.447 21.8953545,12.999 L21.884329,24.999 C21.884329,25.265 21.9885708,25.519 22.1780103,25.707 C22.3654452,25.895 22.6200358,26 22.8866544,26 L31.3292417,26 L51.1221625,67.43 C51.2885485,67.778 51.6393624,68 52.02626,68 L65.9976745,68 C66.5519605,68 67,67.552 67,67 L67,55 C67,54.448 66.5519605,54 65.9976745,54 L65.9976745,54 Z" fill="#FFFFFF"></path> </g></symbol><symbol id="aws-cloudwatch" viewBox="0 0 80 80"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <g fill="#E7157B"> <rect x="0" y="0" width="80" height="80"></rect> </g> <path d="M55.0592315,46.7773707 C55.0592315,42.8680281 51.8575588,39.6876305 47.9220646,39.6876305 C43.9865705,39.6876305 40.785903,42.8680281 40.785903,46.7773707 C40.785903,50.6867133 43.9865705,53.8671108 47.9220646,53.8671108 C51.8575588,53.8671108 55.0592315,50.6867133 55.0592315,46.7773707 M57.0697011,46.7773707 C57.0697011,51.7881194 52.9663327,55.8642207 47.9220646,55.8642207 C42.8788018,55.8642207 38.7754334,51.7881194 38.7754334,46.7773707 C38.7754334,41.7666219 42.8788018,37.6905206 47.9220646,37.6905206 C52.9663327,37.6905206 57.0697011,41.7666219 57.0697011,46.7773707 M65.5096522,60.4735504 L58.5011554,54.2026253 C57.9352082,54.9944794 57.2808004,55.7174332 56.5540156,56.3634982 L63.5524601,62.6334248 C64.1495696,63.1686502 65.0784065,63.1187225 65.6182176,62.5255808 C66.155013,61.9324392 66.1067617,61.010773 65.5096522,60.4735504 M47.9220646,57.6616197 C53.9645309,57.6616197 58.8801289,52.7786859 58.8801289,46.7773707 C58.8801289,40.7750569 53.9645309,35.8931217 47.9220646,35.8931217 C41.8806036,35.8931217 36.9650056,40.7750569 36.9650056,46.7773707 C36.9650056,52.7786859 41.8806036,57.6616197 47.9220646,57.6616197 M67.1119965,63.8626459 C66.4264264,64.6165549 65.47849,65 64.5285431,65 C63.7002296,65 62.8699057,64.708422 62.207456,64.1172774 L54.9305615,57.5987107 C52.9070239,58.8968321 50.505518,59.6587296 47.9220646,59.6587296 C40.7718297,59.6587296 34.9545361,53.8800921 34.9545361,46.7773707 C34.9545361,39.6746493 40.7718297,33.8960118 47.9220646,33.8960118 C55.0733048,33.8960118 60.8905985,39.6746493 60.8905985,46.7773707 C60.8905985,48.8154213 60.3990387,50.7366411 59.5465996,52.4511599 L66.8556616,58.9906963 C68.2750531,60.265851 68.3896499,62.4496907 67.1119965,63.8626459 M21.2803274,29.392529 C21.2803274,29.9117776 21.3124949,30.429029 21.3738143,30.9293051 C21.4089975,31.2138932 21.3205368,31.4984814 21.1295422,31.7131707 C20.9777518,31.8839236 20.7736891,31.9967603 20.550527,32.0347054 C18.0786547,32.6687878 14.0104695,34.5880104 14.0104695,40.3456782 C14.0104695,44.6933865 16.4240382,47.0929141 18.4495863,48.3411077 C19.1411878,48.7744806 19.9594489,49.0051468 20.8229456,49.0141338 L32.9450717,49.0251179 L32.9430613,51.0222278 L20.811888,51.0112437 C19.5664021,50.9982625 18.384246,50.6607509 17.3840374,50.0346569 C15.3765836,48.7974474 12,45.8896553 12,40.3456782 C12,33.66235 16.5999543,31.191925 19.3000149,30.319188 C19.2799102,30.0116331 19.2698579,29.702081 19.2698579,29.392529 C19.2698579,23.9324305 22.9982737,18.2696254 27.9420183,16.2215892 C33.7241287,13.8150717 39.8500294,15.0083449 44.3263399,19.4109737 C45.7135638,20.7749998 46.8545053,22.4316024 47.7300648,24.3478294 C48.9061895,23.3802296 50.355738,22.8460027 51.8836949,22.8460027 C54.8863312,22.8460027 58.2659305,25.1097268 58.8680661,30.0605622 C61.6797078,30.7046302 67.6206453,32.9553731 67.6206453,40.422567 C67.6206453,43.4042521 66.6797455,45.8666886 64.8230769,47.7419748 L63.3896121,46.3410022 C64.8632863,44.8531553 65.6101757,42.8620367 65.6101757,40.422567 C65.6101757,33.891019 60.1055101,32.2663701 57.737177,31.8719409 C57.4677741,31.827006 57.2295334,31.6752256 57.0757325,31.4515493 C56.9259525,31.2358614 56.8686541,30.9712444 56.9138897,30.7146157 C56.5851779,26.6604826 54.1605516,24.8431126 51.8836949,24.8431126 C50.4472144,24.8431126 49.1001998,25.5381069 48.1874466,26.7503526 C47.9652897,27.0439277 47.6044105,27.193711 47.2344841,27.139789 C46.8695838,27.085867 46.5629872,26.8362283 46.4373329,26.4917268 C45.6140456,24.2260057 44.4278686,22.3207628 42.9119745,20.8309188 C39.0327735,17.0154404 33.7281496,15.9809374 28.7170543,18.0649216 C24.5463352,19.7924217 21.2803274,24.7672224 21.2803274,29.392529" fill="#FFFFFF"></path> </g></symbol><symbol id="aws-dynamodb" viewBox="0 0 80 80"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <g fill="#C925D1"> <rect x="0" y="0" width="80" height="80"></rect> </g> <path d="M52.0859525,54.8502506 C48.7479569,57.5490338 41.7449661,58.9752927 35.0439749,58.9752927 C28.3419838,58.9752927 21.336993,57.548042 17.9999974,54.8492588 L17.9999974,60.284515 L18.0009974,60.284515 C18.0009974,62.9952002 24.9999974,66.0163299 35.0439749,66.0163299 C45.0799617,66.0163299 52.0749525,62.9991676 52.0859525,60.290466 L52.0859525,54.8502506 Z M52.0869525,44.522272 L54.0869499,44.5113618 L54.0869499,44.522272 C54.0869499,45.7303271 53.4819507,46.8580436 52.3039522,47.8905439 C53.7319503,49.147199 54.0869499,50.3800499 54.0869499,51.257824 C54.0869499,51.263775 54.0859499,51.2687342 54.0859499,51.2746852 L54.0859499,60.284515 L54.0869499,60.284515 C54.0869499,65.2952658 44.2749628,68 35.0439749,68 C25.8349871,68 16.0499999,65.3071678 16.003,60.3192292 C16.003,60.31427 16,60.3093109 16,60.3043517 L16,51.2548485 C16,51.2528648 16.002,51.2498893 16.002,51.2469138 C16.005,50.3691398 16.3609995,49.1412479 17.7869976,47.8875684 C16.3699995,46.6358725 16.01,45.4149236 16.001,44.5440924 L16.002,44.5440924 C16.002,44.540125 16,44.5371495 16,44.5331822 L16,35.483679 C16,35.4807035 16.002,35.477728 16.002,35.4747525 C16.005,34.5969784 16.3619995,33.3690866 17.7879976,32.1173908 C16.3699995,30.8647031 16.01,29.6427623 16.001,28.7729229 L16.002,28.7729229 C16.002,28.7689556 16,28.7649882 16,28.7610209 L16,19.7125095 C16,19.709534 16.002,19.7065585 16.002,19.703583 C16.019,14.6997751 25.8199871,12 35.0439749,12 C40.2549681,12 45.2609615,12.8281823 48.7779569,14.2722941 L48.0129579,16.1052054 C44.7299622,14.7573015 40.0029684,13.9836701 35.0439749,13.9836701 C24.9999882,13.9836701 18.0009974,17.0047998 18.0009974,19.7174687 C18.0009974,22.4291458 24.9999882,25.4502754 35.0439749,25.4502754 C35.3149746,25.4532509 35.5799742,25.4502754 35.8479739,25.4403571 L35.9319738,27.4220435 C35.6359742,27.4339456 35.3399745,27.4339456 35.0439749,27.4339456 C28.3419838,27.4339456 21.336993,26.0066949 18,23.3079117 L18,28.7401923 L18.0009974,28.7401923 L18.0009974,28.7630046 C18.0109974,29.8034395 19.0779959,30.7119605 19.9719948,31.2892085 C22.6619912,33.0040913 27.4819849,34.1754485 32.8569778,34.4184481 L32.7659779,36.4001346 C27.3209851,36.1531677 22.5529914,35.0234675 19.4839954,33.2917235 C18.7279964,33.8570695 18.0009974,34.6217743 18.0009974,35.4886382 C18.0009974,38.2003153 24.9999882,41.2214449 35.0439749,41.2214449 C36.0289736,41.2214449 37.0069723,41.1887143 37.9519711,41.1232532 L38.0909709,43.1019642 C37.1009722,43.1704008 36.0749736,43.205115 35.0439749,43.205115 C28.3419838,43.205115 21.336993,41.7778644 18,39.0790811 L18,44.5113618 L18.0009974,44.5113618 C18.0109974,45.574609 19.0779959,46.4821381 19.9719948,47.060378 C23.0479907,49.0232196 28.8239831,50.2451604 35.0439749,50.2451604 L35.4839744,50.2451604 L35.4839744,52.2288305 L35.0439749,52.2288305 C28.7249832,52.2288305 22.9819908,51.0554896 19.4699954,49.0728113 C18.7179964,49.6371655 18.0009974,50.397903 18.0009974,51.257824 C18.0009974,53.9695011 24.9999882,56.9916225 35.0439749,56.9916225 C45.0799617,56.9916225 52.0749525,53.9744602 52.0859525,51.2647668 L52.0859525,51.2548485 L52.0859525,51.2538566 C52.0839525,50.391952 51.3639534,49.6312145 50.6099544,49.0668603 C50.1219551,49.3435823 49.5989558,49.6103859 49.0039566,49.8553692 L48.2379576,48.022458 C48.9639566,47.7239156 49.5939558,47.4015692 50.1109551,47.0623616 C51.0129539,46.4742034 52.0869525,45.5547723 52.0869525,44.522272 L52.0869525,44.522272 Z M60.6529412,30.0166841 L55.0489486,30.0166841 C54.717949,30.0166841 54.4069494,29.8540231 54.2219497,29.5822603 C54.0349499,29.3104975 53.99695,28.9643471 54.1189498,28.6598537 L57.5279453,20.1380068 L44.6189702,20.1380068 L38.6189702,32.0400276 L45.0009618,32.0400276 C45.3199614,32.0400276 45.619961,32.1917784 45.8089608,32.44668 C45.9959605,32.7025735 46.0509604,33.0308709 45.9539606,33.3333806 L40.2579681,51.089212 L60.6529412,30.0166841 Z M63.7219372,29.7121907 L38.7229701,55.539576 C38.5279703,55.7399267 38.2659707,55.8440694 38.000971,55.8440694 C37.8249713,55.8440694 37.6479715,55.7994368 37.4899717,55.7052124 C37.0899722,55.4691557 36.9069725,54.992083 37.0479723,54.5517083 L43.6339636,34.0236978 L37.0009724,34.0236978 C36.6539728,34.0236978 36.3329732,33.8461593 36.1499735,33.5535679 C35.9679737,33.2609766 35.9509737,32.8959813 36.1069735,32.5885124 L43.1069643,18.7028214 C43.2759641,18.3665893 43.6219636,18.1543366 44.0009631,18.1543366 L59.0009434,18.1543366 C59.331943,18.1543366 59.6429425,18.3179894 59.8279423,18.5887604 C60.0149421,18.861515 60.052942,19.2066736 59.9309422,19.5121588 L56.5219467,28.0330139 L62.9999381,28.0330139 C63.3999376,28.0330139 63.7629371,28.2710544 63.9199369,28.6360497 C64.0769367,29.0020368 63.9989368,29.4255504 63.7219372,29.7121907 L63.7219372,29.7121907 Z M19.4549955,60.6743062 C20.8719936,61.4727334 22.6559912,62.1442057 24.7569885,62.6678947 L25.2449878,60.7437346 C23.3459903,60.2706293 21.6859925,59.6497405 20.4429942,58.949505 L19.4549955,60.6743062 Z M24.7569885,46.7985335 L25.2449878,44.8753653 C23.3459903,44.4012681 21.6859925,43.7803794 20.4429942,43.0801438 L19.4549955,44.804945 C20.8719936,45.6033722 22.6549912,46.2748446 24.7569885,46.7985335 L24.7569885,46.7985335 Z M19.4549955,28.9355839 L20.4429942,27.2107827 C21.6839925,27.9110182 23.3449903,28.5309151 25.2449878,29.0060041 L24.7569885,30.9291723 C22.6529912,30.4044916 20.8699936,29.7330193 19.4549955,28.9355839 L19.4549955,28.9355839 Z" fill="#FFFFFF"></path> </g></symbol><symbol id="aws-group-cloud" viewBox="0 0 40 40"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <rect fill="#242F3E" x="0" y="0" width="40" height="40"></rect> <path d="M28.993,27.9952689 L11.487,27.9762689 C9.121,27.9742689 7.154,26.1292689 7.012,23.7752689 C7.004,23.6522689 7,23.5262689 7,23.3972689 C7,20.2992689 9.091,19.2872689 10.337,18.9592689 C10.577,18.8962689 10.735,18.6662689 10.707,18.4192689 C10.676,18.1492689 10.659,17.8752689 10.659,17.5962689 C10.659,15.1322689 12.308,12.4822689 14.415,11.5632689 C15.359,11.1502689 16.232,10.9862689 17.023,10.9862689 C19.276,10.9862689 20.867,12.3152689 21.561,13.0332689 C22.329,13.8262689 22.927,14.8382689 23.34,16.0422689 C23.4,16.2192689 23.555,16.3472689 23.74,16.3742689 C23.918,16.4012689 24.109,16.3232689 24.219,16.1712689 C24.807,15.3502689 25.766,14.9822689 26.659,15.2392689 C27.782,15.5602689 28.516,16.7272689 28.62,18.3072689 C28.578,18.5762689 28.759,18.8292689 29.027,18.8772689 C30.222,19.0892689 33,19.9572689 33,23.4402689 C33,27.5892689 29.114,27.9822689 28.993,27.9952689 M29.594,17.9742689 C29.379,16.0672689 28.4,14.6962689 26.934,14.2782689 C25.899,13.9822689 24.811,14.2452689 23.989,14.9502689 C23.553,13.9362689 22.979,13.0602689 22.28,12.3382689 C20.023,10.0052689 16.933,9.37226889 14.014,10.6462689 C11.531,11.7302689 9.659,14.7182689 9.659,17.5962689 C9.659,17.7702689 9.665,17.9432689 9.676,18.1142689 C8.319,18.5732689 6,19.8752689 6,23.3972689 C6,23.5492689 6.004,23.6962689 6.014,23.8382689 C6.188,26.7162689 8.593,28.9732689 11.486,28.9762689 L29.034,28.9932689 C29.084,28.9892689 34,28.5192689 34,23.4402689 C34,19.5022689 31.003,18.3142689 29.594,17.9742689" fill="#FFFFFF"></path> </g></symbol><symbol id="aws-group-vpc" viewBox="0 0 40 40"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <rect fill="#8C4FFF" x="0" y="0" width="40" height="40"></rect> <path d="M30.9707,21.0293596 L28.0267,19.7663596 L28.0267,30.2553596 C30.5717,29.9033596 30.9587,27.2873596 30.9747,27.1683596 L30.9707,21.0293596 Z M27.0267,30.2693596 L27.0267,19.7593596 L23.9917,21.0323596 L23.9917,27.2333596 C24.0047,27.2873596 24.4367,30.0003596 27.0267,30.2693596 L27.0267,30.2693596 Z M27.3327,18.5473596 C27.4567,18.4943596 27.5987,18.4953596 27.7237,18.5483596 L31.6677,20.2403596 C31.8517,20.3193596 31.9707,20.4993596 31.9707,20.6993596 L31.9707,27.2333596 C31.7877,28.6803596 30.6137,31.2963596 27.4437,31.2963596 C24.3687,31.2963596 23.1897,28.6843596 22.9957,27.3023596 L22.9917,20.6993596 C22.9917,20.4983596 23.1127,20.3163596 23.2977,20.2383596 L27.3327,18.5473596 Z M32.9827022,19.1843596 L27.5217,16.7783596 L21.9917,19.1053596 L21.9917,26.2333596 C21.9907,26.2753596 21.9377,29.1013596 23.6487,30.8563596 C24.5657,31.7973596 25.8427,32.2753596 27.4437,32.2753596 C29.0457,32.2753596 30.3307,31.7963596 31.2627,30.8533596 C32.9977,29.0953596 32.9827022,26.2683596 32.9827022,26.2403596 L32.9827022,19.1843596 Z M31.9797,31.5503596 C30.8527,32.6943596 29.3257,33.2753596 27.4437,33.2753596 C25.5597,33.2753596 24.0397,32.6943596 22.9267,31.5483596 C20.9217,29.4853596 20.9877,26.3513596 20.9917,26.2193596 L20.9917,18.7733596 C20.9917,18.5723596 21.1117,18.3903596 21.2967,18.3123596 L27.3317,15.7723596 C27.4587,15.7203596 27.6027,15.7193596 27.7277,15.7763596 L33.6837,18.4013596 C33.8657,18.4813596 33.9827,18.6603596 33.9827,18.8583596 L33.9827,26.2333596 C33.9847,26.3583596 34.0097,29.4883596 31.9797,31.5503596 L31.9797,31.5503596 Z M10.9917,24.2363596 L18.9917,24.2363596 L18.9917,25.2363596 L10.9917,25.2363596 C8.1807,25.2363596 6.1807,23.2203596 6.0127,20.2203596 C6.0007,20.1093596 5.9997,19.9753596 5.9997,19.8413596 C5.9997,17.3323596 7.3177,15.6183596 9.8167,14.8623596 C9.7977,14.6353596 9.7847,14.3963596 9.7847,14.2153596 C9.7847,11.2993596 11.3617,8.77035958 13.8017,7.77035958 C17.0997,6.42235958 20.8437,6.87635958 22.9077,8.87435958 C23.6527,9.59835958 24.2317,10.4163596 24.6677,11.3593596 C25.2767,10.9093596 26.0677,10.6983596 27.0167,10.7453596 C28.7967,10.8353596 30.1657,12.4583596 30.4497,14.7523596 C31.9477,14.8763596 32.9347,15.6353596 33.4597,17.0603596 L32.5227,17.4063596 C32.0947,16.2493596 31.3147,15.7333596 29.9917,15.7333596 C29.7267,15.7333596 29.5077,15.5273596 29.4917,15.2633596 C29.3537,12.9253596 28.0857,11.8003596 26.9657,11.7443596 C26.0207,11.6913596 25.3207,11.9633596 24.8867,12.5353596 C24.7757,12.6803596 24.6017,12.7523596 24.4137,12.7283596 C24.2337,12.7003596 24.0817,12.5773596 24.0187,12.4053596 C23.6147,11.3023596 23.0237,10.3823596 22.2117,9.59135958 C20.4237,7.86135958 17.1217,7.49235958 14.1807,8.69635958 C12.1177,9.54135958 10.7847,11.7073596 10.7847,14.2153596 C10.7847,14.4883596 10.8197,14.9113596 10.8507,15.1743596 C10.8807,15.4253596 10.7197,15.6583596 10.4747,15.7183596 C8.1687,16.2903596 6.9997,17.6773596 6.9997,19.8413596 C6.9997,19.9423596 6.9987,20.0423596 7.0087,20.1433596 C7.1497,22.6383596 8.7117,24.2363596 10.9917,24.2363596 L10.9917,24.2363596 Z" fill="#FFFFFF"></path> </g></symbol><symbol id="aws-group-public" viewBox="0 0 40 40"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <rect fill="#7AA116" x="0" y="0" width="40" height="40"></rect> <path d="M19.536,22.049 C20.642,22.049 21.542,22.948 21.542,24.054 C21.542,25.16 20.642,26.06 19.536,26.06 C18.43,26.06 17.53,25.16 17.53,24.054 C17.53,22.948 18.43,22.049 19.536,22.049 L19.536,22.049 Z M19.012,27.007 L19.012,30.501 L20.012,30.501 L20.012,27.012 C21.442,26.782 22.542,25.549 22.542,24.054 C22.542,22.397 21.193,21.049 19.536,21.049 C17.879,21.049 16.53,22.397 16.53,24.054 C16.53,25.532 17.604,26.757 19.012,27.007 L19.012,27.007 Z M10,33.014 L29.012,33.014 L29.012,18 L10,18 L10,33.014 Z M14.046,12.484 C14.046,9.46 16.506,7 19.529,7 C22.553,7 25.012,9.46 25.012,12.484 L25.012,17 L14.046,17 L14.046,12.484 Z M29.512,17 L26.012,17 L26.012,12.484 C26.012,8.908 23.103,6 19.529,6 C15.954,6 13.046,8.908 13.046,12.484 L13.046,17 L9.5,17 C9.223,17 9,17.224 9,17.5 L9,33.514 C9,33.79 9.223,34.014 9.5,34.014 L29.512,34.014 C29.788,34.014 30.012,33.79 30.012,33.514 L30.012,17.5 C30.012,17.224 29.788,17 29.512,17 L29.512,17 Z" fill="#FFFFFF"></path> </g></symbol><symbol id="aws-group-private" viewBox="0 0 40 40"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <rect fill="#00A4A6" x="0" y="0" width="40" height="40"></rect> <path d="M19.536,22.049 C20.642,22.049 21.542,22.948 21.542,24.054 C21.542,25.16 20.642,26.06 19.536,26.06 C18.43,26.06 17.53,25.16 17.53,24.054 C17.53,22.948 18.43,22.049 19.536,22.049 L19.536,22.049 Z M19.012,27.007 L19.012,30.501 L20.012,30.501 L20.012,27.012 C21.442,26.782 22.542,25.549 22.542,24.054 C22.542,22.397 21.193,21.049 19.536,21.049 C17.879,21.049 16.53,22.397 16.53,24.054 C16.53,25.532 17.604,26.757 19.012,27.007 L19.012,27.007 Z M10,33.014 L29.012,33.014 L29.012,18 L10,18 L10,33.014 Z M14.046,12.484 C14.046,9.46 16.506,7 19.529,7 C22.553,7 25.012,9.46 25.012,12.484 L25.012,17 L14.046,17 L14.046,12.484 Z M29.512,17 L26.012,17 L26.012,12.484 C26.012,8.908 23.103,6 19.529,6 C15.954,6 13.046,8.908 13.046,12.484 L13.046,17 L9.5,17 C9.223,17 9,17.224 9,17.5 L9,33.514 C9,33.79 9.223,34.014 9.5,34.014 L29.512,34.014 C29.788,34.014 30.012,33.79 30.012,33.514 L30.012,17.5 C30.012,17.224 29.788,17 29.512,17 L29.512,17 Z" fill="#FFFFFF"></path> </g></symbol><symbol id="aws-elb" viewBox="0 0 80 80"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <g fill="#8C4FFF"> <rect x="0" y="0" width="80" height="80"></rect> </g> <path d="M30,53 C22.832,53 17,47.168 17,40 C17,32.832 22.832,27 30,27 C37.168,27 43,32.832 43,40 C43,47.168 37.168,53 30,53 M60,59 C60,61.206 58.206,63 56,63 C53.794,63 52,61.206 52,59 C52,56.794 53.794,55 56,55 C58.206,55 60,56.794 60,59 M56,17 C58.206,17 60,18.794 60,21 C60,23.206 58.206,25 56,25 C53.794,25 52,23.206 52,21 C52,18.794 53.794,17 56,17 M59,36 C61.206,36 63,37.794 63,40 C63,42.206 61.206,44 59,44 C56.794,44 55,42.206 55,40 C55,37.794 56.794,36 59,36 M44.949,41 L53.09,41 C53.568,43.833 56.033,46 59,46 C62.309,46 65,43.309 65,40 C65,36.691 62.309,34 59,34 C56.033,34 53.568,36.167 53.09,39 L44.949,39 C44.823,37.099 44.344,35.297 43.572,33.654 L52.446,25.823 C53.442,26.559 54.669,27 56,27 C59.309,27 62,24.309 62,21 C62,17.691 59.309,15 56,15 C52.691,15 50,17.691 50,21 C50,22.256 50.389,23.421 51.051,24.386 L42.581,31.859 C39.904,27.738 35.271,25 30,25 C21.729,25 15,31.729 15,40 C15,48.271 21.729,55 30,55 C35.271,55 39.904,52.262 42.581,48.141 L51.051,55.614 C50.389,56.579 50,57.744 50,59 C50,62.309 52.691,65 56,65 C59.309,65 62,62.309 62,59 C62,55.691 59.309,53 56,53 C54.669,53 53.442,53.441 52.446,54.177 L43.572,46.346 C44.344,44.703 44.823,42.901 44.949,41" fill="#FFFFFF"></path> </g></symbol><symbol id="aws-rds" viewBox="0 0 80 80"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <g fill="#C925D1"> <rect x="0" y="0" width="80" height="80"></rect> </g> <path d="M15.414,14 L24.707,23.293 L23.293,24.707 L14,15.414 L14,23 L12,23 L12,13 C12,12.448 12.447,12 13,12 L23,12 L23,14 L15.414,14 Z M68,13 L68,23 L66,23 L66,15.414 L56.707,24.707 L55.293,23.293 L64.586,14 L57,14 L57,12 L67,12 C67.553,12 68,12.448 68,13 L68,13 Z M66,57 L68,57 L68,67 C68,67.552 67.553,68 67,68 L57,68 L57,66 L64.586,66 L55.293,56.707 L56.707,55.293 L66,64.586 L66,57 Z M65.5,39.213 C65.5,35.894 61.668,32.615 55.25,30.442 L55.891,28.548 C63.268,31.045 67.5,34.932 67.5,39.213 C67.5,43.495 63.268,47.383 55.89,49.879 L55.249,47.984 C61.668,45.812 65.5,42.534 65.5,39.213 L65.5,39.213 Z M14.556,39.213 C14.556,42.393 18.143,45.585 24.152,47.753 L23.473,49.634 C16.535,47.131 12.556,43.333 12.556,39.213 C12.556,35.094 16.535,31.296 23.473,28.792 L24.152,30.673 C18.143,32.842 14.556,36.034 14.556,39.213 L14.556,39.213 Z M24.707,56.707 L15.414,66 L23,66 L23,68 L13,68 C12.447,68 12,67.552 12,67 L12,57 L14,57 L14,64.586 L23.293,55.293 L24.707,56.707 Z M40,31.286 C32.854,31.286 29,29.44 29,28.686 C29,27.931 32.854,26.086 40,26.086 C47.145,26.086 51,27.931 51,28.686 C51,29.44 47.145,31.286 40,31.286 L40,31.286 Z M40.029,39.031 C33.187,39.031 29,37.162 29,36.145 L29,31.284 C31.463,32.643 35.832,33.286 40,33.286 C44.168,33.286 48.537,32.643 51,31.284 L51,36.145 C51,37.163 46.835,39.031 40.029,39.031 L40.029,39.031 Z M40.029,46.667 C33.187,46.667 29,44.798 29,43.781 L29,38.862 C31.431,40.291 35.742,41.031 40.029,41.031 C44.292,41.031 48.578,40.292 51,38.867 L51,43.781 C51,44.799 46.835,46.667 40.029,46.667 L40.029,46.667 Z M40,53.518 C32.883,53.518 29,51.605 29,50.622 L29,46.498 C31.431,47.927 35.742,48.667 40.029,48.667 C44.292,48.667 48.578,47.929 51,46.503 L51,50.622 C51,51.605 47.117,53.518 40,53.518 L40,53.518 Z M40,24.086 C33.739,24.086 27,25.525 27,28.686 L27,50.622 C27,53.836 33.54,55.518 40,55.518 C46.46,55.518 53,53.836 53,50.622 L53,28.686 C53,25.525 46.261,24.086 40,24.086 L40,24.086 Z" fill="#FFFFFF"></path> </g></symbol><symbol id="aws-ecs" viewBox="0 0 80 80"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <g fill="#ED7100"> <rect x="0" y="0" width="80" height="80"></rect> </g> <path d="M64,48.2340095 L56,43.4330117 L56,32.0000169 C56,31.6440171 55.812,31.3150172 55.504,31.1360173 L44,24.4260204 L44,14.7520248 L64,26.5710194 L64,48.2340095 Z M65.509,25.13902 L43.509,12.139026 C43.199,11.9560261 42.818,11.9540261 42.504,12.131026 C42.193,12.3090259 42,12.6410257 42,13.0000256 L42,25.0000201 C42,25.3550199 42.189,25.6840198 42.496,25.8640197 L54,32.5740166 L54,44.0000114 C54,44.3510113 54.185,44.6770111 54.486,44.857011 L64.486,50.8570083 C64.644,50.9520082 64.822,51 65,51 C65.17,51 65.34,50.9570082 65.493,50.8700083 C65.807,50.6930084 66,50.3600085 66,50 L66,26.0000196 C66,25.6460198 65.814,25.31902 65.509,25.13902 L65.509,25.13902 Z M40.445,66.863001 L17,54.3990067 L17,26.5710194 L37,14.7520248 L37,24.4510204 L26.463,31.1560173 C26.175,31.3400172 26,31.6580171 26,32.0000169 L26,49.0000091 C26,49.373009 26.208,49.7150088 26.538,49.8870087 L39.991,56.8870055 C40.28,57.0370055 40.624,57.0380055 40.912,56.8880055 L53.964,50.1440086 L61.996,54.9640064 L40.445,66.863001 Z M64.515,54.1420068 L54.515,48.1420095 C54.217,47.9640096 53.849,47.9520096 53.541,48.1120095 L40.455,54.8730065 L28,48.3930094 L28,32.5490167 L38.537,25.8440197 C38.825,25.6600198 39,25.3420199 39,25.0000201 L39,13.0000256 C39,12.6410257 38.808,12.3090259 38.496,12.131026 C38.184,11.9540261 37.802,11.9560261 37.491,12.139026 L15.491,25.13902 C15.187,25.31902 15,25.6460198 15,26.0000196 L15,55 C15,55.3690062 15.204,55.7090061 15.53,55.883006 L39.984,68.8830001 C40.131,68.961 40.292,69 40.453,69 C40.62,69 40.786,68.958 40.937,68.8750001 L64.484,55.875006 C64.797,55.7020061 64.993,55.3750062 65.0001416,55.0180064 C65.006,54.6600066 64.821,54.3260067 64.515,54.1420068 L64.515,54.1420068 Z" fill="#FFFFFF"></path> </g></symbol><symbol id="aws-vpc" viewBox="0 0 80 80"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <g fill="#8C4FFF"> <rect x="0" y="0" width="80" height="80"></rect> </g> <path d="M61,41.3717025 L55.5,39.1717025 L55.5,59.1227025 C57.106,58.9627025 58.401,58.4347025 59.321,57.5007025 C61.021,55.7727025 61.001,53.2397025 61,53.2147025 L61,41.3717025 Z M53.5,59.1357025 L53.5,39.1717025 L48,41.3717025 L48,53.1947025 C48.007,53.4017025 48.234,58.5517025 53.5,59.1357025 L53.5,59.1357025 Z M63,53.1947025 C63.003,53.3077025 63.053,56.5417025 60.765,58.8847025 C59.269,60.4177025 57.16,61.1947025 54.5,61.1947025 C47.927,61.1947025 46.065,55.9767025 46,53.2187025 L46,40.6947025 C46,40.2857025 46.249,39.9177025 46.629,39.7657025 L54.129,36.7657025 C54.367,36.6707025 54.633,36.6707025 54.871,36.7657025 L62.371,39.7657025 C62.751,39.9177025 63,40.2857025 63,40.6947025 L63,53.1947025 Z M66.001,51.2287025 L66,37.8717025 L54.5,33.2717025 L43,37.8717025 L43,51.1947025 C42.998,51.2857025 42.865,57.4227025 46.534,61.1987025 C48.466,63.1867025 51.146,64.1947025 54.5,64.1947025 C57.877,64.1947025 60.57,63.1797025 62.504,61.1787025 C66.168,57.3867025 66.003,51.2897025 66.001,51.2287025 L66.001,51.2287025 Z M63.942,62.5677025 C61.617,64.9747025 58.44,66.1947025 54.5,66.1947025 C50.579,66.1947025 47.413,64.9787025 45.09,62.5807025 C40.831,58.1877025 40.991,51.4477025 41,51.1637025 L41,37.1947025 C41,36.7857025 41.249,36.4177025 41.629,36.2657025 L54.129,31.2657025 C54.367,31.1707025 54.633,31.1707025 54.871,31.2657025 L67.371,36.2657025 C67.751,36.4177025 68,36.7857025 68,37.1947025 L68,51.1947025 C68.009,51.4447025 68.189,58.1727025 63.942,62.5677025 L63.942,62.5677025 Z M23.055,47.1947025 L38,47.1947025 L38,49.1947025 L23.055,49.1947025 C16.977,49.1947025 12.337,45.1427025 12.024,39.5597025 C12.002,39.3317025 12,39.0657025 12,38.7997025 C12,31.9307025 16.803,29.4017025 19.604,28.5117025 C19.584,28.1907025 19.574,27.8657025 19.574,27.5387025 C19.574,22.0857025 23.464,16.3807025 28.621,14.2687025 C34.677,11.7887025 41.062,12.9897025 45.695,17.4757025 C47.256,18.9967025 48.446,20.6207025 49.307,22.4097025 C50.513,21.3747025 51.969,20.8187025 53.529,20.8187025 C56.834,20.8187025 60.33,23.4127025 60.931,28.3817025 C63.114,28.9317025 65.854,30.0997025 67.788,32.5797025 L66.212,33.8097025 C64.43,31.5237025 61.741,30.5717025 59.8,30.1737025 C59.355,30.0837025 59.028,29.7057025 59.002,29.2537025 C58.741,24.8327025 55.982,22.8187025 53.529,22.8187025 C52.067,22.8187025 50.771,23.5087025 49.78,24.8137025 C49.559,25.1057025 49.199,25.2567025 48.835,25.1987025 C48.474,25.1437025 48.17,24.8967025 48.045,24.5537025 C47.278,22.4637025 46.054,20.6177025 44.302,18.9107025 C40.258,14.9967025 34.676,13.9517025 29.379,16.1197025 C24.93,17.9417025 21.574,22.8507025 21.574,27.5387025 C21.574,28.0797025 21.605,28.6147025 21.668,29.1277025 C21.729,29.6287025 21.405,30.0967025 20.915,30.2187025 C18.333,30.8577025 14,32.8237025 14,38.7997025 C14,39.0017025 13.998,39.2047025 14.018,39.4077025 C14.272,43.9357025 18.072,47.1947025 23.055,47.1947025 L23.055,47.1947025 Z" fill="#FFFFFF"></path> </g></symbol><symbol id="aws-nat" viewBox="0 0 48 48"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <path d="M13.6255,35.9209 L13.6255,33.0829 L15.3995,34.5019 L13.6255,35.9209 Z M13.2505,30.2209 C12.9495,29.9799 12.5365,29.9329 12.1915,30.1009 C11.8465,30.2679 11.6255,30.6169 11.6255,31.0019 L11.6255,38.0019 C11.6255,38.3869 11.8465,38.7359 12.1915,38.9029 C12.3305,38.9699 12.4785,39.0019 12.6255,39.0019 C12.8485,39.0019 13.0695,38.9279 13.2505,38.7829 L17.6255,35.2829 C17.8625,35.0929 18.0005,34.8059 18.0005,34.5019 C18.0005,34.1979 17.8625,33.9109 17.6255,33.7209 L13.2505,30.2209 Z M37.2515,26.8369 L37.2515,22.9149 L39.2125,24.8759 L37.2515,26.8369 Z M41.3335,24.1689 L36.9585,19.7939 C36.6725,19.5079 36.2445,19.4219 35.8685,19.5769 C35.4945,19.7319 35.2515,20.0969 35.2515,20.5009 L35.2515,23.8759 L27.6255,23.8759 L27.6255,14.3759 C27.6255,13.8229 27.1785,13.3759 26.6255,13.3759 L18.9315,13.3759 L18.9315,15.3759 L25.6255,15.3759 L25.6255,23.8759 L18.7505,23.8759 L18.7505,25.8759 L25.6255,25.8759 L25.6255,34.3769 L18.9315,34.3769 L18.9315,36.3769 L26.6255,36.3769 C27.1785,36.3769 27.6255,35.9299 27.6255,35.3769 L27.6255,25.8759 L35.2515,25.8759 L35.2515,29.2519 C35.2515,29.6559 35.4955,30.0219 35.8685,30.1759 C35.9925,30.2279 36.1225,30.2519 36.2515,30.2519 C36.5115,30.2519 36.7675,30.1499 36.9585,29.9589 L41.3335,25.5829 C41.7245,25.1919 41.7245,24.5599 41.3335,24.1689 L41.3335,24.1689 Z M13.6255,26.2959 L13.6255,23.4569 L15.3995,24.8759 L13.6255,26.2959 Z M13.2505,20.5949 C12.9495,20.3539 12.5365,20.3079 12.1915,20.4749 C11.8465,20.6419 11.6255,20.9909 11.6255,21.3759 L11.6255,28.3769 C11.6255,28.7619 11.8465,29.1109 12.1915,29.2779 C12.3305,29.3449 12.4785,29.3769 12.6255,29.3769 C12.8485,29.3769 13.0695,29.3029 13.2505,29.1579 L17.6255,25.6569 C17.8625,25.4669 18.0005,25.1799 18.0005,24.8759 C18.0005,24.5719 17.8625,24.2849 17.6255,24.0949 L13.2505,20.5949 Z M13.6255,15.7949 L13.6255,12.9569 L15.3995,14.3759 L13.6255,15.7949 Z M13.2505,10.0949 C12.9495,9.8539 12.5365,9.8069 12.1915,9.9749 C11.8465,10.1419 11.6255,10.4909 11.6255,10.8759 L11.6255,17.8759 C11.6255,18.2609 11.8465,18.6099 12.1915,18.7769 C12.3305,18.8439 12.4785,18.8759 12.6255,18.8759 C12.8485,18.8759 13.0695,18.8019 13.2505,18.6569 L17.6255,15.1569 C17.8625,14.9669 18.0005,14.6799 18.0005,14.3759 C18.0005,14.0719 17.8625,13.7849 17.6255,13.5949 L13.2505,10.0949 Z M24.0005,44.0029 C12.9725,44.0029 3.9995,35.0299 3.9995,24.0009 C3.9995,12.9729 12.9725,3.9999 24.0005,3.9999 C35.0295,3.9999 44.0025,12.9729 44.0025,24.0009 C44.0025,35.0299 35.0295,44.0029 24.0005,44.0029 L24.0005,44.0029 Z M24.0005,1.9999 C11.8685,1.9999 1.9995,11.8689 1.9995,24.0009 C1.9995,36.1329 11.8685,46.0029 24.0005,46.0029 C36.1325,46.0029 46.0025,36.1329 46.0025,24.0009 C46.0025,11.8689 36.1325,1.9999 24.0005,1.9999 L24.0005,1.9999 Z" fill="#8C4FFF"></path> </g></symbol><symbol id="aws-group-region" viewBox="0 0 40 40"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <rect fill="#00A4A6" x="0" y="0" width="40" height="40"></rect> <path d="M14,20.026 L14,11.026 L29.293,11.026 L25.146,15.172 C24.951,15.368 24.951,15.684 25.146,15.88 L29.293,20.026 L14,20.026 Z M26.207,15.526 L30.854,10.88 C30.996,10.736 31.039,10.522 30.962,10.335 C30.885,10.148 30.702,10.026 30.5,10.026 L14,10.026 L14,8.97 C14.596,8.76 15.026,8.198 15.026,7.531 C15.026,6.687 14.34,6 13.495,6 C12.65,6 11.963,6.687 11.963,7.531 C11.963,8.201 12.398,8.766 13,8.973 L13,33.026 L10,33.026 L10,34.026 L17,34.026 L17,33.026 L14,33.026 L14,21.026 L30.5,21.026 C30.702,21.026 30.885,20.904 30.962,20.717 C31.039,20.53 30.996,20.316 30.854,20.172 L26.207,15.526 Z" fill="#FFFFFF"></path> </g></symbol><symbol id="aws-group-dc" viewBox="0 0 40 40"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <rect fill="#7D8998" x="0" y="0" width="40" height="40"></rect> <path d="M12,17 L15.5,17 C15.776,17 16,16.776 16,16.5 L16,7 L23,7 L23,16.5 C23,16.776 23.224,17 23.5,17 L27,17 L27,33 L12,33 L12,17 Z M28,33.5 L28,16.5 C28,16.224 27.776,16 27.5,16 L24,16 L24,6.5 C24,6.224 23.776,6 23.5,6 L15.5,6 C15.224,6 15,6.224 15,6.5 L15,16 L11.5,16 C11.224,16 11,16.224 11,16.5 L11,33.5 C11,33.776 11.224,34 11.5,34 L27.5,34 C27.776,34 28,33.776 28,33.5 L28,33.5 Z M24,31 L25,31 L25,29 L24,29 L24,31 Z M19,31 L20,31 L20,29 L19,29 L19,31 Z M14,31 L15,31 L15,29 L14,29 L14,31 Z M24,27 L25,27 L25,24 L24,24 L24,27 Z M19,27 L20,27 L20,24 L19,24 L19,27 Z M14,27 L15,27 L15,24 L14,24 L14,27 Z M24,22 L25,22 L25,19 L24,19 L24,22 Z M19,12 L20,12 L20,9 L19,9 L19,12 Z M19,17 L20,17 L20,14 L19,14 L19,17 Z M19,22 L20,22 L20,19 L19,19 L19,22 Z M14,22 L15,22 L15,19 L14,19 L14,22 Z" fill="#FFFFFF"></path> </g></symbol><symbol id="aws-group-account" viewBox="0 0 40 40"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <rect fill="#E7157B" x="0" y="0" width="40" height="40"></rect> <path d="M24.5,22 C26.43,22 28,23.57 28,25.5 C28,27.43 26.43,29 24.5,29 C22.57,29 21,27.43 21,25.5 C21,23.57 22.57,22 24.5,22 L24.5,22 Z M24.5,30 C26.981,30 29,27.981 29,25.5 C29,23.019 26.981,21 24.5,21 C22.019,21 20,23.019 20,25.5 C20,27.981 22.019,30 24.5,30 L24.5,30 Z M26.023,10.88 L29.084,17 L22.963,17 L26.023,10.88 Z M22.154,18 L29.893,18 C30.065,18 30.227,17.91 30.318,17.763 C30.409,17.615 30.417,17.432 30.34,17.276 L26.471,9.538 C26.301,9.2 25.746,9.2 25.576,9.538 L21.707,17.276 C21.63,17.432 21.638,17.615 21.729,17.763 C21.82,17.91 21.981,18 22.154,18 L22.154,18 Z M11,23 L18,23 L18,16 L11,16 L11,23 Z M10.5,24 L18.5,24 C18.776,24 19,23.776 19,23.5 L19,15.5 C19,15.224 18.776,15 18.5,15 L10.5,15 C10.224,15 10,15.224 10,15.5 L10,23.5 C10,23.776 10.224,24 10.5,24 L10.5,24 Z M8,32 L32,32 L32,8 L8,8 L8,32 Z M32.5,7 L7.5,7 C7.224,7 7,7.224 7,7.5 L7,32.5 C7,32.776 7.224,33 7.5,33 L32.5,33 C32.776,33 33,32.776 33,32.5 L33,7.5 C33,7.224 32.776,7 32.5,7 L32.5,7 Z" fill="#FFFFFF"></path> </g></symbol><symbol id="aws-group-asg" viewBox="0 0 40 40"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <rect fill="#ED7100" x="0" y="0" width="40" height="40"></rect> <path d="M18.021,19.4952538 C18.021,19.3402538 17.95,19.1982538 17.833,19.1042538 L14.879,16.1512538 L14.172,16.8582538 L16.31,18.9952538 L7,18.9952538 L7,19.9952538 L16.314,19.9952538 L14.172,22.1372538 L14.879,22.8442538 L17.848,19.8752538 C17.956,19.7812538 18.021,19.6432538 18.021,19.4952538 L18.021,19.4952538 Z M33.986,18.9952538 L24.675,18.9952538 L26.813,16.8582538 L26.106,16.1512538 L23.137,19.1202538 C23.03,19.2132538 22.964,19.3512538 22.964,19.4992538 C22.964,19.6542538 23.036,19.7972538 23.153,19.8902538 L26.106,22.8442538 L26.813,22.1372538 L24.671,19.9952538 L33.986,19.9952538 L33.986,18.9952538 Z M20.996,31.3242538 L20.996,22.0102538 L19.996,22.0102538 L19.996,31.3202538 L17.858,29.1832538 L17.151,29.8902538 L20.12,32.8572538 C20.213,32.9662538 20.352,33.0322538 20.5,33.0322538 C20.656,33.0322538 20.8,32.9592538 20.893,32.8412538 L23.844,29.8902538 L23.137,29.1832538 L20.996,31.3242538 Z M17.858,9.83725376 L17.151,9.13025376 L20.103,6.17925376 C20.285,5.94725376 20.683,5.93925376 20.877,6.16225376 L23.844,9.13025376 L23.137,9.83725376 L20.996,7.69625376 L20.996,17.0102538 L19.996,17.0102538 L19.996,7.70025376 L17.858,9.83725376 Z" fill="#FFFFFF"></path> </g></symbol></defs></svg>
 
 <div class="stage"><div class="grid"></div></div>
 
 <nav class="rail">
-  <button class="t" aria-pressed="true" title="Select · V"><svg class="i" viewBox="0 0 24 24" width="18" height="18"><path d="M5 3l7 17 2.2-6.8L21 11z"/></svg><span class="k">V</span></button>
-  <button class="t" title="Pan · H"><svg class="i" viewBox="0 0 24 24" width="18" height="18"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V11m0-.5V4.5a1.5 1.5 0 0 1 3 0V11m0-.5v-1a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-1a6 6 0 0 1-5.2-3L4 15.2a1.6 1.6 0 0 1 2.6-1.9L9 16"/></svg><span class="k">H</span></button>
+  <button class="t" aria-pressed="true" title="Select · V"><svg class="i" viewBox="0 0 24 24" width="17" height="17"><path d="M5 3l7 17 2.2-6.8L21 11z"/></svg><span class="k">V</span></button>
+  <button class="t" title="Pan · H"><svg class="i" viewBox="0 0 24 24" width="17" height="17"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V11m0-.5V4.5a1.5 1.5 0 0 1 3 0V11m0-.5v-1a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-1a6 6 0 0 1-5.2-3L4 15.2a1.6 1.6 0 0 1 2.6-1.9L9 16"/></svg><span class="k">H</span></button>
   <div class="sep"></div>
-  <button class="t" title="Add service · A"><svg class="i" viewBox="0 0 24 24" width="18" height="18"><path d="M12 5v14M5 12h14"/></svg><span class="k">A</span></button>
-  <button class="t" title="Connect · C"><svg class="i" viewBox="0 0 24 24" width="18" height="18"><path d="M10 13a5 5 0 0 0 7 0l2-2a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-2 2a5 5 0 0 0 7 7l1-1"/></svg><span class="k">C</span></button>
-  <button class="t" id="group" aria-pressed="false" title="Group · G"><svg class="i" viewBox="0 0 24 24" width="18" height="18"><path d="M7 3v18M17 3v18M3 7h18M3 17h18"/></svg><span class="k">G</span></button>
-  <button class="t" id="gcollapse" aria-pressed="false" disabled title="Collapse group"><svg class="i" viewBox="0 0 24 24" width="18" height="18"><path d="M9 9L4 4m0 5V4h5M15 9l5-5m0 5V4h-5M9 15l-5 5m0-5v5h5M15 15l5 5m0-5v5h-5"/></svg></button>
+  <button class="t" title="Add service · A"><svg class="i" viewBox="0 0 24 24" width="17" height="17"><path d="M12 5v14M5 12h14"/></svg><span class="k">A</span></button>
+  <button class="t" title="Connect · C"><svg class="i" viewBox="0 0 24 24" width="17" height="17"><path d="M10 13a5 5 0 0 0 7 0l2-2a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-2 2a5 5 0 0 0 7 7l1-1"/></svg><span class="k">C</span></button>
+  <button class="t" title="Container — VPC, subnet, AZ · B"><svg class="i" viewBox="0 0 24 24" width="17" height="17"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg><span class="k">B</span></button>
+  <button class="t" id="btnSection" title="Section — your own grouping · S"><svg class="i" viewBox="0 0 24 24" width="17" height="17"><path d="M4 5h6v6H4zM14 5h6v6h-6zM4 15h6v6H4zM14 15h6v6h-6z" stroke-dasharray="2 2"/></svg><span class="k">S</span></button>
   <div class="sep"></div>
-  <button class="t" id="play" aria-pressed="false" title="Trace a request · T"><svg class="i" viewBox="0 0 24 24" width="18" height="18"><path d="M7 4l13 8-13 8z"/></svg><span class="k">T</span></button>
+  <button class="t" title="Trace a request · T"><svg class="i" viewBox="0 0 24 24" width="17" height="17"><path d="M7 4l13 8-13 8z"/></svg><span class="k">T</span></button>
   <div class="sp"></div>
-  <button class="t" id="gridtoggle" aria-pressed="true" title="Grid · ⇧G"><svg class="i" viewBox="0 0 24 24" width="18" height="18"><path d="M4 9h16M4 15h16M9 4v16M15 4v16"/></svg></button>
-  <button class="t" title="Undo · ⌘Z"><svg class="i" viewBox="0 0 24 24" width="18" height="18"><path d="M9 7L4 12l5 5"/><path d="M4 12h10a6 6 0 0 1 0 12h-2"/></svg></button>
+  <button class="t" id="gridtoggle" aria-pressed="true" title="Grid · ⇧G"><svg class="i" viewBox="0 0 24 24" width="17" height="17"><path d="M4 9h16M4 15h16M9 4v16M15 4v16"/></svg></button>
+  <button class="t" title="Undo · ⌘Z"><svg class="i" viewBox="0 0 24 24" width="17" height="17"><path d="M9 7L4 12l5 5"/><path d="M4 12h10a6 6 0 0 1 0 12h-2"/></svg></button>
 </nav>
 
 <header class="top">
   <span class="brand">Overhead</span>
-  <span class="crumb">acme-orders <span class="s">/</span> <b>serverless v1</b></span>
-  <span class="src"><span class="d"></span>Price List · ap-southeast-1 · 2 Sep · <a href="#">source</a></span>
-  <span class="delta" id="scenChip" hidden>arm64 + 1024 MB · −$9.20/mo</span>
-  <div class="spend"><span class="lab">Monthly</span><span class="v" id="total">$97.40</span><span class="u">estimate</span></div>
-  <button class="btn" id="scenario" aria-pressed="false"><svg class="i" viewBox="0 0 24 24" width="14" height="14"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>Scenario</button>
+  <span class="crumb">acme-orders <span class="s">/</span> <b>hybrid v2</b></span>
+  <span class="src"><span class="d"></span>Price List · ap-southeast-1 · 2 Sep</span>
+  <div class="spend"><span class="lab">Monthly</span><span class="v" id="total">$369.57</span><span class="u">estimate</span></div>
+  <button class="btn"><svg class="i" viewBox="0 0 24 24" width="14" height="14"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>Scenario</button>
   <button class="btn p"><svg class="i" viewBox="0 0 24 24" width="14" height="14"><path d="M12 3v12M8 11l4 4 4-4M4 19h16"/></svg>Export</button>
 </header>
 
-<aside class="drawer">
-  <div class="h"><span class="lab">Services</span><span class="lab">10</span></div>
-  <div class="sr"><svg class="i" viewBox="0 0 24 24" width="13" height="13"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>Search<span class="kb">/</span></div>
-  <div class="plist">
-    <div class="pg">Ingress</div>
-    <div class="sv"><svg><use href="#aws-apigateway"/></svg><span class="n">API Gateway</span><span class="c">req</span></div>
-    <div class="sv"><svg><use href="#aws-cloudfront"/></svg><span class="n">CloudFront</span><span class="c">GB</span></div>
-    <div class="sv"><svg><use href="#aws-cognito"/></svg><span class="n">Cognito</span><span class="c">MAU</span></div>
-    <div class="pg">Compute</div>
-    <div class="sv"><svg><use href="#aws-lambda"/></svg><span class="n">Lambda</span><span class="c">GB-s</span></div>
-    <div class="sv"><svg><use href="#aws-stepfunctions"/></svg><span class="n">Step Functions</span><span class="c">trans</span></div>
-    <div class="pg">Messaging</div>
-    <div class="sv"><svg><use href="#aws-sqs"/></svg><span class="n">SQS</span><span class="c">msg</span></div>
-    <div class="sv"><svg><use href="#aws-sns"/></svg><span class="n">SNS</span><span class="c">pub</span></div>
-    <div class="sv"><svg><use href="#aws-eventbridge"/></svg><span class="n">EventBridge</span><span class="c">evt</span></div>
-    <div class="pg">Data</div>
-    <div class="sv"><svg><use href="#aws-dynamodb"/></svg><span class="n">DynamoDB</span><span class="c">RCU</span></div>
-    <div class="sv"><svg><use href="#aws-s3"/></svg><span class="n">S3</span><span class="c">GB</span></div>
+<section class="pan" id="pTree">
+  <div class="ph"><span class="ttl">Structure</span><span class="n">11 resources</span>
+    <span class="x"><button data-min title="Collapse panel"><svg class="i" viewBox="0 0 24 24" width="13" height="13"><path d="M5 12h14"/></svg></button></span></div>
+  <div class="bd" id="tree"></div>
+</section>
+
+<section class="pan" id="pPal">
+  <div class="ph"><span class="ttl">Add</span>
+    <span class="x"><button data-min title="Collapse panel"><svg class="i" viewBox="0 0 24 24" width="13" height="13"><path d="M5 12h14"/></svg></button></span></div>
+  <div class="bd">
+    <div class="sr"><svg class="i" viewBox="0 0 24 24" width="13" height="13"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>Search<span class="kb">/</span></div>
+    <div class="pgrid">
+      <div class="c">Services</div>
+      <div class="s"><svg><use href="#aws-lambda"/></svg></div>
+      <div class="s"><svg><use href="#aws-apigateway"/></svg></div>
+      <div class="s"><svg><use href="#aws-dynamodb"/></svg></div>
+      <div class="s"><svg><use href="#aws-s3"/></svg></div>
+      <div class="s"><svg><use href="#aws-sns"/></svg></div>
+      <div class="s"><svg><use href="#aws-sqs"/></svg></div>
+      <div class="s"><svg><use href="#aws-ecs"/></svg></div>
+      <div class="s"><svg><use href="#aws-rds"/></svg></div>
+      <div class="s"><svg><use href="#aws-elb"/></svg></div>
+      <div class="s"><svg><use href="#aws-cloudfront"/></svg></div>
+      <div class="s"><svg><use href="#aws-nat"/></svg></div>
+      <div class="s"><svg><use href="#aws-cognito"/></svg></div>
+      <div class="c">Containers</div>
+      <div class="g" style="color:#8B97A8"><svg><use href="#aws-group-cloud"/></svg>AWS Cloud</div>
+      <div class="g" style="color:#00A4A6"><svg><use href="#aws-group-region"/></svg>Region</div>
+      <div class="g" style="color:#E7157B"><svg><use href="#aws-group-account"/></svg>Account</div>
+      <div class="g" style="color:#8C4FFF"><svg><use href="#aws-group-vpc"/></svg>VPC</div>
+      <div class="g" style="color:#00A4A6"><span class="sw"></span>Availability Zone</div>
+      <div class="g" style="color:#7AA116"><svg><use href="#aws-group-public"/></svg>Public subnet</div>
+      <div class="g" style="color:#00A4A6"><svg><use href="#aws-group-private"/></svg>Private subnet</div>
+      <div class="g" style="color:#ED7100"><svg><use href="#aws-group-asg"/></svg>Auto Scaling group</div>
+      <div class="g" style="color:#7D8998"><svg><use href="#aws-group-dc"/></svg>On-prem / external</div>
+      <div class="c">Yours</div>
+      <div class="g" style="color:#3B82F6"><span class="sw"></span>Section</div>
+    </div>
   </div>
-</aside>
+</section>
 
-<div id="steps" class="steps" aria-live="polite"></div>
-<div class="viewport"><svg id="after" class="l-request l-events l-data" viewBox="0 0 1080 456" role="img" aria-label="Serverless order pipeline: API Gateway to Lambda to DynamoDB, with SNS fan-out to workers and S3, priced per node."></svg></div>
+<div class="viewport"><svg id="cv" viewBox="0 0 1440 780" role="img" aria-label="A hybrid AWS architecture: an on-premises data centre outside AWS, an AWS Cloud frame containing a region with serverless services, and a VPC split into two availability zones with public and private subnets holding a load balancer, NAT gateway, ECS service and a Multi-AZ RDS pair. Three user-made sections overlay the diagram."></svg></div>
 
-<div class="tblock">
-  <div><span class="k">Drawing</span><span class="v">orders-pipeline</span></div>
-  <div><span class="k">Region</span><span class="v">ap-southeast-1</span></div>
-  <div><span class="k">Resources</span><span class="v">11</span></div>
-  <div><span class="k">Findings</span><span class="v">2</span></div>
-  <div><span class="k">Est. monthly</span><span class="v g" id="tbtotal">$97.40</span></div>
-</div>
+<section class="pan" id="pBlock">
+  <div class="ph" style="height:30px"><span class="ttl" style="font-size:10.5px">Title block</span>
+    <span class="x"><button data-min><svg class="i" viewBox="0 0 24 24" width="12" height="12"><path d="M5 12h14"/></svg></button></span></div>
+  <div class="bd">
+    <div class="cell"><span class="k">Drawing</span><span class="v">orders-hybrid</span></div>
+    <div class="cell"><span class="k">Region</span><span class="v">ap-southeast-1</span></div>
+    <div class="cell"><span class="k">AZs</span><span class="v">2</span></div>
+    <div class="cell"><span class="k">Resources</span><span class="v">11</span></div>
+    <div class="cell"><span class="k">Findings</span><span class="v">2</span></div>
+    <div class="cell"><span class="k">Est. monthly</span><span class="v g">$369.57</span></div>
+  </div>
+</section>
 
 <div class="float layers">
-  <button data-layer="request" aria-pressed="true">Request</button>
-  <button data-layer="events" aria-pressed="true">Events</button>
-  <button data-layer="data" aria-pressed="true">Data</button>
+  <button data-l="sections" aria-pressed="true">Sections</button>
+  <button data-l="security" aria-pressed="false">Security</button>
+  <button data-l="cost" aria-pressed="false">Cost</button>
   <div class="dv"></div>
-  <button data-layer="security" aria-pressed="false">Security</button>
-  <button data-layer="cost" aria-pressed="false">Cost</button>
-  <div class="dv"></div>
-  <button id="cards" aria-pressed="false">Cards</button>
+  <button id="collapseAll">Collapse VPC</button>
 </div>
 
 <div class="float zoom">
   <button class="sq" id="zoomout" aria-label="Zoom out"><svg class="i" viewBox="0 0 24 24" width="15" height="15"><path d="M5 12h14"/></svg></button>
-  <input id="zoom" type="range" min="60" max="160" step="5" value="100" aria-label="Zoom" style="width:96px;accent-color:var(--accent)">
+  <input id="zoom" type="range" min="50" max="180" step="5" value="100" aria-label="Zoom" style="width:92px;accent-color:var(--accent)">
   <button class="sq" id="zoomin" aria-label="Zoom in"><svg class="i" viewBox="0 0 24 24" width="15" height="15"><path d="M12 5v14M5 12h14"/></svg></button>
   <span class="pc" id="zoomv">100%</span>
   <button class="sq" id="zoomfit" aria-label="Fit"><svg class="i" viewBox="0 0 24 24" width="15" height="15"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
 </div>
 
-<aside class="insp" id="inspector"></aside>
+<section class="pan" id="pInsp">
+  <div class="ph"><span class="ttl">Inspector</span>
+    <span class="x"><button data-min title="Collapse panel"><svg class="i" viewBox="0 0 24 24" width="13" height="13"><path d="M5 12h14"/></svg></button></span></div>
+  <div class="bd" id="inspector"></div>
+</section>
 
 <footer class="agent">
   <span class="pulse"></span>
-  <span><b>WebMCP</b> · <span class="count" id="toolcount">18</span> tools live<span id="toolextra"> · +4 while a scenario is open</span></span>
-  <div class="log" id="toollog">
+  <span><b>WebMCP</b> · <span class="count">21</span> tools live · +4 while a scenario is open</span>
+  <div class="log">
+    <span>add_container kind=az → <i>ap-southeast-1b</i></span>
+    <span>move_into_container rdsb → <i>private-b</i></span>
     <span>get_findings → <i>2 findings</i></span>
-    <span>set_property thumbnail-worker.architecture=arm64 → <i>$16.10</i></span>
-    <span>get_cost_breakdown groupBy=node → <i>11 lines</i></span>
   </div>
 </footer>
 
 <script>
-
-// Overhead — diagram module for the plan page.
-// Data-driven: nodes, typed edges, groups. Renders two figures (#after, #groups),
-// smooth bezier edges, icon/card node modes, semantic zoom, layer toggles,
-// hover isolation, group collapse, and the request trace.
+/* Overhead — structure module.
+   Containers nest (external | cloud | region | vpc | az | subnet | asg) and carry AWS semantics.
+   Sections are user-made, free-form, renameable, collapsible — they replace fixed lanes.
+   Everything is SVG; zoom scales coordinates. */
 (function () {
   var NS = 'http://www.w3.org/2000/svg';
-  function el(tag, attrs, kids) {
-    var e = document.createElementNS(NS, tag);
-    if (attrs) for (var k in attrs) if (attrs[k] != null) e.setAttribute(k, attrs[k]);
-    (kids || []).forEach(function (c) { if (c == null) return; e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); });
-    return e;
-  }
-  var MONO = "'IBM Plex Mono', monospace", SANS = "'IBM Plex Sans', sans-serif", HEAD = 'Archivo, sans-serif';
-  var ICON = 56, CARD_W = 200, CARD_H = 76;
+  function el(t, a, k) { var e = document.createElementNS(NS, t); if (a) for (var x in a) if (a[x] != null) e.setAttribute(x, a[x]);
+    (k || []).forEach(function (c) { if (c == null) return; e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); }); return e; }
+  var MONO = "'JetBrains Mono',monospace", SANS = "Archivo,sans-serif";
+  var ICON = 52, CARD_W = 196, CARD_H = 72;
 
-  // ---------- shared renderers ----------
-  function gear(x, y) {
-    return el('g', { 'class': 'gear', transform: 'translate(' + x + ',' + y + ')', stroke: 'currentColor', 'stroke-width': 1.2, fill: 'none' }, [
-      el('circle', { r: 5 }), el('circle', { r: 1.5, fill: 'currentColor', stroke: 'none' }),
-      el('line', { x1: 0, y1: -8, x2: 0, y2: -5.5 }), el('line', { x1: 0, y1: 5.5, x2: 0, y2: 8 }),
-      el('line', { x1: -8, y1: 0, x2: -5.5, y2: 0 }), el('line', { x1: 5.5, y1: 0, x2: 8, y2: 0 })]);
-  }
-  function badge(x, y, text) {
-    var w = text.length * 5.6 + 10;
-    return el('g', { 'class': 'sec' }, [
-      el('rect', { x: x, y: y, width: w, height: 12, rx: 3, fill: 'var(--surface)', stroke: 'currentColor', 'stroke-width': .8 }),
-      el('text', { x: x + w / 2, y: y + 9, 'font-family': MONO, 'font-size': 8.5, 'font-weight': 600, fill: 'currentColor', 'text-anchor': 'middle' }, [text])]);
-  }
-  function bounds(n, mode) {
-    if (mode === 'card') return { l: n.cx - CARD_W / 2, r: n.cx + CARD_W / 2, t: n.cy - CARD_H / 2, b: n.cy + CARD_H / 2 };
-    return { l: n.cx - ICON / 2, r: n.cx + ICON / 2, t: n.cy - ICON / 2, b: n.cy + ICON / 2 };
-  }
-  function renderNode(n, mode) {
-    var g = el('g', { 'class': 'node' + (mode === 'card' ? ' card' : ''), 'data-id': n.id, transform: 'translate(' + n.cx + ',' + n.cy + ')' });
-    if (mode === 'card') {
-      if (n.stacked) g.appendChild(el('rect', { x: -CARD_W / 2 + 6, y: -CARD_H / 2 - 6, width: CARD_W, height: CARD_H, rx: 8, fill: 'var(--surface)', stroke: 'currentColor', 'stroke-width': 1, opacity: .5 }));
-      g.appendChild(el('rect', { 'class': 'frame', x: -CARD_W / 2, y: -CARD_H / 2, width: CARD_W, height: CARD_H, rx: 8, fill: 'var(--surface)', stroke: 'currentColor', 'stroke-width': 1 }));
-      if (n.warn) g.appendChild(el('line', { 'class': 'stripe', x1: -CARD_W / 2 + 1.5, y1: -CARD_H / 2 + 10, x2: -CARD_W / 2 + 1.5, y2: CARD_H / 2 - 10, stroke: 'var(--finding)', 'stroke-width': 3, 'stroke-linecap': 'round' }));
-      if (n.cluster) { n.cluster.slice(0, 4).forEach(function (ic, i) { g.appendChild(el('use', { href: '#' + ic, x: -CARD_W / 2 + 12 + (i % 2) * 25, y: -24 + Math.floor(i / 2) * 25, width: 23, height: 23 })); }); }
-      else g.appendChild(el('use', { href: '#' + n.icon, x: -CARD_W / 2 + 12, y: -24, width: 48, height: 48 }));
-      var tx = -CARD_W / 2 + 70;
-      g.appendChild(el('text', { x: tx, y: -20, 'font-family': HEAD, 'font-size': 9.5, 'font-weight': 600, fill: 'currentColor', opacity: .65 }, [n.term]));
-      g.appendChild(el('text', { x: tx, y: -4, 'font-family': SANS, 'font-size': 12.5, 'font-weight': 500, fill: 'currentColor' }, [n.name]));
-      g.appendChild(el('text', { x: tx, y: 11, 'font-family': MONO, 'font-size': 9.5, fill: 'currentColor', opacity: .7 }, [n.settings]));
-      if (n.sec) g.appendChild(badge(tx, 19, n.sec));
-      g.appendChild(el('text', { 'class': 'cost', x: CARD_W / 2 - 10, y: 30, 'font-family': MONO, 'font-size': 11, 'font-weight': 600, fill: 'currentColor', 'text-anchor': 'end' }, [n.cost]));
-      g.appendChild(gear(CARD_W / 2 - 14, -CARD_H / 2 + 14));
-    } else {
-      if (n.stacked) g.appendChild(el('use', { href: '#' + n.icon, x: -ICON / 2 + 6, y: -ICON / 2 - 6, width: ICON, height: ICON, opacity: .45 }));
-      g.appendChild(el('rect', { 'class': 'ring' + (n.warn ? ' warn' : ''), x: -33, y: -33, width: 66, height: 66, rx: 11 }));
-      if (n.res) { g.appendChild(el('rect', { x: -ICON / 2, y: -ICON / 2, width: ICON, height: ICON, rx: 6, fill: 'var(--surface)', stroke: n.res, 'stroke-width': 1.5 })); g.appendChild(el('use', { href: '#' + n.icon, x: -22, y: -22, width: 44, height: 44 })); }
-      else g.appendChild(el('use', { href: '#' + n.icon, x: -ICON / 2, y: -ICON / 2, width: ICON, height: ICON }));
-      g.appendChild(gear(38, -22));
-      if (n.sec) g.appendChild(badge(4, 14, n.sec));
-      g.appendChild(el('text', { y: 46, 'font-family': SANS, 'font-size': 12, 'font-weight': 500, fill: 'currentColor', 'text-anchor': 'middle' }, [n.name]));
-    }
-    return g;
-  }
-  // smooth edge geometry between two node bounds
-  function edgePath(e, a, b, ca, cb) {
-    var s, t, d, lab;
-    if (e.side) {                       // same column: bracket out one side
-      var k = e.side === 'left' ? -1 : 1, reach = 60;
-      s = { x: k < 0 ? a.l : a.r, y: ca.y }; t = { x: k < 0 ? b.l : b.r, y: cb.y };
-      d = 'M' + s.x + ',' + s.y + ' C' + (s.x + k * reach) + ',' + s.y + ' ' + (t.x + k * reach) + ',' + t.y + ' ' + t.x + ',' + t.y;
-      lab = { x: s.x + k * (reach * .78), y: (s.y + t.y) / 2, rot: -90 };
-    } else if (e.arch) {                // long hop over intermediate nodes: arch above
-      var lift = 34;
-      s = { x: ca.x, y: a.t }; t = { x: cb.x, y: b.t };
-      d = 'M' + s.x + ',' + s.y + ' C' + s.x + ',' + (s.y - lift) + ' ' + t.x + ',' + (t.y - lift) + ' ' + t.x + ',' + t.y;
-      lab = { x: (s.x + t.x) / 2 + 150, y: Math.min(s.y, t.y) - lift * .75 - 6 };
-    } else {                            // left → right
-      s = { x: a.r, y: ca.y }; t = { x: b.l, y: cb.y };
-      var dx = Math.max(24, t.x - s.x);
-      d = 'M' + s.x + ',' + s.y + ' C' + (s.x + dx * .5) + ',' + s.y + ' ' + (t.x - dx * .5) + ',' + t.y + ' ' + t.x + ',' + t.y;
-      lab = { x: (s.x + t.x) / 2, y: (s.y + t.y) / 2 - 9 };
-    }
-    return { d: d, s: s, t: t, lab: lab };
-  }
-  function renderEdge(e, geo, markerId) {
-    var g = el('g', { 'class': 'edge', 'data-layer': e.layer, 'data-from': e.from, 'data-to': e.to, fill: 'none', stroke: 'currentColor' });
-    var attrs = { d: geo.d, 'stroke-width': e.w, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' };
-    if (e.kind === 'async') { attrs['stroke-dasharray'] = '7 5'; attrs['marker-end'] = 'url(#' + markerId + ')'; }
-    else if (e.kind === 'data') { attrs['stroke-dasharray'] = '2 5'; }
-    else { attrs['marker-end'] = 'url(#' + markerId + ')'; }
-    g.appendChild(el('path', attrs));
-    if (e.badge) {
-      g.appendChild(el('rect', { x: geo.lab.x - 13, y: geo.lab.y - 3, width: 26, height: 14, rx: 7, fill: 'currentColor', stroke: 'none', opacity: .85 }));
-      g.appendChild(el('text', { x: geo.lab.x, y: geo.lab.y + 7.5, 'font-family': SANS, 'font-size': 9.5, 'font-weight': 600, fill: 'var(--surface)', stroke: 'none', 'text-anchor': 'middle' }, [e.badge]));
-    } else if (e.label) {
-      var ta = { 'font-family': SANS, 'font-size': 10, fill: 'currentColor', stroke: 'none', 'text-anchor': 'middle', opacity: .72 };
-      if (geo.lab.rot) ta.transform = 'translate(' + geo.lab.x + ',' + geo.lab.y + ') rotate(' + geo.lab.rot + ')'; else { ta.x = geo.lab.x; ta.y = geo.lab.y; }
-      g.appendChild(el('text', ta, [e.label]));
-    }
-    return g;
-  }
-  function marker(id) {
-    return el('marker', { id: id, viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 6, markerHeight: 6, orient: 'auto-start-reverse' }, [el('path', { d: 'M0,0 L10,5 L0,10 z', fill: 'currentColor' })]);
-  }
-  function wireHover(svg) {
-    var nodes = svg.querySelectorAll('.node'), edges = svg.querySelectorAll('.edge');
-    function clear() { svg.classList.remove('hover'); nodes.forEach(function (n) { n.classList.remove('lit'); }); edges.forEach(function (e) { e.classList.remove('lit'); }); svg._hoverId = null; }
-    function light(id) {
-      clear(); svg.classList.add('hover'); svg._hoverId = id;
-      var n = svg.querySelector('.node[data-id="' + id + '"]'); if (n) n.classList.add('lit');
-      edges.forEach(function (e) { if (e.dataset.from === id || e.dataset.to === id) { e.classList.add('lit'); var o = svg.querySelector('.node[data-id="' + (e.dataset.from === id ? e.dataset.to : e.dataset.from) + '"]'); if (o) o.classList.add('lit'); } });
-    }
-    // delegated, so nodes replaced by a rebuild never strand the hover state
-    if (!svg._hoverWired) {
-      svg._hoverWired = true;
-      svg.addEventListener('mousemove', function (e) {
-        if (svg.dataset.busy) return; var g = e.target.closest ? e.target.closest('.node') : null; var id = g ? g.dataset.id : null;
-        if (id !== svg._hoverId) { if (id) svg._light(id); else svg._clear(); }
-      });
-      svg.addEventListener('mouseleave', function () { if (!svg.dataset.busy) svg._clear(); });
-    }
-    svg._light = light; svg._clear = clear; svg._hoverId = null;
-    nodes.forEach(function (n) { n.style.cursor = 'grab'; });
-    return clear;
-  }
+  // ---- container kinds: colour, border, whether AWS draws it dashed ----
+  var KIND = {
+    external: { c: '#7D8998', dash: '', icon: 'aws-group-dc',      label: 'On-premises' },
+    cloud:    { c: '#8B97A8', dash: '', icon: 'aws-group-cloud',   label: 'AWS Cloud' },
+    account:  { c: '#E7157B', dash: '', icon: 'aws-group-account', label: 'Account' },
+    region:   { c: '#00A4A6', dash: '5 4', icon: 'aws-group-region', label: 'Region' },
+    vpc:      { c: '#8C4FFF', dash: '', icon: 'aws-group-vpc',     label: 'VPC' },
+    az:       { c: '#00A4A6', dash: '5 4', icon: null,             label: 'Availability Zone' },
+    subnetpub:{ c: '#7AA116', dash: '', icon: 'aws-group-public',  label: 'Public subnet' },
+    subnetpri:{ c: '#00A4A6', dash: '', icon: 'aws-group-private', label: 'Private subnet' },
+    asg:      { c: '#ED7100', dash: '5 4', icon: 'aws-group-asg',  label: 'Auto Scaling group' }
+  };
 
-  // ---------- Figure 1: the serverless system, lanes ----------
-  var LANES = ['INGRESS', 'HANDLERS', 'MESSAGING', 'WORKERS', 'DATA'];
-  var ROWS = [88, 228, 368];
+  // ---- the scene ----
+  var C = [
+    { id:'ext',    kind:'external',  name:'corp-dc · Manila',        x:20,   y:250, w:186, h:230, parent:null },
+    { id:'cloud',  kind:'cloud',     name:'AWS Cloud',               x:240,  y:26,  w:1180,h:718, parent:null },
+    { id:'region', kind:'region',    name:'ap-southeast-1',          x:262,  y:62,  w:1142,h:664, parent:'cloud' },
+    { id:'vpc',    kind:'vpc',       name:'prod-vpc · 10.0.0.0/16',  x:286,  y:270, w:1096,h:434, parent:'region' },
+    { id:'aza',    kind:'az',        name:'ap-southeast-1a',         x:308,  y:318, w:518, h:366, parent:'vpc' },
+    { id:'azb',    kind:'az',        name:'ap-southeast-1b',         x:848,  y:318, w:512, h:366, parent:'vpc' },
+    { id:'puba',   kind:'subnetpub', name:'public-a · 10.0.1.0/24',  x:328,  y:362, w:216, h:142, parent:'aza' },
+    { id:'pria',   kind:'subnetpri', name:'private-a · 10.0.10.0/24',x:566,  y:362, w:238, h:298, parent:'aza' },
+    { id:'pubb',   kind:'subnetpub', name:'public-b · 10.0.2.0/24',  x:868,  y:362, w:216, h:142, parent:'azb' },
+    { id:'prib',   kind:'subnetpri', name:'private-b · 10.0.11.0/24',x:1106, y:362, w:232, h:298, parent:'azb' }
+  ];
   var N = [
-    { id: 'cdn', lane: 0, row: 0, icon: 'aws-cloudfront', term: 'Amazon CloudFront', name: 'static-site-cdn', settings: 'PriceClass_100 · 40 GB', cost: '$3.60' },
-    { id: 'pool', lane: 0, row: 1, icon: 'aws-cognito', term: 'Amazon Cognito', name: 'user-pool', settings: '12k MAU · JWT', cost: '$0.00' },
-    { id: 'http', lane: 0, row: 2, icon: 'aws-apigateway', term: 'Amazon API Gateway', name: 'orders-http', settings: 'HTTP API · 5M req', cost: '$5.00' },
-    { id: 'api', lane: 1, row: 2, icon: 'aws-lambda', term: 'AWS Lambda', name: 'orders-api', settings: 'arm64 · 512 MB · 120 ms', cost: '$4.98', sec: 'IAM role' },
-    { id: 'sqs', lane: 2, row: 1, icon: 'aws-sqs', term: 'Amazon SQS', name: 'thumbnail-queue', settings: 'Standard · DLQ · 0.4M', cost: '$0.16' },
-    { id: 'sns', lane: 2, row: 2, icon: 'aws-sns', term: 'Amazon SNS', name: 'order-events', settings: 'Standard · 1.2M pub', cost: '$0.60' },
-    { id: 'thumb', lane: 3, row: 1, icon: 'aws-lambda', term: 'AWS Lambda', name: 'thumbnail-worker', settings: 'arm64 · 1024 MB · 3 s', cost: '$16.10', sec: 'IAM role' },
-    { id: 'notify', lane: 3, row: 2, icon: 'aws-lambda', term: 'AWS Lambda', name: 'notify · analytics', settings: 'arm64 · 256 MB · 80 ms', cost: '$0.40', sec: 'IAM role', stacked: true },
-    { id: 'static', lane: 4, row: 0, icon: 'aws-s3', term: 'Amazon S3', name: 'static-site', settings: 'Standard · 2 GB', cost: '$0.05', sec: 'SSE-S3' },
-    { id: 'uploads', lane: 4, row: 1, icon: 'aws-s3', term: 'Amazon S3', name: 'uploads', settings: '120 GB · 90d → IA', cost: '$2.76', sec: 'SSE-KMS' },
-    { id: 'orders', lane: 4, row: 2, icon: 'aws-dynamodb', term: 'Amazon DynamoDB', name: 'orders', settings: 'On-demand · 40 GB · PITR', cost: '$63.75', sec: 'SSE-KMS', warn: true }
+    { id:'onprem', icon:'aws-group-dc',    term:'Corporate data center', name:'erp-legacy',   set:'Direct Connect · 1 Gbps', cost:'$0.00',  x:113, y:372, in:'ext' },
+    { id:'cf',     icon:'aws-cloudfront',  term:'Amazon CloudFront',     name:'edge-cdn',     set:'PriceClass_100 · 40 GB',  cost:'$3.60',  x:352, y:170, in:'region' },
+    { id:'apigw',  icon:'aws-apigateway',  term:'Amazon API Gateway',    name:'orders-http',  set:'HTTP API · 5M req',       cost:'$5.00',  x:548, y:170, in:'region' },
+    { id:'fn',     icon:'aws-lambda',      term:'AWS Lambda',            name:'orders-api',   set:'arm64 · 512 MB · 120 ms', cost:'$4.98',  x:744, y:170, in:'region' },
+    { id:'ddb',    icon:'aws-dynamodb',    term:'Amazon DynamoDB',       name:'orders',       set:'On-demand · 40 GB',       cost:'$63.75', x:940, y:170, in:'region', warn:true },
+    { id:'s3',     icon:'aws-s3',          term:'Amazon S3',             name:'uploads',      set:'120 GB · 90d → IA',       cost:'$2.76',  x:1136,y:170, in:'region' },
+    { id:'alb',    icon:'aws-elb',         term:'Elastic Load Balancing',name:'prod-alb',     set:'ALB · 1.2M LCU-h',        cost:'$22.27', x:436, y:432, in:'puba' },
+    { id:'nat',    icon:'aws-nat',         term:'NAT Gateway',           name:'nat-a',        set:'1.2 TB processed',        cost:'$77.85', x:976, y:432, in:'pubb', warn:true, res:'#8C4FFF' },
+    { id:'ecs',    icon:'aws-ecs',         term:'Amazon ECS',            name:'api-service',  set:'Fargate · 2 × 0.5 vCPU',  cost:'$71.10', x:685, y:432, in:'pria', stack:true },
+    { id:'rds',    icon:'aws-rds',         term:'Amazon RDS',            name:'orders-db',    set:'db.r6g.large · Multi-AZ', cost:'$118.26',x:685, y:580, in:'pria', sec:'primary' },
+    { id:'rdsb',   icon:'aws-rds',         term:'Amazon RDS',            name:'orders-db',    set:'standby',                 cost:'—',      x:1222,y:432, in:'prib', sec:'standby', ghost:true }
   ];
   var E = [
-    { from: 'cdn', to: 'static', kind: 'sync', layer: 'request', w: 1.2, label: 'origin fetch · 0.3M' },
-    { from: 'pool', to: 'http', kind: 'sync', layer: 'request', w: 1.2, label: 'JWT authorizer', side: 'left' },
-    { from: 'http', to: 'api', kind: 'sync', layer: 'request', w: 3.5, label: '5M req/mo' },
-    { from: 'api', to: 'orders', kind: 'data', layer: 'data', w: 2.6, label: 'reads / writes · 4.8M', arch: true },
-    { from: 'api', to: 'sns', kind: 'async', layer: 'events', w: 2.2, label: 'publish · 1.2M' },
-    { from: 'sns', to: 'notify', kind: 'async', layer: 'events', w: 2.2, badge: '×2' },
-    { from: 'sns', to: 'sqs', kind: 'async', layer: 'events', w: 1.6, label: 'fan-out', side: 'right' },
-    { from: 'sqs', to: 'thumb', kind: 'async', layer: 'events', w: 1.6, label: 'poll' },
-    { from: 'thumb', to: 'uploads', kind: 'data', layer: 'data', w: 1.6, label: 'put · 0.4M' }
+    { f:'onprem', t:'alb',  k:'sync',  l:'Direct Connect', w:1.4 },
+    { f:'cf',     t:'s3',   k:'sync',  l:'origin · 0.3M', w:1.2, arch:true },
+    { f:'apigw',  t:'fn',   k:'sync',  l:'5M req/mo',     w:3.2 },
+    { f:'fn',     t:'ddb',  k:'data',  l:'4.8M',          w:2.4 },
+    { f:'alb',    t:'ecs',  k:'sync',  l:'target group',  w:2.4 },
+    { f:'ecs',    t:'rds',  k:'data',  l:'reads / writes',w:2.0 },
+    { f:'ecs',    t:'nat',  k:'sync',  l:'egress · 1.2 TB', w:1.6 },
+    { f:'rds',    t:'rdsb', k:'async', l:'sync replication', w:1.4 }
   ];
-  var after = document.getElementById('after');
-  if (after) {
-    var mode = 'icon', zoom = 1, forceCards = false, clearAfter = function () {};
-    var byId = {};
-    var GROUP = { id: 'pipeline', label: 'order pipeline', members: ['sqs', 'sns', 'thumb', 'notify'], dx: 0, dy: 0 };
-    var groupOn = false, groupCollapsed = false;
-    // drag: nodes move in SVG units; edges re-route on every move (the model is the source of truth)
-    function wireDrag(svg, byId) {
-      svg._byId = byId;
-      svg.querySelectorAll('.node').forEach(function (g) {
-        g.addEventListener('pointerdown', function (e) {
-          if (e.button !== 0) return; var n = svg._byId[g.dataset.id]; if (!n) return;
-          var m = svg.getScreenCTM();
-          svg._drag = { n: n, sx: e.clientX, sy: e.clientY, dx: n.group ? GROUP.dx : (n.dx || 0), dy: n.group ? GROUP.dy : (n.dy || 0), k: 1 / m.a, moved: false };
-          svg.setPointerCapture(e.pointerId); svg.dataset.busy = '1'; e.preventDefault();
-        });
-      });
-      if (svg._dragWired) return; svg._dragWired = true;
-      svg.addEventListener('pointermove', function (e) {
-        var d = svg._drag; if (!d) return; var ddx = (e.clientX - d.sx) * d.k, ddy = (e.clientY - d.sy) * d.k;
-        if (!d.moved && Math.abs(ddx) + Math.abs(ddy) < 3) return; d.moved = true;
-        if (d.n.group) { GROUP.dx = d.dx + ddx; GROUP.dy = d.dy + ddy; } else { d.n.dx = d.dx + ddx; d.n.dy = d.dy + ddy; }
-        build(); svg.classList.add('hover'); var g2 = svg.querySelector('.node[data-id="' + d.n.id + '"]'); if (g2) g2.classList.add('lit');
-      });
-      function end() { var d = svg._drag; if (!d) return; svg._drag = null; delete svg.dataset.busy; svg._clear(); if (!d.moved) svg.dispatchEvent(new CustomEvent('overhead:select', { detail: d.n.id, bubbles: true })); }
-      svg.addEventListener('pointerup', end); svg.addEventListener('pointercancel', end);
-    }
-    function build() {
-      var gap = mode === 'card' ? 262 : 210, x0 = mode === 'card' ? 175 : 115, W = x0 * 2 + gap * 4, H = 456;
-      after.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
-      while (after.firstChild) after.removeChild(after.firstChild);
-      after.appendChild(el('defs', null, [marker('ah')]));
-      var laneW = mode === 'card' ? 220 : 170;
-      var lanes = el('g', { 'font-family': HEAD, 'font-size': 10, 'font-weight': 600, 'letter-spacing': 1.4, fill: 'currentColor', opacity: .55, 'text-anchor': 'middle' });
-      LANES.forEach(function (name, i) {
-        var cx = x0 + i * gap;
-        if (i % 2 === 0) lanes.appendChild(el('rect', { x: cx - laneW / 2, y: 14, width: laneW, height: H - 24, rx: 6, fill: 'currentColor', opacity: .04, stroke: 'none' }));
-        lanes.appendChild(el('text', { x: cx, y: 34 }, [name]));
-      });
-      after.appendChild(lanes);
-      N.forEach(function (n) { n.cx = x0 + n.lane * gap + (n.dx || 0); n.cy = ROWS[n.row] + (n.dy || 0); byId[n.id] = n; });
-      // ---- logical group: frame around members, or collapsed to one card
-      var nodes = N.slice(), edgesNow = E.slice();
-      var members = GROUP.members, inG = function (id) { return members.indexOf(id) >= 0; };
-      var gsum = members.reduce(function (a, id) { return a + parseFloat(byId[id].cost.replace(/[$,]/g, '')); }, 0);
-      if (groupOn && groupCollapsed) {
-        var gm = members.map(function (id) { return byId[id]; });
-        var gn = { id: GROUP.id, cx: gm.reduce(function (a, n) { return a + n.cx; }, 0) / gm.length + (GROUP.dx || 0), cy: gm.reduce(function (a, n) { return a + n.cy; }, 0) / gm.length + (GROUP.dy || 0),
-                   icon: gm[0].icon, cluster: gm.map(function (n) { return n.icon; }), term: 'Group', name: GROUP.label, settings: gm.length + ' resources', cost: '$' + gsum.toFixed(2), group: true };
-        nodes = N.filter(function (n) { return !inG(n.id); }).concat([gn]); byId[gn.id] = gn;
-        var seen = {}; edgesNow = [];
-        E.forEach(function (e) {
-          var f = inG(e.from) ? GROUP.id : e.from, t = inG(e.to) ? GROUP.id : e.to; if (f === t) return;
-          var k = f + '>' + t; if (seen[k]) return; seen[k] = 1;
-          var c = {}; for (var key in e) c[key] = e[key]; c.from = f; c.to = t; var touched = (f !== e.from || t !== e.to); if (touched) { c.side = null; c.arch = false; c.badge = null; } edgesNow.push(c);
-        });
-      } else if (groupOn) {
-        var bx = members.map(function (id) { return bounds(byId[id], mode); });
-        var gx = Math.min.apply(null, bx.map(function (b) { return b.l; })) - 22, gy = Math.min.apply(null, bx.map(function (b) { return b.t; })) - 30;
-        var gr = Math.max.apply(null, bx.map(function (b) { return b.r; })) + 22, gb = Math.max.apply(null, bx.map(function (b) { return b.b; })) + (mode === 'card' ? 22 : 62);
-        var fr = el('g', { 'class': 'gframe' }, [
-          el('rect', { x: gx, y: gy, width: gr - gx, height: gb - gy, rx: 10, fill: 'var(--accent)', 'fill-opacity': .05, stroke: 'var(--accent)', 'stroke-width': 1.2, 'stroke-dasharray': '6 4' }),
-          el('text', { x: gx + 12, y: gy + 17, 'font-family': HEAD, 'font-size': 10, 'font-weight': 600, 'letter-spacing': .8, fill: 'var(--accent)' }, [GROUP.label.toUpperCase()]),
-          el('text', { 'class': 'cost', x: gr - 12, y: gy + 17, 'font-family': MONO, 'font-size': 10, 'font-weight': 600, fill: 'var(--accent)', 'text-anchor': 'end' }, [members.length + ' resources · $' + gsum.toFixed(2) + '/mo'])]);
-        after.appendChild(fr);
-      }
-      var eg = el('g', { 'class': 'edges' });
-      edgesNow.forEach(function (e) { var a = byId[e.from], b = byId[e.to]; e.geo = edgePath(e, bounds(a, a.group ? 'card' : mode), bounds(b, b.group ? 'card' : mode), { x: a.cx, y: a.cy }, { x: b.cx, y: b.cy }); eg.appendChild(renderEdge(e, e.geo, 'ah')); });
-      after.appendChild(eg);
-      after.appendChild(el('g', { id: 'trace' }, [el('path', { id: 'tp1', fill: 'none', stroke: 'none' }), el('path', { id: 'tp2', fill: 'none', stroke: 'none' }), el('circle', { id: 'dot1', r: 6, fill: 'var(--accent)', stroke: 'var(--surface)', 'stroke-width': 2, style: 'display:none' }), el('circle', { id: 'dot2', r: 6, fill: 'var(--accent)', stroke: 'var(--surface)', 'stroke-width': 2, style: 'display:none' })]));
-      var ng = el('g', { 'class': 'nodes' });
-      nodes.forEach(function (n) { ng.appendChild(renderNode(n, n.group ? 'card' : mode)); });
-      after.appendChild(ng);
-      clearAfter = wireHover(after);
-      wireDrag(after, byId);
-      // trace geometry: hop paths joined by straight runs through the nodes they pass
-      function hop(f, t) { var e = edgesNow.filter(function (e) { return e.from === f && e.to === t; })[0]; return e ? e.geo : null; }
-      var h1 = hop('http', 'api'), h2 = hop('api', 'sns'), h3 = hop('sns', 'notify'), h4 = hop('api', 'orders');
-      var pb = document.getElementById('play'); if (pb) pb.disabled = !(h1 && h2 && h3 && h4);
-      if (h1 && h2 && h3) document.getElementById('tp1').setAttribute('d', h1.d + ' L' + h2.s.x + ',' + h2.s.y + ' ' + h2.d.replace(/^M[^C]+/, '') + ' L' + h3.s.x + ',' + h3.s.y + ' ' + h3.d.replace(/^M[^C]+/, ''));
-      if (h4) document.getElementById('tp2').setAttribute('d', h4.d);
-      applyZoom();
-    }
-    function setMode(m) { if (m !== mode) { mode = m; build(); } var cb = document.getElementById('cards'); if (cb) cb.setAttribute('aria-pressed', mode === 'card' ? 'true' : 'false'); }
-    function zoomTo(z) { zoom = z; var ze = document.getElementById('zoom'), zv = document.getElementById('zoomv'); if (ze) ze.value = Math.round(z * 100); if (zv) zv.textContent = Math.round(z * 100) + '%'; applyZoom(); }
-    function applyZoom() { var vp = after.parentElement; var base = vp.clientWidth || 1000; after.style.width = Math.round(base * zoom) + 'px'; after.style.height = 'auto'; }
-    build();
-    // layer toggles
-    document.querySelectorAll('button[data-layer]').forEach(function (b) {
-      b.addEventListener('click', function () {
-        var on = b.getAttribute('aria-pressed') !== 'true'; b.setAttribute('aria-pressed', on ? 'true' : 'false'); after.classList.toggle('l-' + b.dataset.layer, on);
-        if (on && b.dataset.layer === 'cost' && mode !== 'card') { forceCards = true; setMode('card'); if (zoom < 1.4) zoomTo(1.4); }
-      });
-    });
-    var cardsBtn = document.getElementById('cards');
-    if (cardsBtn) cardsBtn.addEventListener('click', function () { forceCards = mode !== 'card'; setMode(forceCards ? 'card' : 'icon'); if (forceCards && zoom < 1.4) zoomTo(1.4); if (!forceCards && zoom > 1) zoomTo(1); });
-    var zoomEl = document.getElementById('zoom'), zoomOut = document.getElementById('zoomv');
-    if (zoomEl) zoomEl.addEventListener('input', function () {
-      zoom = zoomEl.value / 100; if (zoomOut) zoomOut.textContent = zoomEl.value + '%';
-      if (!forceCards) setMode(zoom >= 1.25 ? 'card' : 'icon'); applyZoom();
-    });
-    window.addEventListener('resize', applyZoom);
-    // zoom buttons, fit, and ctrl/cmd + wheel (pinch on a trackpad) over the canvas
-    function clampZ(z) { return Math.max(.6, Math.min(1.6, Math.round(z * 20) / 20)); }
-    var zi = document.getElementById('zoomin'), zo = document.getElementById('zoomout'), zf = document.getElementById('zoomfit');
-    function afterZoom() { if (!forceCards) setMode(zoom >= 1.25 ? 'card' : 'icon'); }
-    if (zi) zi.addEventListener('click', function () { zoomTo(clampZ(zoom + .2)); afterZoom(); });
-    if (zo) zo.addEventListener('click', function () { zoomTo(clampZ(zoom - .2)); afterZoom(); });
-    if (zf) zf.addEventListener('click', function () { forceCards = false; zoomTo(1); setMode('icon'); });
-    var vp = after.parentElement;
-    if (vp) vp.addEventListener('wheel', function (e) { if (!(e.ctrlKey || e.metaKey)) return; e.preventDefault(); zoomTo(clampZ(zoom * (e.deltaY < 0 ? 1.1 : .9))); afterZoom(); }, { passive: false });
-    // group: frame the order pipeline, or collapse it to one card
-    var gb = document.getElementById('group'), gcb = document.getElementById('gcollapse');
-    if (gb) gb.addEventListener('click', function () { groupOn = !groupOn; if (!groupOn) groupCollapsed = false; gb.setAttribute('aria-pressed', groupOn ? 'true' : 'false'); if (gcb) { gcb.disabled = !groupOn; gcb.setAttribute('aria-pressed', 'false'); } build(); });
-    if (gcb) gcb.addEventListener('click', function () { if (!groupOn) return; groupCollapsed = !groupCollapsed; gcb.setAttribute('aria-pressed', groupCollapsed ? 'true' : 'false'); build(); });
+  // user-made sections — free-form, renameable, NOT a fixed taxonomy
+  var S = [
+    { id:'s1', name:'Checkout flow',  x:520,  y:120, w:480, h:118, color:'#3B82F6' },
+    { id:'s2', name:'Owned by Payments', x:300, y:336, w:520, h:356, color:'#E7157B' },
+    { id:'s3', name:'Legacy — migrating Q4', x:8, y:236, w:210, h:258, color:'#F0B34E' }
+  ];
 
-    // Play a request — what trace_request does
-    var play = document.getElementById('play'), stepsEl = document.getElementById('steps');
-    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var raf = null, running = false;
-    var steps = [[0, 'http', 'api', 'API Gateway receives the request'], [450, 'api', null, 'Lambda orders-api handles it'], [700, 'api', 'orders', 'writes the order to DynamoDB'], [1400, 'api', 'sns', 'publishes order-created to SNS'], [2400, 'sns', 'notify', 'two workers consume it — notify, analytics']];
-    function lit(sel) { after.querySelectorAll(sel).forEach(function (x) { x.classList.add('lit'); }); }
-    function renderSteps(upto) { if (stepsEl) stepsEl.innerHTML = upto < 0 ? '' : steps.map(function (s, i) { return '<span class="' + (i <= upto ? 'on' : '') + '">' + (i + 1) + ' · ' + s[3] + '</span>'; }).join(''); }
-    function stop() { running = false; delete after.dataset.busy; if (raf) cancelAnimationFrame(raf); ['dot1', 'dot2'].forEach(function (i) { var d = document.getElementById(i); if (d) d.style.display = 'none'; }); play.setAttribute('aria-pressed', 'false'); clearAfter(); renderSteps(-1); }
-    function place(dot, path, f) { var L = path.getTotalLength(); var p = path.getPointAtLength(Math.max(0, Math.min(1, f)) * L); dot.setAttribute('cx', p.x); dot.setAttribute('cy', p.y); }
-    function run() {
-      running = true; after.dataset.busy = '1'; clearAfter(); after.classList.add('hover'); play.setAttribute('aria-pressed', 'true');
-      var p1 = document.getElementById('tp1'), p2 = document.getElementById('tp2'), d1 = document.getElementById('dot1'), d2 = document.getElementById('dot2');
-      function stepLit(s) { lit('.node[data-id="' + s[1] + '"]'); if (s[2]) { lit('.edge[data-from="' + s[1] + '"][data-to="' + s[2] + '"]'); lit('.node[data-id="' + s[2] + '"]'); } }
-      if (reduce) { steps.forEach(stepLit); renderSteps(steps.length - 1); running = false; delete after.dataset.busy; play.setAttribute('aria-pressed', 'false'); return; }
-      var T1 = 2600, T2s = 700, T2 = 1500, total = 3400, t0 = performance.now(), done = -1;
-      d1.style.display = ''; place(d1, p1, 0);
-      (function frame(now) {
-        if (!running) return; var t = now - t0;
-        place(d1, p1, t / T1);
-        if (t >= T2s) { d2.style.display = ''; place(d2, p2, (t - T2s) / T2); }
-        if (t > T2s + T2) d2.style.display = 'none'; if (t > T1) d1.style.display = 'none';
-        for (var i = 0; i < steps.length; i++) if (t >= steps[i][0] && i > done) { done = i; stepLit(steps[i]); renderSteps(done); }
-        if (t < total) raf = requestAnimationFrame(frame); else setTimeout(stop, 900);
-      })(t0);
-    }
-    if (play) { play.addEventListener('click', function () { running ? stop() : run(); }); renderSteps(-1); }
+  var svg = document.getElementById('cv'); if (!svg) return;
+  var state = { zoom: 1, sections: true, collapsed: {}, sel: 'ddb', showCost: false, showSec: false, grid: true, mode: 'icon' };
+  var byC = {}, byN = {};
+
+  function kindOf(c) { return KIND[c.kind]; }
+  function isHidden(o) { // inside a collapsed container?
+    var p = o.parent || o.in;
+    while (p) { if (state.collapsed[p]) return true; p = byC[p] ? byC[p].parent : null; }
+    return false;
   }
+  function collapsedHost(id) { // nearest collapsed ancestor
+    var p = byN[id] ? byN[id].in : (byC[id] ? byC[id].parent : null), last = null;
+    while (p) { if (state.collapsed[p]) last = p; p = byC[p] ? byC[p].parent : null; }
+    return last;
+  }
+  function nodeBox(n) {
+    if (state.mode === 'card') return { l:n.x-CARD_W/2, r:n.x+CARD_W/2, t:n.y-CARD_H/2, b:n.y+CARD_H/2, x:n.x, y:n.y };
+    return { l:n.x-ICON/2, r:n.x+ICON/2, t:n.y-ICON/2, b:n.y+ICON/2, x:n.x, y:n.y };
+  }
+  function boxOf(id) {
+    var h = collapsedHost(id);
+    if (h) { var c = byC[h]; return { l:c.x, r:c.x+220, t:c.y, b:c.y+84, x:c.x+110, y:c.y+42, host:h }; }
+    return nodeBox(byN[id]);
+  }
+  function path(e) {
+    var A = boxOf(e.f), B = boxOf(e.t);
+    if (A.host && A.host === B.host) return null;
+    if (Math.abs(A.x - B.x) < 8) { var k = -1, r = 46;
+      var s = { x:A.l, y:A.y }, t = { x:B.l, y:B.y };
+      return { d:'M'+s.x+','+s.y+' C'+(s.x+k*r)+','+s.y+' '+(t.x+k*r)+','+t.y+' '+t.x+','+t.y, s:s, t:t, lx:s.x+k*r*.8, ly:(s.y+t.y)/2, rot:-90 };
+    }
+    if (e.arch) { var lift = 52, s2 = { x:A.x, y:A.t }, t2 = { x:B.x, y:B.t };
+      return { d:'M'+s2.x+','+s2.y+' C'+s2.x+','+(s2.y-lift)+' '+t2.x+','+(t2.y-lift)+' '+t2.x+','+t2.y, s:s2, t:t2, lx:(s2.x+t2.x)/2, ly:Math.min(s2.y,t2.y)-lift*.72, rot:0 };
+    }
+    var rev = B.x < A.x;
+    var s3 = { x: rev ? A.l : A.r, y:A.y }, t3 = { x: rev ? B.r : B.l, y:B.y }, dx = Math.max(28, Math.abs(t3.x - s3.x));
+    return { d:'M'+s3.x+','+s3.y+' C'+(s3.x+(rev?-1:1)*dx*.5)+','+s3.y+' '+(t3.x+(rev?1:-1)*dx*.5)+','+t3.y+' '+t3.x+','+t3.y,
+             s:s3, t:t3, lx:(s3.x+t3.x)/2, ly:(s3.y+t3.y)/2-9, rot:0 };
+  }
+  function sum(cid) {
+    var tot = 0;
+    N.forEach(function (n) { var p = n.in; while (p) { if (p === cid) { tot += parseFloat(n.cost.replace(/[$,—]/g,'')) || 0; break; } p = byC[p] ? byC[p].parent : null; } });
+    return tot;
+  }
+  function count(cid) { var k = 0; N.forEach(function (n) { var p = n.in; while (p) { if (p === cid) { k++; break; } p = byC[p] ? byC[p].parent : null; } }); return k; }
 
-  // ---------- Figure 2: groups (VPC / subnets) and collapse ----------
-  var gsvg = document.getElementById('groups');
-  if (gsvg) {
-    var GN = [
-      { id: 'cf', cx: 110, cy: 215, icon: 'aws-cloudfront', name: 'edge-cdn', cost: 12.4 },
-      { id: 'alb', cx: 400, cy: 180, icon: 'aws-elb', name: 'prod-alb', cost: 22.27, group: 'pub' },
-      { id: 'nat', cx: 400, cy: 320, icon: 'aws-nat', name: 'nat-a', cost: 77.85, group: 'pub', warn: true, res: '#8C4FFF' },
-      { id: 'ecs', cx: 700, cy: 250, icon: 'aws-ecs', name: 'api-service ×2', cost: 71.10, group: 'priv', stacked: true },
-      { id: 'rds', cx: 900, cy: 250, icon: 'aws-rds', name: 'orders-db', cost: 118.26, group: 'priv', sec: 'Multi-AZ' }
-    ];
-    var GE = [
-      { from: 'cf', to: 'alb', kind: 'sync', w: 2.6, label: '1.2M req' },
-      { from: 'alb', to: 'ecs', kind: 'sync', w: 2.6, label: 'target group' },
-      { from: 'ecs', to: 'rds', kind: 'data', w: 2, label: 'reads / writes' },
-      { from: 'ecs', to: 'nat', kind: 'sync', w: 1.6, label: 'egress · 1.2 TB', back: true }
-    ];
-    var GROUPS = [
-      { id: 'cloud', x: 24, y: 24, w: 1032, h: 392, color: '#242F3E', icon: 'aws-group-cloud', label: 'AWS Cloud' },
-      { id: 'vpc', x: 250, y: 60, w: 780, h: 336, color: '#8C4FFF', icon: 'aws-group-vpc', label: 'prod-vpc · 10.0.0.0/16', collapsible: true },
-      { id: 'pub', x: 290, y: 108, w: 240, h: 262, color: '#7AA116', icon: 'aws-group-public', label: 'public-a · 10.0.1.0/24' },
-      { id: 'priv', x: 580, y: 108, w: 420, h: 262, color: '#00A4A6', icon: 'aws-group-private', label: 'private-a · 10.0.10.0/24' }
-    ];
-    var collapsed = false, showCost = false;
-    function money(v) { return '$' + v.toFixed(2); }
-    function groupFrame(gr, members) {
-      var g = el('g', { 'class': 'group', 'data-id': gr.id });
-      g.appendChild(el('rect', { x: gr.x, y: gr.y, width: gr.w, height: gr.h, rx: 4, fill: gr.color, 'fill-opacity': .035, stroke: gr.color, 'stroke-width': 1.4 }));
-      g.appendChild(el('use', { href: '#' + gr.icon, x: gr.x, y: gr.y, width: 28, height: 28 }));
-      g.appendChild(el('text', { x: gr.x + 36, y: gr.y + 19, 'font-family': SANS, 'font-size': 12, 'font-weight': 500, fill: 'currentColor' }, [gr.label]));
-      if (showCost && members.length) {
-        var sum = members.reduce(function (a, n) { return a + n.cost; }, 0);
-        g.appendChild(el('text', { 'class': 'gcost', x: gr.x + gr.w - 10, y: gr.y + 36, 'font-family': MONO, 'font-size': 10.5, 'font-weight': 600, fill: 'currentColor', 'text-anchor': 'end' }, [members.length + ' resources · ' + money(sum) + '/mo']));
-      }
+  function gear(x, y) { return el('g', { 'class':'gear', transform:'translate('+x+','+y+')', stroke:'currentColor', 'stroke-width':1.2, fill:'none' },
+    [el('circle',{r:5}), el('circle',{r:1.5,fill:'currentColor',stroke:'none'}), el('line',{x1:0,y1:-8,x2:0,y2:-5.5}),
+     el('line',{x1:0,y1:5.5,x2:0,y2:8}), el('line',{x1:-8,y1:0,x2:-5.5,y2:0}), el('line',{x1:5.5,y1:0,x2:8,y2:0})]); }
+
+  function drawContainer(c) {
+    var k = kindOf(c), g = el('g', { 'class':'cont'+(state.collapsed[c.id]?' cl':''), 'data-id':c.id });
+    if (state.collapsed[c.id]) {
+      g.appendChild(el('rect', { x:c.x, y:c.y, width:220, height:84, rx:10, fill:'#111620', stroke:k.c, 'stroke-width':1.6 }));
+      if (k.icon) g.appendChild(el('use', { href:'#'+k.icon, x:c.x+12, y:c.y+12, width:26, height:26 }));
+      g.appendChild(el('text', { x:c.x+(k.icon?46:14), y:c.y+22, 'font-family':SANS, 'font-size':9.5, 'font-weight':600, 'letter-spacing':.9, fill:k.c }, [k.label.toUpperCase()]));
+      g.appendChild(el('text', { x:c.x+14, y:c.y+48, 'font-family':SANS, 'font-size':13, 'font-weight':500, fill:'#E8ECF2' }, [c.name]));
+      g.appendChild(el('text', { x:c.x+14, y:c.y+66, 'font-family':MONO, 'font-size':10, fill:'#7C8CA0' }, [count(c.id)+' resources · $'+sum(c.id).toFixed(2)+'/mo']));
+      g.appendChild(el('text', { 'class':'exp', x:c.x+206, y:c.y+68, 'font-family':MONO, 'font-size':13, fill:'#66738A', 'text-anchor':'end' }, ['⤢']));
       return g;
     }
-    function inGroup(n, gid) { if (gid === 'cloud') return true; if (gid === 'vpc') return n.group === 'pub' || n.group === 'priv'; return n.group === gid; }
-    function buildGroups() {
-      while (gsvg.firstChild) gsvg.removeChild(gsvg.firstChild);
-      gsvg.appendChild(el('defs', null, [marker('gh')]));
-      var nodes = GN.slice(), edges = GE.slice(), groups = GROUPS.slice();
-      if (collapsed) {
-        var vpcMembers = GN.filter(function (n) { return inGroup(n, 'vpc'); });
-        var sum = vpcMembers.reduce(function (a, n) { return a + n.cost; }, 0);
-        nodes = GN.filter(function (n) { return !inGroup(n, 'vpc'); }).concat([{ id: 'vpcnode', cx: 640, cy: 215, icon: 'aws-group-vpc', term: 'Amazon VPC', name: 'prod-vpc', settings: '2 subnets · ' + vpcMembers.length + ' resources', cost: money(sum), warn: true, collapsedGroup: true }]);
-        edges = [{ from: 'cf', to: 'vpcnode', kind: 'sync', w: 2.6, label: '1.2M req' }];
-        groups = groups.filter(function (g) { return g.id === 'cloud'; });
-      }
-      var byId = {}; nodes.forEach(function (n) { byId[n.id] = n; });
-      groups.forEach(function (gr) { gsvg.appendChild(groupFrame(gr, GN.filter(function (n) { return inGroup(n, gr.id); }))); });
-      var eg = el('g', { 'class': 'edges' });
-      edges.forEach(function (e) {
-        var a = byId[e.from], b = byId[e.to], ma = a.collapsedGroup ? 'card' : 'icon', mb = b.collapsedGroup ? 'card' : 'icon';
-        var geo;
-        if (e.back) { // ecs → nat: leaves left, arrives right, one smooth S-curve
-          var A = bounds(a, ma), B = bounds(b, mb), s = { x: A.l, y: a.cy }, t = { x: B.r, y: b.cy };
-          geo = { d: 'M' + s.x + ',' + s.y + ' C' + (s.x - 110) + ',' + s.y + ' ' + (t.x + 110) + ',' + t.y + ' ' + t.x + ',' + t.y, s: s, t: t, lab: { x: (s.x + t.x) / 2, y: (s.y + t.y) / 2 - 9 } };
-        } else geo = edgePath(e, bounds(a, ma), bounds(b, mb), { x: a.cx, y: a.cy }, { x: b.cx, y: b.cy });
-        e.layer = 'request'; eg.appendChild(renderEdge(e, geo, 'gh'));
-      });
-      gsvg.appendChild(eg);
-      var ng = el('g', { 'class': 'nodes' });
-      nodes.forEach(function (n) { var node = renderNode(n, n.collapsedGroup ? 'card' : 'icon'); if (!n.collapsedGroup && showCost) node.appendChild(el('text', { 'class': 'cost', y: 61, 'font-family': MONO, 'font-size': 10.5, 'font-weight': 600, fill: 'currentColor', 'text-anchor': 'middle' }, [money(n.cost)])); ng.appendChild(node); });
-      gsvg.appendChild(ng);
-      wireHover(gsvg);
+    g.appendChild(el('rect', { x:c.x, y:c.y, width:c.w, height:c.h, rx:8, fill:k.c, 'fill-opacity':.045, stroke:k.c, 'stroke-width':1.3, 'stroke-dasharray':k.dash || null }));
+    if (k.icon) g.appendChild(el('use', { href:'#'+k.icon, x:c.x+7, y:c.y+7, width:24, height:24 }));
+    var tx = c.x + (k.icon ? 37 : 12);
+    g.appendChild(el('text', { x:tx, y:c.y+16, 'font-family':SANS, 'font-size':8.5, 'font-weight':600, 'letter-spacing':.9, fill:k.c, opacity:.85 }, [k.label.toUpperCase()]));
+    g.appendChild(el('text', { x:tx, y:c.y+28, 'font-family':SANS, 'font-size':11.5, 'font-weight':500, fill:'#C7D0DC' }, [c.name]));
+    if (state.showCost) g.appendChild(el('text', { 'class':'ccost', x:c.x+c.w-10, y:c.y+21, 'font-family':MONO, 'font-size':10, 'font-weight':600, fill:k.c, 'text-anchor':'end' }, [count(c.id)+' · $'+sum(c.id).toFixed(2)+'/mo']));
+    g.appendChild(el('text', { 'class':'col', x:c.x+c.w-10, y:c.y+c.h-9, 'font-family':MONO, 'font-size':12, fill:'#4E5A6B', 'text-anchor':'end' }, ['⤡']));
+    return g;
+  }
+
+  function drawNode(n) {
+    var g = el('g', { 'class':'node'+(state.mode==='card'?' card':'')+(n.ghost?' ghost':''), 'data-id':n.id, transform:'translate('+n.x+','+n.y+')' });
+    if (state.mode === 'card') {
+      if (n.stack) g.appendChild(el('rect', { x:-CARD_W/2+6, y:-CARD_H/2-6, width:CARD_W, height:CARD_H, rx:9, fill:'#111620', stroke:'#2A3341', opacity:.6 }));
+      g.appendChild(el('rect', { 'class':'frame', x:-CARD_W/2, y:-CARD_H/2, width:CARD_W, height:CARD_H, rx:9, fill:'#111620', stroke:'#2A3341', 'stroke-width':1.2 }));
+      if (n.warn) g.appendChild(el('line', { x1:-CARD_W/2+1.6, y1:-CARD_H/2+11, x2:-CARD_W/2+1.6, y2:CARD_H/2-11, stroke:'#F0B34E', 'stroke-width':3, 'stroke-linecap':'round' }));
+      g.appendChild(el('use', { href:'#'+n.icon, x:-CARD_W/2+11, y:-22, width:44, height:44 }));
+      var tx = -CARD_W/2+64;
+      g.appendChild(el('text', { x:tx, y:-18, 'font-family':SANS, 'font-size':9, 'font-weight':600, fill:'#7C8CA0' }, [n.term]));
+      g.appendChild(el('text', { x:tx, y:-3, 'font-family':SANS, 'font-size':12, 'font-weight':500, fill:'#E8ECF2' }, [n.name]));
+      g.appendChild(el('text', { x:tx, y:11, 'font-family':MONO, 'font-size':9, fill:'#7C8CA0' }, [n.set]));
+      g.appendChild(el('text', { 'class':'cost', x:CARD_W/2-10, y:28, 'font-family':MONO, 'font-size':11, 'font-weight':600, fill:'#E8ECF2', 'text-anchor':'end' }, [n.cost]));
+      g.appendChild(gear(CARD_W/2-14, -CARD_H/2+14));
+    } else {
+      if (n.stack) g.appendChild(el('use', { href:'#'+n.icon, x:-ICON/2+6, y:-ICON/2-6, width:ICON, height:ICON, opacity:.4 }));
+      g.appendChild(el('rect', { 'class':'ring'+(n.warn?' warn':''), x:-31, y:-31, width:62, height:62, rx:11 }));
+      if (n.res) { g.appendChild(el('rect', { x:-ICON/2, y:-ICON/2, width:ICON, height:ICON, rx:7, fill:'#111620', stroke:n.res, 'stroke-width':1.5 }));
+        g.appendChild(el('use', { href:'#'+n.icon, x:-20, y:-20, width:40, height:40 })); }
+      else g.appendChild(el('use', { href:'#'+n.icon, x:-ICON/2, y:-ICON/2, width:ICON, height:ICON }));
+      g.appendChild(gear(36, -21));
+      g.appendChild(el('text', { y:ICON/2+17, 'font-family':SANS, 'font-size':11.5, 'font-weight':500, fill:'#E8ECF2', 'text-anchor':'middle' }, [n.name]));
+      if (n.sec) g.appendChild(el('text', { 'class':'sec', y:ICON/2+30, 'font-family':MONO, 'font-size':9, fill:'#7C8CA0', 'text-anchor':'middle' }, [n.sec]));
+      if (state.showCost) g.appendChild(el('text', { 'class':'cost', y:ICON/2+(n.sec?43:30), 'font-family':MONO, 'font-size':10.5, 'font-weight':600, fill:'#6FE3B0', 'text-anchor':'middle' }, [n.cost]));
     }
-    buildGroups();
-    var cb = document.getElementById('collapse'); if (cb) cb.addEventListener('click', function () { collapsed = !collapsed; cb.setAttribute('aria-pressed', collapsed ? 'true' : 'false'); buildGroups(); });
-    var gc = document.getElementById('gcost'); if (gc) gc.addEventListener('click', function () { showCost = !showCost; gc.setAttribute('aria-pressed', showCost ? 'true' : 'false'); buildGroups(); });
+    return g;
   }
-})();
 
+  function drawSection(s) {
+    var g = el('g', { 'class':'sect', 'data-id':s.id });
+    g.appendChild(el('rect', { x:s.x, y:s.y, width:s.w, height:s.h, rx:12, fill:s.color, 'fill-opacity':.05, stroke:s.color, 'stroke-width':1.4, 'stroke-dasharray':'2 5', 'stroke-linecap':'round' }));
+    var w = s.name.length * 6.4 + 34;
+    g.appendChild(el('rect', { x:s.x, y:s.y-23, width:w, height:20, rx:6, fill:s.color, 'fill-opacity':.16, stroke:s.color, 'stroke-width':1 }));
+    g.appendChild(el('text', { x:s.x+10, y:s.y-9, 'font-family':SANS, 'font-size':10.5, 'font-weight':600, fill:s.color }, [s.name]));
+    g.appendChild(el('text', { x:s.x+w-11, y:s.y-9, 'font-family':MONO, 'font-size':10, fill:s.color, 'text-anchor':'end', opacity:.7 }, ['⤡']));
+    return g;
+  }
 
-</script>
-<script>
-
-(function(){
-  // ---------- inspector: settings from the per-service schema, cost lines with provenance, findings with doc links ----------
-  var PR = 'https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/';
-  var S = {
-    lambda:   { term:'AWS Lambda', icon:'aws-lambda', fields:[['Architecture','architecture','enum',['x86_64','arm64']],['Memory (MB)','memoryMb','num'],['Timeout (s)','timeoutSec','num'],['Avg duration (ms)','avgDurationMs','num','driver'],['Reserved concurrency','reservedConcurrency','num']] },
-    apigw:    { term:'Amazon API Gateway', icon:'aws-apigateway', fields:[['API type','apiType','enum',['HTTP','REST']],['Requests / month','requests','num','driver'],['Throttling (rps)','throttle','num']] },
-    cf:       { term:'Amazon CloudFront', icon:'aws-cloudfront', fields:[['Price class','priceClass','enum',['100','200','All']],['Data out (GB)','dataOutGb','num','driver'],['Requests / month','requests','num','driver']] },
-    cognito:  { term:'Amazon Cognito', icon:'aws-cognito', fields:[['Monthly active users','mau','num','driver'],['Advanced security','asf','enum',['off','on']]] },
-    sqs:      { term:'Amazon SQS', icon:'aws-sqs', fields:[['Queue type','type','enum',['Standard','FIFO']],['Messages / month','messages','num','driver'],['Dead-letter queue','dlq','enum',['on','off']]] },
-    sns:      { term:'Amazon SNS', icon:'aws-sns', fields:[['Publishes / month','publishes','num','driver'],['Subscriptions','subs','num']] },
-    ddb:      { term:'Amazon DynamoDB', icon:'aws-dynamodb', fields:[['Billing mode','billing','enum',['On-demand','Provisioned']],['Storage (GB)','storageGb','num','driver'],['Reads / month (M)','reads','num','driver'],['Writes / month (M)','writes','num','driver'],['Point-in-time recovery','pitr','enum',['on','off']]] },
-    s3:       { term:'Amazon S3', icon:'aws-s3', fields:[['Storage class','cls','enum',['Standard','IA','Glacier IR']],['Storage (GB)','storageGb','num','driver'],['PUT / month (M)','puts','num','driver'],['Lifecycle rule','lifecycle','enum',['none','→ IA 90d','→ Glacier 180d']]] }
-  };
-  var NODES = {
-    cdn:{svc:'cf',name:'static-site-cdn',cost:3.60,v:{priceClass:'100',dataOutGb:40,requests:300000},lines:[['Data transfer out','40 GB × $0.085',3.40],['HTTPS requests','0.3M × $0.0075/10k',0.20]],findings:[]},
-    pool:{svc:'cognito',name:'user-pool',cost:0,v:{mau:12000,asf:'off'},lines:[['Monthly active users','12,000 · first 50k free',0]],findings:[]},
-    http:{svc:'apigw',name:'orders-http',cost:5.00,v:{apiType:'HTTP',requests:5000000,throttle:1000},lines:[['HTTP API requests','5M × $1.00/M',5.00]],findings:[]},
-    api:{svc:'lambda',name:'orders-api',cost:4.98,v:{architecture:'arm64',memoryMb:512,timeoutSec:3,avgDurationMs:120,reservedConcurrency:''},lines:[['Requests','5M × $0.20/M',1.00],['Compute','300k GB-s × $0.0000133',3.98]],findings:[]},
-    sqs:{svc:'sqs',name:'thumbnail-queue',cost:0.16,v:{type:'Standard',messages:400000,dlq:'on'},lines:[['Requests','0.4M × $0.40/M',0.16]],findings:[]},
-    sns:{svc:'sns',name:'order-events',cost:0.60,v:{publishes:1200000,subs:3},lines:[['Publishes','1.2M × $0.50/M',0.60]],findings:[['info','unbounded_fanout','3 subscribers, no reserved concurrency on consumers — a burst fans out uncapped.','https://docs.aws.amazon.com/wellarchitected/latest/serverless-applications-lens/welcome.html',null]]},
-    thumb:{svc:'lambda',name:'thumbnail-worker',cost:16.10,v:{architecture:'arm64',memoryMb:1024,timeoutSec:3,avgDurationMs:3000,reservedConcurrency:20},lines:[['Requests','0.4M × $0.20/M',0.08],['Compute','1.2M GB-s × $0.0000133',16.02]],findings:[['info','memory_duration_tradeoff','3 s at 1024 MB. Try 1536 MB — if duration drops below 2 s the bill goes down, not up.','https://docs.aws.amazon.com/lambda/latest/operatorguide/computing-power.html','≈ $2.10']]},
-    notify:{svc:'lambda',name:'notify · analytics',cost:0.40,v:{architecture:'arm64',memoryMb:256,timeoutSec:3,avgDurationMs:80,reservedConcurrency:''},lines:[['Requests','2.4M × $0.20/M',0.48],['Compute','48k GB-s × $0.0000133',0.64]],findings:[]},
-    static:{svc:'s3',name:'static-site',cost:0.05,v:{cls:'Standard',storageGb:2,puts:0.01,lifecycle:'none'},lines:[['Storage','2 GB × $0.025',0.05]],findings:[]},
-    uploads:{svc:'s3',name:'uploads',cost:2.76,v:{cls:'Standard',storageGb:120,puts:0.4,lifecycle:'→ IA 90d'},lines:[['Storage','120 GB × $0.025',3.00],['IA after 90d','−',-2.24],['PUT requests','0.4M × $0.005/1k',2.00]],findings:[]},
-    orders:{svc:'ddb',name:'orders',cost:63.75,v:{billing:'On-demand',storageGb:40,reads:3.6,writes:1.2,pitr:'on'},lines:[['Write request units','1.2M × $1.4231/M',1.71],['Read request units','3.6M × $0.285/M',1.03],['Storage','40 GB × $0.285',11.40],['PITR backup','40 GB × $0.228',9.12],['Steady-state on-demand premium','vs provisioned at this throughput',40.49]],findings:[['warn','on_demand_steady_state','Throughput is steady across the month. Provisioned capacity with auto-scaling is cheaper past ~1.5M reads/day.','https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/capacity-mode.html','≈ $38.20']]}
-  };
-  var el = document.getElementById('inspector');
-  function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
-  function money(v){ return (v<0?'−':'')+'$'+Math.abs(v).toFixed(2); }
-  function render(id){
-    var n = NODES[id]; if(!n){ el.innerHTML='<div class="empty">Select a node to see its settings, cost lines and findings.</div>'; return; }
-    var s = S[n.svc]; var h = '';
-    h += '<div class="ihead"><svg><use href="#'+s.icon+'"/></svg><div class="t"><span class="term">'+esc(s.term)+'</span><span class="name">'+esc(n.name)+'</span></div><span class="cost">'+money(n.cost)+'</span></div>';
-    h += '<div class="isec"><span class="label">Settings</span>';
-    s.fields.forEach(function(f){
-      var label=f[0], key=f[1], type=f[2], val=n.v[key];
-      h += '<div class="field"><div class="k">'+esc(label)+(f[3]==='driver'?'<small>pricing driver</small>':'')+'</div>';
-      if(type==='enum'){ h += '<div class="seg">'+f[3].map(function(o){ return '<button aria-pressed="'+(String(val)===o?'true':'false')+'">'+esc(o)+'</button>'; }).join('')+'</div>'; }
-      else { h += '<input class="ctl mono" value="'+esc(val===''?'':val)+'" placeholder="—">'; }
-      h += '</div>';
+  function build() {
+    byC = {}; C.forEach(function (c) { byC[c.id] = c; });
+    byN = {}; N.forEach(function (n) { byN[n.id] = n; });
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    svg.appendChild(el('defs', null, [el('marker', { id:'ah', viewBox:'0 0 10 10', refX:9, refY:5, markerWidth:6, markerHeight:6, orient:'auto-start-reverse' }, [el('path', { d:'M0,0 L10,5 L0,10 z', fill:'#5C6B7F' })])]));
+    // containers, parents first
+    var order = [], seen = {};
+    (function walk(p) { C.forEach(function (c) { if (c.parent === p && !seen[c.id]) { seen[c.id] = 1; order.push(c); walk(c.id); } }); })(null);
+    var cg = el('g', { 'class':'conts' });
+    order.forEach(function (c) { if (!isHidden(c)) cg.appendChild(drawContainer(c)); });
+    svg.appendChild(cg);
+    // sections sit above containers, below nodes
+    if (state.sections) { var sg = el('g', { 'class':'sects' }); S.forEach(function (s) { sg.appendChild(drawSection(s)); }); svg.appendChild(sg); }
+    // edges
+    var eg = el('g', { 'class':'edges' });
+    E.forEach(function (e) {
+      var p = path(e); if (!p) return;
+      var g = el('g', { 'class':'edge', 'data-from':e.f, 'data-to':e.t, 'data-kind':e.k, fill:'none', stroke:'#5C6B7F' });
+      var a = { d:p.d, 'stroke-width':e.w, 'stroke-linecap':'round' };
+      if (e.k === 'async') { a['stroke-dasharray'] = '7 5'; a['marker-end'] = 'url(#ah)'; }
+      else if (e.k === 'data') a['stroke-dasharray'] = '2 5';
+      else a['marker-end'] = 'url(#ah)';
+      g.appendChild(el('path', a));
+      var ta = { 'font-family':SANS, 'font-size':9.5, fill:'#7C8CA0', stroke:'none', 'text-anchor':'middle' };
+      if (p.rot) ta.transform = 'translate('+p.lx+','+p.ly+') rotate('+p.rot+')'; else { ta.x = p.lx; ta.y = p.ly; }
+      g.appendChild(el('text', ta, [e.l]));
+      eg.appendChild(g);
     });
-    h += '</div>';
-    h += '<div class="isec"><span class="label">Cost lines · AWS Price List</span>';
-    n.lines.forEach(function(l){ h += '<div class="line"><div class="k">'+esc(l[0])+'<small>'+esc(l[1])+'</small></div><div class="v">'+money(l[2])+'</div></div>'; });
-    h += '<div class="line sum"><div class="k">Monthly</div><div class="v">'+money(n.cost)+'</div></div></div>';
-    h += '<div class="isec"><span class="label">Findings</span>';
-    if(!n.findings.length) h += '<div style="font-size:.8rem;color:var(--ink-3)">Nothing flagged for this node.</div>';
-    n.findings.forEach(function(f){ h += '<div class="finding '+f[0]+'"><div class="sev"></div><div class="b"><b>'+esc(f[1])+'</b><span class="m">'+esc(f[2])+'</span><span class="s"><a href="'+esc(f[3])+'" target="_blank" rel="noopener">AWS doc ↗</a>'+(f[4]?'<span class="save">saves '+esc(f[4])+'/mo</span>':'')+'</span></div></div>'; });
-    h += '</div>';
-    el.innerHTML = h;
-    var svg = document.getElementById('after');
-    svg.querySelectorAll('.node').forEach(function(x){ x.classList.toggle('sel', x.dataset.id===id); });
+    svg.appendChild(eg);
+    var ng = el('g', { 'class':'nodes' });
+    N.forEach(function (n) { if (!isHidden(n)) ng.appendChild(drawNode(n)); });
+    svg.appendChild(ng);
+    svg.classList.toggle('l-cost', state.showCost);
+    svg.classList.toggle('l-sec', state.showSec);
+    mark();
+    wire();
+    tree();
   }
-  document.addEventListener('overhead:select', function(e){ render(e.detail); });
-  render('orders');
-  // re-apply selection after the diagram rebuilds (cards/zoom)
-  var selected = 'orders';
-  document.addEventListener('overhead:select', function(e){ selected = e.detail; });
-  new MutationObserver(function(){ document.querySelectorAll('#after .node').forEach(function(x){ x.classList.toggle('sel', x.dataset.id===selected); }); }).observe(document.getElementById('after'), {childList:true});
+  function mark() { svg.querySelectorAll('.node').forEach(function (n) { n.classList.toggle('sel', n.dataset.id === state.sel); }); }
 
-  // scenario: dynamic tools appear, delta chip shows
-  var sc = document.getElementById('scenario'), chip = document.getElementById('scenChip'), cnt = document.getElementById('toolcount'), extra = document.getElementById('toolextra'), total = document.getElementById('total'), log = document.getElementById('toollog');
-  var open = false;
-  sc.addEventListener('click', function(){
-    open = !open; sc.setAttribute('aria-pressed', open?'true':'false'); chip.hidden = !open;
-    cnt.textContent = open ? '22' : '18'; extra.textContent = open ? ' · scenario tools registered' : ' · +4 while a scenario is open';
-    total.textContent = open ? '$88.20' : '$97.40';
-    log.innerHTML = open
-      ? '<span><b>open_scenario</b> "arm64 + 1024 MB" → <i>4 tools registered</i></span><span><b>scenario_apply</b> set_property thumbnail-worker.memoryMb=1024 → <i>$16.10</i></span><span><b>get_delta</b> → <i>−$9.20/mo</i></span>'
-      : '<span><b>get_findings</b> → <i>2 findings</i></span><span><b>set_property</b> thumbnail-worker.architecture=arm64 → <i>$16.10</i></span><span><b>get_cost_breakdown</b> groupBy=node → <i>11 lines</i></span>';
-  });
+  // ---- interaction ----
+  function wire() {
+    svg.querySelectorAll('.cont .col, .cont.cl .exp').forEach(function (t) {
+      t.style.cursor = 'pointer';
+      t.addEventListener('click', function (e) { e.stopPropagation(); var id = t.closest('.cont').dataset.id; state.collapsed[id] = !state.collapsed[id]; build(); });
+    });
+    svg.querySelectorAll('.node').forEach(function (g) {
+      g.style.cursor = 'pointer';
+      g.addEventListener('click', function () { state.sel = g.dataset.id; mark(); document.dispatchEvent(new CustomEvent('oh:sel', { detail:g.dataset.id })); });
+      g.addEventListener('mouseenter', function () { if (svg.dataset.busy) return; svg.classList.add('hover'); g.classList.add('lit');
+        svg.querySelectorAll('.edge').forEach(function (e) { if (e.dataset.from === g.dataset.id || e.dataset.to === g.dataset.id) { e.classList.add('lit');
+          var o = svg.querySelector('.node[data-id="'+(e.dataset.from === g.dataset.id ? e.dataset.to : e.dataset.from)+'"]'); if (o) o.classList.add('lit'); } }); });
+      g.addEventListener('mouseleave', clear);
+      drag(g, byN[g.dataset.id]);
+    });
+    svg.querySelectorAll('.sect').forEach(function (g) { drag(g, S.filter(function (s) { return s.id === g.dataset.id; })[0]); g.style.cursor = 'grab'; });
+  }
+  function clear() { if (svg.dataset.busy) return; svg.classList.remove('hover'); svg.querySelectorAll('.lit').forEach(function (x) { x.classList.remove('lit'); }); }
+  function drag(g, o) {
+    if (!o) return;
+    g.addEventListener('pointerdown', function (e) {
+      if (e.button !== 0) return; var m = svg.getScreenCTM();
+      svg._d = { o:o, sx:e.clientX, sy:e.clientY, ox:o.x, oy:o.y, k:1/m.a, moved:false };
+      svg.setPointerCapture(e.pointerId); svg.dataset.busy = '1'; e.preventDefault(); e.stopPropagation();
+    });
+  }
+  if (!svg._dw) { svg._dw = 1;
+    svg.addEventListener('pointermove', function (e) { var d = svg._d; if (!d) return;
+      var dx = (e.clientX - d.sx) * d.k, dy = (e.clientY - d.sy) * d.k;
+      if (!d.moved && Math.abs(dx) + Math.abs(dy) < 3) return; d.moved = true;
+      d.o.x = d.ox + dx; d.o.y = d.oy + dy; build(); });
+    var end = function () { if (!svg._d) return; svg._d = null; delete svg.dataset.busy; clear(); };
+    svg.addEventListener('pointerup', end); svg.addEventListener('pointercancel', end);
+  }
+
+  // ---- structure tree panel ----
+  function tree() {
+    var host = document.getElementById('tree'); if (!host) return;
+    var h = '';
+    function kidsOf(p) { return C.filter(function (c) { return c.parent === p; }); }
+    function nodesIn(cid) { return N.filter(function (n) { return n.in === cid; }); }
+    function row(depth, id, icon, colour, label, meta, kind) {
+      var pad = 8 + depth * 13;
+      return '<div class="tr'+(state.sel===id?' on':'')+'" data-id="'+id+'" data-kind="'+kind+'" style="padding-left:'+pad+'px">'
+        + (icon ? '<svg class="ti"><use href="#'+icon+'"/></svg>' : '<span class="tdot" style="background:'+colour+'"></span>')
+        + '<span class="tl">'+label+'</span>'
+        + (meta ? '<span class="tm">'+meta+'</span>' : '')
+        + (kind==='c' ? '<span class="tc">'+(state.collapsed[id]?'⤢':'⤡')+'</span>' : '') + '</div>';
+    }
+    function walk(p, d) {
+      kidsOf(p).forEach(function (c) {
+        var k = kindOf(c);
+        h += row(d, c.id, k.icon, k.c, c.name, state.showCost ? '$'+sum(c.id).toFixed(0) : count(c.id)+'', 'c');
+        if (!state.collapsed[c.id]) { walk(c.id, d + 1); nodesIn(c.id).forEach(function (n) { h += row(d + 1, n.id, n.icon, null, n.name, state.showCost ? n.cost : '', 'n'); }); }
+      });
+    }
+    h += '<div class="th">Structure</div>'; walk(null, 0);
+    h += '<div class="th" style="margin-top:8px">Sections <span class="add">+</span></div>';
+    S.forEach(function (s) { h += '<div class="tr" data-id="'+s.id+'" data-kind="s" style="padding-left:8px"><span class="tdot" style="background:'+s.color+'"></span><span class="tl">'+s.name+'</span><span class="tc">⤡</span></div>'; });
+    host.innerHTML = h;
+    host.querySelectorAll('.tr').forEach(function (r) {
+      r.addEventListener('click', function () {
+        if (r.dataset.kind === 'n') { state.sel = r.dataset.id; mark(); tree(); document.dispatchEvent(new CustomEvent('oh:sel', { detail:r.dataset.id })); }
+        else if (r.dataset.kind === 'c') { state.collapsed[r.dataset.id] = !state.collapsed[r.dataset.id]; build(); }
+      });
+    });
+  }
+
+  // ---- chrome wiring ----
+  function apply() { var vp = svg.parentElement, base = vp.clientWidth || 1000; svg.style.width = Math.round(base * state.zoom) + 'px'; }
+  function zoomTo(z) { state.zoom = Math.max(.5, Math.min(1.8, Math.round(z * 20) / 20));
+    var r = document.getElementById('zoom'), v = document.getElementById('zoomv');
+    if (r) r.value = Math.round(state.zoom * 100); if (v) v.textContent = Math.round(state.zoom * 100) + '%';
+    var want = state.zoom >= 1.3 ? 'card' : 'icon'; if (want !== state.mode && !state.force) { state.mode = want; build(); } apply(); }
+  window.OH = { build:build, state:state, zoomTo:zoomTo, apply:apply, tree:tree, N:N, C:C, S:S };
+  build(); apply();
+  window.addEventListener('resize', apply);
 })();
 
 </script>
 <script>
 (function(){
+  // ---- inspector, generated from the per-service settings schema ----
+  var DATA={
+   ddb:{icon:'aws-dynamodb',term:'Amazon DynamoDB',name:'orders',cost:'$63.75',
+     where:[['AWS Cloud','cloud'],['ap-southeast-1','region']],
+     f:[['Billing mode','seg',['On-demand','Prov.'],'On-demand'],['Storage (GB)','in','40','pricing driver'],
+        ['Reads / month (M)','in','3.6','pricing driver'],['Writes / month (M)','in','1.2','pricing driver'],
+        ['Point-in-time recovery','seg',['on','off'],'on']],
+     lines:[['Write request units','1.2M × $1.4231/M','$1.71'],['Read request units','3.6M × $0.285/M','$1.03'],
+            ['Storage','40 GB × $0.285','$11.40'],['PITR backup','40 GB × $0.228','$9.12'],
+            ['On-demand premium','vs provisioned here','$40.49']],
+     find:['on_demand_steady_state','Throughput is steady all month. Provisioned with auto-scaling wins past ~1.5M reads/day.','≈ $38.20/mo']},
+   nat:{icon:'aws-nat',term:'NAT Gateway',name:'nat-a',cost:'$77.85',
+     where:[['AWS Cloud','cloud'],['ap-southeast-1','region'],['prod-vpc','vpc'],['ap-southeast-1b','az'],['public-b','subnet']],
+     f:[['Data processed (TB)','in','1.2','pricing driver'],['Hours / month','in','730',''],['Redundant per AZ','seg',['yes','no'],'no']],
+     lines:[['Hourly','730 h × $0.059','$43.07'],['Data processing','1.2 TB × $0.059/GB','$34.78']],
+     find:['nat_egress','1.2 TB through one NAT. VPC endpoints for S3 and DynamoDB remove most of it, and a second NAT is needed for real AZ redundancy.','≈ $31.00/mo']},
+   rds:{icon:'aws-rds',term:'Amazon RDS',name:'orders-db',cost:'$118.26',
+     where:[['AWS Cloud','cloud'],['ap-southeast-1','region'],['prod-vpc','vpc'],['ap-southeast-1a','az'],['private-a','subnet']],
+     f:[['Instance class','in','db.r6g.large',''],['Multi-AZ','seg',['on','off'],'on'],['Storage (GB)','in','200','pricing driver'],
+        ['Engine','in','postgres 16',''],['Backup retention (d)','in','7','']],
+     lines:[['Instance · primary','730 h × $0.1130','$82.49'],['Instance · standby','Multi-AZ','$82.49'],
+            ['Storage 200 GB gp3','× 2 for Multi-AZ','$46.00'],['Committed-use discount','1-yr partial','−$92.72']],
+     find:null},
+   ecs:{icon:'aws-ecs',term:'Amazon ECS',name:'api-service',cost:'$71.10',
+     where:[['AWS Cloud','cloud'],['ap-southeast-1','region'],['prod-vpc','vpc'],['ap-southeast-1a','az'],['private-a','subnet']],
+     f:[['Launch type','seg',['Fargate','EC2'],'Fargate'],['Tasks','in','2','pricing driver'],['vCPU per task','in','0.5','pricing driver'],
+        ['Memory (GB)','in','1','pricing driver'],['Architecture','seg',['x86_64','arm64'],'x86_64']],
+     lines:[['vCPU','2 × 0.5 × 730 h × $0.04856','$35.45'],['Memory','2 × 1 GB × 730 h × $0.00532','$7.77'],['Cross-AZ transfer','to private-b','$27.88']],
+     find:null},
+   onprem:{icon:'aws-group-dc',term:'Corporate data center',name:'erp-legacy',cost:'$0.00',
+     where:[['Outside AWS','external']],
+     f:[['Link','seg',['Direct Connect','VPN'],'Direct Connect'],['Bandwidth','in','1 Gbps',''],['Location','in','Manila','']],
+     lines:[['Port hours','not billed in Overhead','—'],['Data transfer out','see Direct Connect pricing','—']],
+     find:null},
+   alb:{icon:'aws-elb',term:'Elastic Load Balancing',name:'prod-alb',cost:'$22.27',
+     where:[['AWS Cloud','cloud'],['ap-southeast-1','region'],['prod-vpc','vpc'],['ap-southeast-1a','az'],['public-a','subnet']],
+     f:[['Type','seg',['ALB','NLB'],'ALB'],['LCU-hours','in','1.2M','pricing driver'],['Cross-zone','seg',['on','off'],'on']],
+     lines:[['Hourly','730 h × $0.0225','$16.43'],['LCU','1.2M × $0.008','$5.84']],find:null},
+   cf:{icon:'aws-cloudfront',term:'Amazon CloudFront',name:'edge-cdn',cost:'$3.60',
+     where:[['AWS Cloud','cloud'],['Edge locations','global']],
+     f:[['Price class','seg',['100','200','All'],'100'],['Data out (GB)','in','40','pricing driver'],['Requests / mo','in','0.3M','pricing driver']],
+     lines:[['Data transfer out','40 GB × $0.085','$3.40'],['HTTPS requests','0.3M × $0.0075/10k','$0.20']],find:null},
+   apigw:{icon:'aws-apigateway',term:'Amazon API Gateway',name:'orders-http',cost:'$5.00',
+     where:[['AWS Cloud','cloud'],['ap-southeast-1','region']],
+     f:[['API type','seg',['HTTP','REST'],'HTTP'],['Requests / mo','in','5M','pricing driver'],['Throttle (rps)','in','1000','']],
+     lines:[['HTTP API requests','5M × $1.00/M','$5.00']],find:null},
+   fn:{icon:'aws-lambda',term:'AWS Lambda',name:'orders-api',cost:'$4.98',
+     where:[['AWS Cloud','cloud'],['ap-southeast-1','region']],
+     f:[['Architecture','seg',['x86_64','arm64'],'arm64'],['Memory (MB)','in','512',''],['Timeout (s)','in','3',''],['Avg duration (ms)','in','120','pricing driver']],
+     lines:[['Requests','5M × $0.20/M','$1.00'],['Compute','300k GB-s × $0.0000133','$3.98']],find:null},
+   s3:{icon:'aws-s3',term:'Amazon S3',name:'uploads',cost:'$2.76',
+     where:[['AWS Cloud','cloud'],['ap-southeast-1','region']],
+     f:[['Storage class','seg',['Standard','IA'],'Standard'],['Storage (GB)','in','120','pricing driver'],['Lifecycle','in','90d → IA','']],
+     lines:[['Storage','120 GB × $0.025','$3.00'],['Lifecycle saving','after 90 d','−$2.24'],['PUT requests','0.4M × $0.005/1k','$2.00']],find:null},
+   rdsb:{icon:'aws-rds',term:'Amazon RDS',name:'orders-db · standby',cost:'—',
+     where:[['AWS Cloud','cloud'],['ap-southeast-1','region'],['prod-vpc','vpc'],['ap-southeast-1b','az'],['private-b','subnet']],
+     f:[['Role','seg',['standby','primary'],'standby'],['Managed by','in','Multi-AZ','']],
+     lines:[['Billed on the primary','Multi-AZ doubles instance + storage','—']],find:null}
+  };
+  var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+  function render(id){
+    var d=DATA[id], host=document.getElementById('inspector');
+    if(!d){host.innerHTML='<div style="padding:20px 15px;color:var(--ink-3);font-size:12.5px">Select something on the canvas.</div>';return;}
+    var h='<div class="ihead"><svg><use href="#'+d.icon+'"/></svg><div><span class="term">'+esc(d.term)+'</span><span class="name">'+esc(d.name)+'</span></div><span class="cost">'+d.cost+'</span></div>';
+    h+='<div class="isec"><span class="label">Where it lives</span><div class="where">';
+    d.where.forEach(function(w,i){ h+=(i?'<i>›</i>':'')+'<span>'+esc(w[0])+'</span>'; });
+    h+='</div></div>';
+    h+='<div class="isec"><span class="label">Settings</span>';
+    d.f.forEach(function(f){
+      h+='<div class="field"><div class="k">'+esc(f[0])+((f[1]!=='seg'&&f[3])?'<small>'+esc(f[3])+'</small>':'')+'</div>';
+      if(f[1]==='seg'){h+='<div class="seg">'+f[2].map(function(o){return '<button aria-pressed="'+(o===f[3]||o===f[3]?'':'')+'">'+esc(o)+'</button>';}).join('')+'</div>';}
+      else h+='<input class="ctl" value="'+esc(f[2])+'">';
+      h+='</div>';
+    });
+    h+='</div>';
+    h+='<div class="isec"><span class="label">Cost lines · AWS Price List</span>';
+    d.lines.forEach(function(l){h+='<div class="line"><div class="k">'+esc(l[0])+'<small>'+esc(l[1])+'</small></div><div class="v">'+esc(l[2])+'</div></div>';});
+    h+='<div class="line" style="border-top:1px solid var(--line-2);margin-top:3px"><div class="k" style="color:var(--ink)">Monthly</div><div class="v">'+d.cost+'</div></div></div>';
+    h+='<div class="isec" style="border:0"><span class="label">Findings</span>';
+    if(d.find) h+='<div class="finding"><div class="sev"></div><div><b>'+esc(d.find[0])+'</b><span class="m">'+esc(d.find[1])+'</span><div class="r"><a href="#">AWS doc ↗</a><span class="s">saves '+esc(d.find[2])+'</span></div></div></div>';
+    else h+='<div style="font-size:12px;color:var(--ink-3)">Nothing flagged for this resource.</div>';
+    h+='</div>';
+    host.innerHTML=h;
+    // mark the active segment
+    d.f.forEach(function(f,i){ if(f[1]!=='seg')return;
+      var segs=host.querySelectorAll('.seg')[[].concat(d.f).slice(0,i).filter(function(x){return x[1]==='seg';}).length];
+      if(!segs)return; segs.querySelectorAll('button').forEach(function(b){ b.setAttribute('aria-pressed', b.textContent===f[3]?'true':'false'); });
+    });
+  }
+  document.addEventListener('oh:sel',function(e){render(e.detail);});
+  render('nat');
+
+  // ---- panel: drag by header, collapse by button ----
+  document.querySelectorAll('.pan').forEach(function(p){
+    var h=p.querySelector('.ph'), d=null;
+    h.addEventListener('pointerdown',function(e){
+      if(e.target.closest('button'))return;
+      var r=p.getBoundingClientRect();
+      p.style.right='auto';p.style.bottom='auto';p.style.left=r.left+'px';p.style.top=r.top+'px';
+      d={x:e.clientX-r.left,y:e.clientY-r.top}; h.setPointerCapture(e.pointerId); h.style.cursor='grabbing'; e.preventDefault();
+    });
+    h.addEventListener('pointermove',function(e){ if(!d)return;
+      p.style.left=Math.max(4,Math.min(innerWidth-p.offsetWidth-4,e.clientX-d.x))+'px';
+      p.style.top=Math.max(4,Math.min(innerHeight-42,e.clientY-d.y))+'px'; });
+    var end=function(){d=null;h.style.cursor='grab';};
+    h.addEventListener('pointerup',end); h.addEventListener('pointercancel',end);
+    var mb=p.querySelector('[data-min]');
+    if(mb) mb.addEventListener('click',function(){ p.classList.toggle('min'); });
+  });
+
+  // ---- chrome ----
+  var S=window.OH.state;
+  document.querySelectorAll('.layers button[data-l]').forEach(function(b){
+    b.addEventListener('click',function(){
+      var on=b.getAttribute('aria-pressed')!=='true'; b.setAttribute('aria-pressed',on?'true':'false');
+      if(b.dataset.l==='sections'){S.sections=on;document.body.classList.toggle('nosect',!on);}
+      if(b.dataset.l==='cost')S.showCost=on;
+      if(b.dataset.l==='security')S.showSec=on;
+      window.OH.build();
+    });
+  });
+  var ca=document.getElementById('collapseAll');
+  ca.addEventListener('click',function(){ S.collapsed.vpc=!S.collapsed.vpc; ca.textContent=S.collapsed.vpc?'Expand VPC':'Collapse VPC'; window.OH.build(); });
+  document.getElementById('zoom').addEventListener('input',function(){window.OH.zoomTo(this.value/100);});
+  document.getElementById('zoomin').addEventListener('click',function(){window.OH.zoomTo(S.zoom+.15);});
+  document.getElementById('zoomout').addEventListener('click',function(){window.OH.zoomTo(S.zoom-.15);});
+  document.getElementById('zoomfit').addEventListener('click',function(){S.force=false;window.OH.zoomTo(1);});
+  document.querySelector('.viewport').addEventListener('wheel',function(e){ if(!(e.ctrlKey||e.metaKey))return; e.preventDefault();
+    window.OH.zoomTo(S.zoom*(e.deltaY<0?1.1:.9)); },{passive:false});
   var g=document.getElementById('gridtoggle');
-  g.addEventListener('click',function(){
-    var on=g.getAttribute('aria-pressed')!=='true';
-    g.setAttribute('aria-pressed',on?'true':'false');
-    document.body.classList.toggle('nogrid',!on);
-  });
-  document.addEventListener('keydown',function(e){
-    if(e.target.tagName==='INPUT')return;
-    if(e.key==='G'&&e.shiftKey){g.click();e.preventDefault();}
-    if(e.key==='t'||e.key==='T'){if(!e.shiftKey)document.getElementById('play').click();}
-  });
-  // keep the title block's total in step with the header
-  var t=document.getElementById('total'),tb=document.getElementById('tbtotal');
-  new MutationObserver(function(){tb.textContent=t.textContent;}).observe(t,{childList:true,characterData:true,subtree:true});
+  g.addEventListener('click',function(){var on=g.getAttribute('aria-pressed')!=='true';g.setAttribute('aria-pressed',on?'true':'false');document.body.classList.toggle('nogrid',!on);});
+  document.addEventListener('keydown',function(e){ if(e.target.tagName==='INPUT')return; if(e.key==='G'&&e.shiftKey){g.click();e.preventDefault();} });
 })();
 </script>

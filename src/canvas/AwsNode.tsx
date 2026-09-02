@@ -93,7 +93,7 @@ export const AwsNode = memo(function AwsNode({ data }: NodeProps<AwsNodeType>) {
   if (!def) return null;
 
   const ringColor =
-    worst === "critical" ? "var(--critical)" : worst === "warn" ? "var(--finding)" : null;
+    worst === "critical" ? "var(--bad)" : worst === "warn" ? "var(--warn)" : null;
 
   const cardSettings = def.cardLines
     .map((key) => {
@@ -124,13 +124,13 @@ export const AwsNode = memo(function AwsNode({ data }: NodeProps<AwsNodeType>) {
       <Handle type="source" position={Position.Right} style={anchor.right} />
       {cardMode ? (
         <div
-          className="absolute overflow-hidden rounded-lg border bg-surface shadow-sm"
+          className="absolute overflow-hidden rounded-lg border bg-panel shadow-sm"
           style={{
             left: 0,
             top: (NODE_H - 76) / 2,
             width: 200,
             height: 76,
-            borderColor: "var(--rule)",
+            borderColor: "var(--line)",
           }}
         >
           {ringColor ? (
@@ -154,7 +154,7 @@ export const AwsNode = memo(function AwsNode({ data }: NodeProps<AwsNodeType>) {
             </div>
             <div
               className="truncate text-[9.5px] opacity-70"
-              style={{ fontFamily: "var(--font-plex-mono)" }}
+              style={{ fontFamily: "var(--font-mono-jb)" }}
             >
               {cardSettings}
             </div>
@@ -163,8 +163,8 @@ export const AwsNode = memo(function AwsNode({ data }: NodeProps<AwsNodeType>) {
             <div
               className="absolute bottom-1.5 left-[70px] rounded border px-1 py-px text-[8.5px] font-semibold"
               style={{
-                fontFamily: "var(--font-plex-mono)",
-                borderColor: "var(--rule)",
+                fontFamily: "var(--font-mono-jb)",
+                borderColor: "var(--line)",
                 color: "var(--ink-2)",
               }}
             >
@@ -173,7 +173,7 @@ export const AwsNode = memo(function AwsNode({ data }: NodeProps<AwsNodeType>) {
           ) : null}
           <div
             className="absolute bottom-1.5 right-2.5 text-[11px] font-semibold"
-            style={{ fontFamily: "var(--font-plex-mono)" }}
+            style={{ fontFamily: "var(--font-mono-jb)" }}
           >
             {money(monthly)}
           </div>
@@ -199,10 +199,10 @@ export const AwsNode = memo(function AwsNode({ data }: NodeProps<AwsNodeType>) {
             <div
               className="rounded border px-1 py-px text-[8.5px] font-semibold"
               style={{
-                fontFamily: "var(--font-plex-mono)",
-                borderColor: "var(--rule)",
+                fontFamily: "var(--font-mono-jb)",
+                borderColor: "var(--line)",
                 color: "var(--ink-2)",
-                background: "var(--surface)",
+                background: "var(--panel)",
               }}
             >
               {SEC_BADGE[node.service]}
@@ -211,7 +211,7 @@ export const AwsNode = memo(function AwsNode({ data }: NodeProps<AwsNodeType>) {
           {costOn ? (
             <div
               className="text-[10.5px] font-semibold"
-              style={{ fontFamily: "var(--font-plex-mono)" }}
+              style={{ fontFamily: "var(--font-mono-jb)" }}
             >
               {money(monthly)}
             </div>

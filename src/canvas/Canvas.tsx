@@ -134,7 +134,7 @@ export function Canvas() {
         markerEnd:
           e.kind === "data"
             ? undefined
-            : { type: MarkerType.ArrowClosed, width: 14, height: 14, color: "var(--ink)" },
+            : { type: MarkerType.ArrowClosed, width: 14, height: 14, color: "var(--edge)" },
       });
     }
     return out;
@@ -245,13 +245,13 @@ export function Canvas() {
         onMove={onMove}
         fitView
         fitViewOptions={{ maxZoom: 1, padding: 0.15 }}
-        minZoom={0.4}
-        maxZoom={2}
+        minZoom={0.5}
+        maxZoom={1.8}
         zoomOnScroll={false}
         zoomOnPinch
         panOnScroll
       >
-        <Background variant={BackgroundVariant.Lines} gap={24} color="var(--rule)" style={{ opacity: 0.35 }} />
+        <Background variant={BackgroundVariant.Lines} gap={24} color="var(--line)" style={{ opacity: 0.35 }} />
         <GroupFrames />
       </ReactFlow>
     </div>

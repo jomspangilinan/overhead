@@ -252,5 +252,5 @@ export function pricingOf(s: OverheadState): PricingTable {
 
 /** Card mode when zoomed past 125%, forced, or the cost layer is on. */
 export function cardModeOf(s: OverheadState): boolean {
-  return s.cardsForced || s.zoom >= 1.25 || s.layers.cost;
+  return s.cardsForced || s.zoom >= 1.3 || s.layers.cost;
 }

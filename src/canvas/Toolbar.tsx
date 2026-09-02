@@ -54,7 +54,7 @@ function IconBtn({
       className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors ${
         on
           ? "bg-accent text-white"
-          : "text-ink-2 hover:bg-surface-2 hover:text-ink"
+          : "text-ink-2 hover:bg-panel-2 hover:text-ink"
       }`}
     >
       <Icon name={icon} />
@@ -91,11 +91,11 @@ function SamplesMenu() {
         onClick={() => setOpen((o) => !o)}
       />
       {open ? (
-        <div className="absolute left-0 top-9 z-[70] w-44 rounded-lg border border-rule bg-surface p-1 shadow-lg">
+        <div className="absolute left-0 top-9 z-[70] w-44 rounded-lg border border-line bg-panel p-1 shadow-lg">
           {Object.keys(SAMPLES).map((name) => (
             <button
               key={name}
-              className="block w-full rounded px-2.5 py-1.5 text-left text-[12px] hover:bg-surface-2"
+              className="block w-full rounded px-2.5 py-1.5 text-left text-[12px] hover:bg-panel-2"
               onClick={() => {
                 loadSnapshot(SAMPLES[name]);
                 applyAutoLayout();
@@ -146,7 +146,7 @@ export function Toolbar() {
   };
 
   return (
-    <div className="flex items-center gap-1 border-b border-rule bg-surface px-3 py-1.5">
+    <div className="flex items-center gap-1 border-b border-line bg-panel px-3 py-1.5">
       <span
         className="mr-2 text-[15px] font-bold tracking-tight"
         style={{ fontFamily: "var(--font-archivo)" }}
@@ -178,7 +178,7 @@ export function Toolbar() {
       <button
         data-tip="Zoom out"
         aria-label="Zoom out"
-        className="flex h-7 w-6 items-center justify-center rounded-md text-[14px] text-ink-2 hover:bg-surface-2"
+        className="flex h-7 w-6 items-center justify-center rounded-md text-[14px] text-ink-2 hover:bg-panel-2"
         onClick={() => applyZoom(zoom - 0.2)}
       >
         −
@@ -195,14 +195,14 @@ export function Toolbar() {
       <button
         data-tip="Zoom in"
         aria-label="Zoom in"
-        className="flex h-7 w-6 items-center justify-center rounded-md text-[14px] text-ink-2 hover:bg-surface-2"
+        className="flex h-7 w-6 items-center justify-center rounded-md text-[14px] text-ink-2 hover:bg-panel-2"
         onClick={() => applyZoom(zoom + 0.2)}
       >
         +
       </button>
       <span
         className="w-9 text-right text-[10.5px] tabular-nums text-ink-3"
-        style={{ fontFamily: "var(--font-plex-mono)" }}
+        style={{ fontFamily: "var(--font-mono-jb)" }}
       >
         {Math.round(zoom * 100)}%
       </span>
@@ -221,7 +221,7 @@ export function Toolbar() {
         <a
           data-tip={`AWS Price List · fetched ${generatedAt}`}
           aria-label="Pricing source"
-          className="flex h-7 w-7 items-center justify-center rounded-md text-ink-3 hover:bg-surface-2 hover:text-ink"
+          className="flex h-7 w-7 items-center justify-center rounded-md text-ink-3 hover:bg-panel-2 hover:text-ink"
           href="https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/index.json"
           target="_blank"
           rel="noreferrer"
@@ -229,11 +229,11 @@ export function Toolbar() {
           <Icon name="info" />
         </a>
         <select
-          className="rounded-md border border-rule bg-surface px-1.5 py-1 text-[11px] text-ink-2"
+          className="rounded-md border border-line bg-panel px-1.5 py-1 text-[11px] text-ink-2"
           value={region}
           onChange={(e) => setRegion(e.target.value)}
           aria-label="Pricing region"
-          style={{ fontFamily: "var(--font-plex-mono)" }}
+          style={{ fontFamily: "var(--font-mono-jb)" }}
         >
           {Object.keys(PRICING_TABLES).map((r) => (
             <option key={r}>{r}</option>
@@ -241,7 +241,7 @@ export function Toolbar() {
         </select>
         <span
           className="text-[16px] font-semibold tabular-nums"
-          style={{ fontFamily: "var(--font-plex-mono)" }}
+          style={{ fontFamily: "var(--font-mono-jb)" }}
         >
           ${toMoney(total).toFixed(2)}
           <span className="text-[10.5px] text-ink-3">/mo</span>

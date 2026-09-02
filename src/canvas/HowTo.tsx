@@ -23,7 +23,7 @@ export function HowTo() {
 
   return (
     <div className="pointer-events-none absolute inset-x-0 top-2 z-30 flex justify-center px-4">
-      <div className="pointer-events-auto flex max-w-2xl items-start gap-3 rounded-lg border border-rule bg-surface px-4 py-3 shadow-md">
+      <div className="pointer-events-auto flex max-w-2xl items-start gap-3 rounded-lg border border-line bg-panel px-4 py-3 shadow-md">
         <div className="text-[13px] leading-relaxed text-ink-2">
           {empty ? (
             <>
@@ -41,7 +41,7 @@ export function HowTo() {
         </div>
         {!empty ? (
           <button
-            className="rounded border border-rule px-1.5 text-[12px] text-ink-3 hover:bg-surface-2"
+            className="rounded border border-line px-1.5 text-[12px] text-ink-3 hover:bg-panel-2"
             aria-label="Dismiss"
             onClick={() => {
               setShow(false);

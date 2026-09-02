@@ -12,7 +12,7 @@ import { toMoney, type ArchGroup } from "@/engine/model";
 import { NODE_W, NODE_H } from "./AwsNode";
 
 const GROUP_STYLE: Record<ArchGroup["kind"], { color: string; icon: string }> = {
-  cloud: { color: "#242F3E", icon: "aws-group-cloud" },
+  cloud: { color: "#8B97A8", icon: "aws-group-cloud" },
   vpc: { color: "#8C4FFF", icon: "aws-group-vpc" },
   subnet: { color: "#7AA116", icon: "aws-group-public" },
   az: { color: "#00A4A6", icon: "aws-group-private" },
@@ -88,7 +88,7 @@ function Frame({
             width: box.r - box.l - 10,
             textAlign: "right",
             color,
-            fontFamily: "var(--font-plex-mono)",
+            fontFamily: "var(--font-mono-jb)",
           }}
         >
           {sub}

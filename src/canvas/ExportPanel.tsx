@@ -58,8 +58,8 @@ export function ExportPanel() {
   if (!panel) return null;
 
   return (
-    <div className="absolute inset-y-0 right-0 z-50 flex w-[420px] max-w-full flex-col border-l border-rule bg-surface shadow-xl">
-      <div className="flex items-center gap-1.5 border-b border-rule px-3 py-2">
+    <div className="absolute inset-y-0 right-0 z-50 flex w-[420px] max-w-full flex-col border-l border-line bg-panel shadow-xl">
+      <div className="flex items-center gap-1.5 border-b border-line px-3 py-2">
         <span
           className="mr-1 text-[12px] font-semibold uppercase tracking-wider text-ink-3"
           style={{ fontFamily: "var(--font-archivo)" }}
@@ -70,7 +70,7 @@ export function ExportPanel() {
           <button
             key={f}
             className={`rounded px-2 py-0.5 text-[11.5px] ${
-              panel === f ? "bg-accent text-white" : "border border-rule hover:bg-surface-2"
+              panel === f ? "bg-accent text-white" : "border border-line hover:bg-panel-2"
             }`}
             onClick={() => setExportPanel(f)}
           >
@@ -78,7 +78,7 @@ export function ExportPanel() {
           </button>
         ))}
         <button
-          className="ml-auto rounded border border-rule px-2 py-0.5 text-[12px] hover:bg-surface-2"
+          className="ml-auto rounded border border-line px-2 py-0.5 text-[12px] hover:bg-panel-2"
           onClick={() => setExportPanel(null)}
           aria-label="Close export panel"
         >
@@ -93,13 +93,13 @@ export function ExportPanel() {
           </p>
           <div className="flex gap-2">
             <button
-              className="rounded border border-rule px-3 py-1.5 hover:bg-surface-2"
+              className="rounded border border-line px-3 py-1.5 hover:bg-panel-2"
               onClick={() => captureCanvas("svg")}
             >
               Download SVG
             </button>
             <button
-              className="rounded border border-rule px-3 py-1.5 hover:bg-surface-2"
+              className="rounded border border-line px-3 py-1.5 hover:bg-panel-2"
               onClick={() => captureCanvas("png")}
             >
               Download PNG
@@ -111,10 +111,10 @@ export function ExportPanel() {
           <textarea
             readOnly
             value={content}
-            className="min-h-0 flex-1 resize-none bg-surface-2 p-3 text-[11px] leading-relaxed outline-none"
-            style={{ fontFamily: "var(--font-plex-mono)" }}
+            className="min-h-0 flex-1 resize-none bg-panel-2 p-3 text-[11px] leading-relaxed outline-none"
+            style={{ fontFamily: "var(--font-mono-jb)" }}
           />
-          <div className="flex gap-2 border-t border-rule p-3">
+          <div className="flex gap-2 border-t border-line p-3">
             <button
               className="rounded bg-accent px-3 py-1.5 text-[12.5px] font-semibold text-white"
               onClick={() => download(`overhead.${EXT[panel]}`, content)}
@@ -122,7 +122,7 @@ export function ExportPanel() {
               Download .{EXT[panel]}
             </button>
             <button
-              className="rounded border border-rule px-3 py-1.5 text-[12.5px] hover:bg-surface-2"
+              className="rounded border border-line px-3 py-1.5 text-[12.5px] hover:bg-panel-2"
               onClick={async () => {
                 await navigator.clipboard.writeText(content);
                 setCopied(true);

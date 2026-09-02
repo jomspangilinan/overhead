@@ -11,7 +11,7 @@ export function Palette() {
   const count = useStore((s) => s.nodes.length);
 
   return (
-    <aside className="flex w-[92px] shrink-0 flex-col gap-1 overflow-y-auto border-r border-rule bg-surface p-2">
+    <aside className="flex w-[92px] shrink-0 flex-col gap-1 overflow-y-auto border-r border-line bg-panel p-2">
       <div
         className="mb-1 text-center text-[9px] font-semibold uppercase tracking-widest text-ink-3"
         style={{ fontFamily: "var(--font-archivo)" }}
@@ -27,7 +27,7 @@ export function Palette() {
             e.dataTransfer.setData("application/overhead-service", def.id);
             e.dataTransfer.effectAllowed = "copy";
           }}
-          className="flex cursor-grab flex-col items-center gap-0.5 rounded p-1.5 hover:bg-surface-2 active:cursor-grabbing"
+          className="flex cursor-grab flex-col items-center gap-0.5 rounded p-1.5 hover:bg-panel-2 active:cursor-grabbing"
           onClick={() => {
             const id = addNode(def.id, `${def.id}-${count + 1}`);
             select(id);

@@ -33,17 +33,17 @@ export function ToolPanel({ outcome }: { outcome: RegisterOutcome | "checking" |
   return (
     <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-1.5">
       {open && tools.length > 0 ? (
-        <div className="max-h-72 w-64 overflow-y-auto rounded-lg border border-rule bg-surface p-2 shadow-lg">
+        <div className="max-h-72 w-64 overflow-y-auto rounded-lg border border-line bg-panel p-2 shadow-lg">
           {tools.map((t) => (
             <div
               key={t.name}
-              className="flex items-center gap-1.5 rounded px-1.5 py-1 text-[11px] hover:bg-surface-2"
+              className="flex items-center gap-1.5 rounded px-1.5 py-1 text-[11px] hover:bg-panel-2"
               title={t.description}
             >
               <span
-                className={`h-1.5 w-1.5 shrink-0 rounded-full ${t.dynamic ? "bg-saving" : "bg-accent"}`}
+                className={`h-1.5 w-1.5 shrink-0 rounded-full ${t.dynamic ? "bg-good" : "bg-accent"}`}
               />
-              <span style={{ fontFamily: "var(--font-plex-mono)" }}>{t.name}</span>
+              <span style={{ fontFamily: "var(--font-mono-jb)" }}>{t.name}</span>
             </div>
           ))}
         </div>
@@ -53,10 +53,10 @@ export function ToolPanel({ outcome }: { outcome: RegisterOutcome | "checking" |
         data-status={outcome}
         className={`rounded-full border px-4 py-1.5 text-xs shadow-sm ${
           outcome === "registered"
-            ? "border-rule bg-surface text-ink"
-            : "border-finding bg-surface text-finding"
+            ? "border-line bg-panel text-ink"
+            : "border-warn bg-panel text-finding"
         }`}
-        style={{ fontFamily: "var(--font-plex-mono)" }}
+        style={{ fontFamily: "var(--font-mono-jb)" }}
       >
         {label}
       </button>
