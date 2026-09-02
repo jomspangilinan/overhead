@@ -6,7 +6,7 @@ export const lambda = defineService({
   id: "lambda",
   term: "AWS Lambda",
   icon: "aws-lambda",
-  lane: "handlers",
+  role: "handlers",
   settings: {
     architecture: {
       type: "enum",

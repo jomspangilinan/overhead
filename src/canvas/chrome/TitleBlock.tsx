@@ -48,7 +48,7 @@ function Cell({
 export function TitleBlock() {
   const nodes = useStore((s) => s.nodes);
   const edges = useStore((s) => s.edges);
-  const groups = useStore((s) => s.groups);
+  const containers = useStore((s) => s.containers);
   const traffic = useStore((s) => s.traffic);
   const region = useStore((s) => s.region);
 
@@ -65,7 +65,7 @@ export function TitleBlock() {
       return { total: 0, findings: 0 };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodes, edges, groups, traffic, region]);
+  }, [nodes, edges, containers, traffic, region]);
 
   return (
     <Panel
@@ -77,7 +77,7 @@ export function TitleBlock() {
       <div className="flex">
         <Cell k="Drawing" v="untitled" />
         <Cell k="Region" v={region} />
-        <Cell k="Containers" v={String(groups.length)} />
+        <Cell k="Containers" v={String(containers.length)} />
         <Cell k="Resources" v={String(nodes.length)} />
         <Cell k="Findings" v={String(findings)} />
         <Cell k="Est. monthly" v={`$${toMoney(total).toFixed(2)}`} good last />

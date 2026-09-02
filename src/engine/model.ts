@@ -1,8 +1,14 @@
 // Core data model. Pure TS — no React, no DOM.
 
+import type { Container } from "./containers";
+
+export type { Container, ContainerKind } from "./containers";
+
 export type EdgeKind = "sync" | "async" | "data";
 
-export type Lane =
+/** Internal layout role — not a model concept and never shown in the UI.
+ *  autoLayout() uses it to arrange left to right and emits sections. */
+export type Role =
   | "ingress"
   | "handlers"
   | "messaging"
@@ -26,8 +32,8 @@ export interface ArchNode {
   service: ServiceId;
   name: string;
   settings: Record<string, unknown>;
-  lane?: Lane;
-  group?: string;
+  /** Exactly one container — structural, validated. */
+  container?: string;
   position: { x: number; y: number };
 }
 
@@ -40,14 +46,14 @@ export interface ArchEdge {
   label?: string;
 }
 
-export type GroupKind = "cloud" | "vpc" | "subnet" | "az" | "logical";
-
-export interface ArchGroup {
+/** Yours: free-form, orthogonal to containment, never validated.
+ *  nodeIds is the single source of truth for membership. */
+export interface Section {
   id: string;
-  kind: GroupKind;
   name: string;
-  cidr?: string;
-  parent?: string;
+  color: string;
+  bounds?: { x: number; y: number; w: number; h: number };
+  nodeIds: string[];
   collapsed: boolean;
 }
 
@@ -59,7 +65,8 @@ export interface Traffic {
 export interface StateSnapshot {
   nodes: ArchNode[];
   edges: ArchEdge[];
-  groups: ArchGroup[];
+  containers: Container[];
+  sections: Section[];
   traffic: Traffic;
 }
 
@@ -107,7 +114,8 @@ export function emptySnapshot(): StateSnapshot {
   return {
     nodes: [],
     edges: [],
-    groups: [],
+    containers: [],
+    sections: [],
     traffic: { ...DEFAULT_TRAFFIC },
   };
 }

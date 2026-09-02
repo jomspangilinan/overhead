@@ -6,7 +6,7 @@ export const stepfunctions = defineService({
   id: "stepfunctions",
   term: "AWS Step Functions",
   icon: "aws-stepfunctions",
-  lane: "workers",
+  role: "workers",
   settings: {
     workflowType: {
       type: "enum",

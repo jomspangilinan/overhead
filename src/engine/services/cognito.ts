@@ -6,7 +6,7 @@ export const cognito = defineService({
   id: "cognito",
   term: "Amazon Cognito",
   icon: "aws-cognito",
-  lane: "ingress",
+  role: "ingress",
   settings: {
     monthlyActiveUsers: {
       type: "number",

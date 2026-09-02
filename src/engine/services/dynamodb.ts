@@ -6,7 +6,7 @@ export const dynamodb = defineService({
   id: "dynamodb",
   term: "Amazon DynamoDB",
   icon: "aws-dynamodb",
-  lane: "data",
+  role: "data",
   settings: {
     capacityMode: {
       type: "enum",

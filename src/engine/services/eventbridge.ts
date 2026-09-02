@@ -6,7 +6,7 @@ export const eventbridge = defineService({
   id: "eventbridge",
   term: "Amazon EventBridge",
   icon: "aws-eventbridge",
-  lane: "messaging",
+  role: "messaging",
   settings: {
     eventsPerMonth: {
       type: "number",

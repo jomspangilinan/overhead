@@ -21,7 +21,8 @@ export function exportJson(
   const payload: JsonExport = {
     nodes: snapshot.nodes,
     edges: snapshot.edges,
-    groups: snapshot.groups,
+    containers: snapshot.containers,
+    sections: snapshot.sections,
     traffic: snapshot.traffic,
     overhead: {
       version: 1,

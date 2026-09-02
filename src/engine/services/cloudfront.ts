@@ -6,7 +6,7 @@ export const cloudfront = defineService({
   id: "cloudfront",
   term: "Amazon CloudFront",
   icon: "aws-cloudfront",
-  lane: "ingress",
+  role: "ingress",
   settings: {
     dataOutGbPerMonth: {
       type: "number",

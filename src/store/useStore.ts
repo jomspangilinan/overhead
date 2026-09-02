@@ -6,7 +6,8 @@
 import { create } from "zustand";
 import type {
   ArchEdge,
-  ArchGroup,
+  Container,
+  Section,
   ArchNode,
   EdgeKind,
   StateSnapshot,
@@ -15,7 +16,16 @@ import type {
 import { DEFAULT_TRAFFIC } from "@/engine/model";
 import type { PricingTable } from "@/engine/pricing";
 import type { BillSummary } from "@/engine/bill";
-import { autoLayout, laneOf, placeInLane } from "@/engine/layout";
+import { autoLayout, roleOf, placeInRole } from "@/engine/layout";
+import {
+  validateContainerParent,
+  validateNodePlacement,
+  wouldCycle,
+  descendantIds,
+  type ContainerKind,
+  type PlacementError,
+} from "@/engine/containers";
+import { migrateSnapshot } from "@/engine/migrate";
 import { defaultSettings } from "@/engine/defineService";
 import { getService } from "@/engine/services";
 import use1 from "../../data/pricing.us-east-1.json";
@@ -44,6 +54,8 @@ export type Tool =
   | "section"
   | "trace";
 
+const SECTION_COLORS = ["#3B82F6", "#E7157B", "#F0B34E", "#7AA116", "#8C4FFF"];
+
 let nextId = 1;
 export function newId(prefix: string): string {
   return `${prefix}-${nextId++}`;
@@ -52,7 +64,8 @@ export function newId(prefix: string): string {
 export interface OverheadState {
   nodes: ArchNode[];
   edges: ArchEdge[];
-  groups: ArchGroup[];
+  containers: Container[];
+  sections: Section[];
   traffic: Traffic;
   region: string;
   layers: Record<Layer, boolean>;
@@ -72,7 +85,7 @@ export interface OverheadState {
     service: string,
     name: string,
     settings?: Record<string, unknown>,
-    group?: string,
+    container?: string,
     position?: { x: number; y: number },
   ) => string;
   tool: Tool;
@@ -101,9 +114,28 @@ export interface OverheadState {
   setTrace: (ids: string[] | null) => void;
   setExportPanel: (format: OverheadState["exportPanel"]) => void;
   setBill: (bill: BillSummary | null) => void;
-  addGroup: (kind: ArchGroup["kind"], name: string, cidr?: string, parent?: string) => string;
-  moveIntoGroup: (nodeIds: string[], groupId: string | null) => void;
-  setGroupCollapsed: (groupId: string, collapsed: boolean) => void;
+  addContainer: (
+    kind: ContainerKind,
+    name: string,
+    cidr?: string,
+    parent?: string,
+  ) => { id: string } | { error: PlacementError };
+  moveIntoContainer: (
+    nodeIds: string[],
+    containerId: string | null,
+  ) => { moved: number } | { error: PlacementError };
+  setContainerCollapsed: (containerId: string, collapsed: boolean) => void;
+  removeContainer: (containerId: string) => void;
+  addSection: (
+    name: string,
+    nodeIds?: string[],
+    color?: string,
+    bounds?: Section["bounds"],
+  ) => string;
+  renameSection: (id: string, name: string) => void;
+  setSectionNodes: (id: string, nodeIds: string[]) => void;
+  removeSection: (id: string) => void;
+  moveSection: (id: string, dx: number, dy: number) => void;
   openScenario: (name: string) => void;
   commitScenario: () => void;
   discardScenario: () => void;
@@ -112,7 +144,8 @@ export interface OverheadState {
 export const useStore = create<OverheadState>((set, get) => ({
   nodes: [],
   edges: [],
-  groups: [],
+  containers: [],
+  sections: [],
   traffic: { ...DEFAULT_TRAFFIC },
   region: "ap-southeast-1",
   layers: {
@@ -133,17 +166,21 @@ export const useStore = create<OverheadState>((set, get) => ({
   exportPanel: null,
   bill: null,
 
-  loadSnapshot: (snap) =>
-    set({
+  loadSnapshot: (raw) =>
+    set(((): Partial<OverheadState> => {
+      const snap = migrateSnapshot(raw);
+      return {
       nodes: snap.nodes.map((n) => ({ ...n })),
       edges: snap.edges.map((e) => ({ ...e })),
-      groups: snap.groups.map((g) => ({ ...g })),
+      containers: snap.containers.map((c) => ({ ...c })),
+      sections: snap.sections.map((x) => ({ ...x })),
       traffic: { ...snap.traffic },
       selectedId: null,
       hoveredId: null,
-    }),
+      };
+    })()),
 
-  addNode: (service, name, settings, group, position) => {
+  addNode: (service, name, settings, container, position) => {
     const def = getService(service);
     if (!def) throw new Error(`Unknown service "${service}"`);
     const id = newId(service);
@@ -152,12 +189,12 @@ export const useStore = create<OverheadState>((set, get) => ({
       service: def.id,
       name,
       settings: { ...defaultSettings(def), ...settings },
-      group,
+      container,
       position: { x: 0, y: 0 },
     };
     // New node lands in its lane's next free row (or where it was dropped);
     // existing nodes never move.
-    node.position = position ?? placeInLane(get().nodes, laneOf(node));
+    node.position = position ?? placeInRole(get().nodes, roleOf(node));
     set((s) => ({ nodes: [...s.nodes, node] }));
     return id;
   },
@@ -221,25 +258,127 @@ export const useStore = create<OverheadState>((set, get) => ({
   setExportPanel: (format) => set({ exportPanel: format }),
   setBill: (bill) => set({ bill }),
 
-  addGroup: (kind, name, cidr, parent) => {
-    const id = newId("group");
+  addContainer: (kind, name, cidr, parent) => {
+    const s = get();
+    const parentC = parent ? s.containers.find((c) => c.id === parent) : undefined;
+    if (parent && !parentC)
+      return {
+        error: {
+          code: "no_such_container" as const,
+          message: `No container "${parent}".`,
+        },
+      };
+    const err = validateContainerParent(kind, parentC?.kind ?? null);
+    if (err) return { error: err };
+    const id = newId(kind);
+    set((st) => ({
+      containers: [
+        ...st.containers,
+        { id, kind, name, cidr, parent, collapsed: false },
+      ],
+    }));
+    return { id };
+  },
+
+  moveIntoContainer: (nodeIds, containerId) => {
+    const s = get();
+    const target = containerId
+      ? s.containers.find((c) => c.id === containerId)
+      : undefined;
+    if (containerId && !target)
+      return {
+        error: {
+          code: "no_such_container" as const,
+          message: `No container "${containerId}".`,
+        },
+      };
+    for (const id of nodeIds) {
+      const node = s.nodes.find((n) => n.id === id);
+      if (!node) continue;
+      const err = validateNodePlacement(node.service, target?.kind ?? null);
+      if (err) return { error: err };
+    }
+    set((st) => ({
+      nodes: st.nodes.map((n) =>
+        nodeIds.includes(n.id) ? { ...n, container: containerId ?? undefined } : n,
+      ),
+    }));
+    return { moved: nodeIds.length };
+  },
+
+  setContainerCollapsed: (containerId, collapsed) =>
     set((s) => ({
-      groups: [...s.groups, { id, kind, name, cidr, parent, collapsed: false }],
+      containers: s.containers.map((c) =>
+        c.id === containerId ? { ...c, collapsed } : c,
+      ),
+    })),
+
+  /** Children and members re-parent upward — removing a frame never
+   *  silently deletes what was inside it. */
+  removeContainer: (containerId) =>
+    set((s) => {
+      const own = s.containers.find((c) => c.id === containerId);
+      const up = own?.parent;
+      return {
+        containers: s.containers
+          .filter((c) => c.id !== containerId)
+          .map((c) => (c.parent === containerId ? { ...c, parent: up } : c)),
+        nodes: s.nodes.map((n) =>
+          n.container === containerId ? { ...n, container: up } : n,
+        ),
+      };
+    }),
+
+  addSection: (name, nodeIds, color, bounds) => {
+    const id = newId("section");
+    set((s) => ({
+      sections: [
+        ...s.sections,
+        {
+          id,
+          name,
+          color: color ?? SECTION_COLORS[s.sections.length % SECTION_COLORS.length],
+          nodeIds: nodeIds ?? [],
+          bounds,
+          collapsed: false,
+        },
+      ],
     }));
     return id;
   },
 
-  moveIntoGroup: (nodeIds, groupId) =>
+  renameSection: (id, name) =>
     set((s) => ({
-      nodes: s.nodes.map((n) =>
-        nodeIds.includes(n.id) ? { ...n, group: groupId ?? undefined } : n,
-      ),
+      sections: s.sections.map((x) => (x.id === id ? { ...x, name } : x)),
     })),
 
-  setGroupCollapsed: (groupId, collapsed) =>
+  setSectionNodes: (id, nodeIds) =>
     set((s) => ({
-      groups: s.groups.map((g) => (g.id === groupId ? { ...g, collapsed } : g)),
+      sections: s.sections.map((x) => (x.id === id ? { ...x, nodeIds } : x)),
     })),
+
+  removeSection: (id) =>
+    set((s) => ({ sections: s.sections.filter((x) => x.id !== id) })),
+
+  /** One action so undo captures the frame and its members as a single step. */
+  moveSection: (id, dx, dy) =>
+    set((s) => {
+      const section = s.sections.find((x) => x.id === id);
+      if (!section) return {};
+      const members = new Set(section.nodeIds);
+      return {
+        sections: s.sections.map((x) =>
+          x.id === id && x.bounds
+            ? { ...x, bounds: { ...x.bounds, x: x.bounds.x + dx, y: x.bounds.y + dy } }
+            : x,
+        ),
+        nodes: s.nodes.map((n) =>
+          members.has(n.id)
+            ? { ...n, position: { x: n.position.x + dx, y: n.position.y + dy } }
+            : n,
+        ),
+      };
+    }),
 
   // While a scenario is open, the live state IS the fork; base is frozen.
   openScenario: (name) => {
@@ -268,7 +407,8 @@ export function snapshotOf(s: OverheadState): StateSnapshot {
   return {
     nodes: s.nodes,
     edges: s.edges,
-    groups: s.groups,
+    containers: s.containers,
+    sections: s.sections,
     traffic: s.traffic,
   };
 }

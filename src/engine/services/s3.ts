@@ -6,7 +6,7 @@ export const s3 = defineService({
   id: "s3",
   term: "Amazon S3",
   icon: "aws-s3",
-  lane: "data",
+  role: "data",
   settings: {
     storageGb: {
       type: "number",

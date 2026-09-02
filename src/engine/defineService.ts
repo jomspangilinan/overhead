@@ -2,7 +2,7 @@
 // inspector form, set_property input schema, list_services output, card
 // lines, pricing inputs, CDK props — is derived from these definitions.
 
-import type { CostLine, Lane, ServiceId, Traffic } from "./model";
+import type { CostLine, Role, ServiceId, Traffic } from "./model";
 import type { PricingTable } from "./pricing";
 
 export type SettingDef =
@@ -41,8 +41,8 @@ export interface ServiceDef {
   term: string;
   /** Sprite symbol id in public/icons/aws sprite, e.g. "aws-lambda". */
   icon: string;
-  /** Default lane; overridable per node. */
-  lane: Lane;
+  /** Layout role — internal to autoLayout; never a UI concept. */
+  role: Role;
   settings: SettingsSchema;
   /** The 2–3 settings that decide price, shown on the card. */
   cardLines: readonly string[];

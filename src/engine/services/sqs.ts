@@ -6,7 +6,7 @@ export const sqs = defineService({
   id: "sqs",
   term: "Amazon SQS",
   icon: "aws-sqs",
-  lane: "messaging",
+  role: "messaging",
   settings: {
     queueType: {
       type: "enum",

@@ -21,7 +21,13 @@ import {
   type ExportFormat,
 } from "@/engine/exporters";
 import { toMoney, type EdgeKind } from "@/engine/model";
-import { laneOf } from "@/engine/layout";
+import {
+  CONTAINER_KINDS,
+  breadcrumb,
+  containerStats,
+  legalChildren,
+  type ContainerKind,
+} from "@/engine/containers";
 import { errorResult, text, type ToolSpec } from "./toolRegistry";
 
 const money = (n: number) => toMoney(n);
@@ -65,10 +71,19 @@ export function coreTools(): ToolSpec[] {
             id: n.id,
             service: n.service,
             name: n.name,
-            lane: laneOf(n),
+            ...(n.container ? { container: n.container } : {}),
             monthly: money(costs.get(n.id) ?? 0),
           })),
           edges: s.edges.map((e) => `${e.from}-${e.kind}->${e.to}`),
+          containers: s.containers.map((c) => ({
+            id: c.id,
+            kind: c.kind,
+            name: c.name,
+            ...(c.parent ? { parent: c.parent } : {}),
+          })),
+          ...(s.sections.length
+            ? { sections: s.sections.map((x) => ({ id: x.id, name: x.name })) }
+            : {}),
           traffic: s.traffic,
           region: s.region,
           monthlyTotal: money(monthlyTotal(snap, pricing)),
@@ -97,12 +112,24 @@ export function coreTools(): ToolSpec[] {
           name: node.name,
           settings: node.settings,
           monthly: money(cost.monthly),
-          lines: cost.lines.map((l) => ({
+          ...(node.container
+            ? { placement: breadcrumb(snapshotOf(s), node.id).join(" › ") }
+            : {}),
+          lines: cost.lines.slice(0, 6).map((l) => ({
             unit: l.unit,
             qty: l.qty,
             rate: l.rate,
             monthly: money(l.monthly),
           })),
+          findings: allFindings(snapshotOf(s), pricingOf(s))
+            .filter((f) => f.nodeIds.includes(node.id))
+            .slice(0, 2)
+            .map((f) => ({
+              rule: f.rule,
+              severity: f.severity,
+              docUrl: f.docUrl,
+              ...(f.estimatedSaving ? { estimatedSaving: f.estimatedSaving } : {}),
+            })),
           pricingSource: cost.lines[0]?.sourceUrl,
         });
       },
@@ -177,7 +204,7 @@ export function coreTools(): ToolSpec[] {
           return text({
             id: def.id,
             term: def.term,
-            lane: def.lane,
+            role: def.role,
             settings: Object.fromEntries(
               Object.entries(def.settings).map(([k, v]) => [
                 k,
@@ -267,15 +294,18 @@ export function coreTools(): ToolSpec[] {
           type: { type: "string", enum: Object.keys(SERVICES), description: "Service id" },
           name: { type: "string", description: "Resource name shown on the diagram" },
           settings: { type: "object", description: "Initial settings (console terms)" },
-          group: { type: "string", description: "Optional group id to place the node in" },
+          container: { type: "string", description: "Optional container id to place it in" },
         },
         required: ["type", "name"],
         additionalProperties: false,
       },
-      execute: ({ type, name, settings, group }) => {
-        if (group !== undefined && !useStore.getState().groups.some((g) => g.id === group))
-          return errorResult("no_such_group", `No group "${String(group)}".`, {
-            groups: useStore.getState().groups.map((g) => g.id),
+      execute: ({ type, name, settings, container }) => {
+        if (
+          container !== undefined &&
+          !useStore.getState().containers.some((c) => c.id === container)
+        )
+          return errorResult("no_such_container", `No container "${String(container)}".`, {
+            containers: useStore.getState().containers.map((c) => c.id),
           });
         const def = getService(String(type));
         if (!def)
@@ -292,7 +322,7 @@ export function coreTools(): ToolSpec[] {
         }
         const id = useStore
           .getState()
-          .addNode(def.id, String(name), clean, group ? String(group) : undefined);
+          .addNode(def.id, String(name), clean, container ? String(container) : undefined);
         const s = useStore.getState();
         const cost = nodeCost(snapshotOf(s), id, pricingOf(s));
         return text({
@@ -499,7 +529,7 @@ export function coreTools(): ToolSpec[] {
     {
       name: "auto_layout",
       description:
-        "Re-place every node into its lane: Ingress → Handlers → Messaging → Workers → Data, left to right.",
+        "Arrange nodes left to right by role and emit the arrangement as ordinary sections you can rename or delete. Suggestion, not structure.",
       inputSchema: { type: "object", properties: {}, additionalProperties: false },
       execute: () => {
         useStore.getState().applyAutoLayout();
@@ -513,7 +543,10 @@ export function coreTools(): ToolSpec[] {
       inputSchema: {
         type: "object",
         properties: {
-          layer: { type: "string", enum: ["request", "events", "data", "security", "cost"] },
+          layer: {
+            type: "string",
+            enum: ["request", "events", "data", "security", "cost", "sections"],
+          },
           on: { type: "boolean" },
         },
         required: ["layer", "on"],
@@ -557,92 +590,248 @@ export function coreTools(): ToolSpec[] {
       },
     },
     {
-      name: "add_group",
+      name: "add_container",
       description:
-        "Create a group (logical, vpc, subnet, az). Groups frame their members with official AWS colours, carry a cost subtotal, and can collapse to one card.",
+        "Create a container: cloud, region, vpc, subnetpub or subnetpri. Containers nest in a legal order, roll costs up the tree, and collapse to one card. Returns a structured error naming the rule if the parent is illegal.",
       inputSchema: {
         type: "object",
         properties: {
-          kind: { type: "string", enum: ["logical", "vpc", "subnet", "az"] },
+          kind: { type: "string", enum: CONTAINER_KINDS },
           name: { type: "string" },
           cidr: { type: "string", description: "Optional CIDR shown on the frame" },
+          parent: { type: "string", description: "Parent container id" },
         },
         required: ["kind", "name"],
         additionalProperties: false,
       },
-      execute: ({ kind, name, cidr }) => {
-        const id = useStore
+      execute: ({ kind, name, cidr, parent }) => {
+        const res = useStore
           .getState()
-          .addGroup(kind as "logical", String(name), cidr ? String(cidr) : undefined);
-        return text({ id });
+          .addContainer(
+            kind as ContainerKind,
+            String(name),
+            cidr ? String(cidr) : undefined,
+            parent ? String(parent) : undefined,
+          );
+        if ("error" in res)
+          return errorResult(res.error.code, res.error.message, {
+            ...(res.error.legalParents ? { legalParents: res.error.legalParents } : {}),
+          });
+        return text({
+          id: res.id,
+          parent: parent ?? null,
+          legalChildren: legalChildren(kind as ContainerKind),
+        });
       },
     },
     {
-      name: "move_into_group",
-      description: "Re-parent nodes into a group (or pass null groupId to ungroup).",
+      name: "move_into_container",
+      description:
+        "Move nodes into a container (or pass null to put them back on the canvas). Refuses illegal placements with a message naming the rule.",
       inputSchema: {
         type: "object",
         properties: {
           nodeIds: { type: "array", items: { type: "string" } },
-          groupId: { type: ["string", "null"] },
+          containerId: { type: ["string", "null"] },
         },
-        required: ["nodeIds", "groupId"],
+        required: ["nodeIds", "containerId"],
         additionalProperties: false,
       },
-      execute: ({ nodeIds, groupId }) => {
+      execute: ({ nodeIds, containerId }) => {
         const s = useStore.getState();
-        if (groupId !== null && !s.groups.some((g) => g.id === groupId))
-          return errorResult("no_such_group", `No group "${String(groupId)}".`, {
-            groups: s.groups.map((g) => g.id),
-          });
         const ids = (Array.isArray(nodeIds) ? nodeIds : []).map(String);
         const missing = ids.filter((id) => !s.nodes.some((n) => n.id === id));
         if (missing.length)
           return errorResult("no_such_node", `Unknown node(s): ${missing.join(", ")}`);
-        s.moveIntoGroup(ids, groupId as string | null);
-        return text({ groupId, members: ids.length });
+        const res = s.moveIntoContainer(ids, (containerId as string | null) ?? null);
+        if ("error" in res)
+          return errorResult(res.error.code, res.error.message, {
+            ...(res.error.legalContainers
+              ? { legalContainers: res.error.legalContainers }
+              : {}),
+          });
+        const after = useStore.getState();
+        return text({
+          moved: res.moved,
+          containerId,
+          breadcrumb: ids[0] ? breadcrumb(snapshotOf(after), ids[0]) : [],
+        });
       },
     },
     {
-      name: "collapse_group",
+      name: "collapse_container",
       description:
-        "Fold a group into one card (icon cluster, member count, subtotal); edges re-route to it.",
+        "Fold a container into one card (kind, name, resource count, subtotal). Edges re-route to it; edges wholly inside it are dropped.",
       inputSchema: {
         type: "object",
-        properties: { groupId: { type: "string" } },
-        required: ["groupId"],
+        properties: { id: { type: "string" } },
+        required: ["id"],
         additionalProperties: false,
       },
-      execute: ({ groupId }) => {
+      execute: ({ id }) => {
         const s = useStore.getState();
-        const g = s.groups.find((x) => x.id === groupId);
-        if (!g)
-          return errorResult("no_such_group", `No group "${String(groupId)}".`, {
-            groups: s.groups.map((x) => x.id),
+        const c = s.containers.find((x) => x.id === id);
+        if (!c)
+          return errorResult("no_such_container", `No container "${String(id)}".`, {
+            containers: s.containers.map((x) => x.id),
           });
-        s.setGroupCollapsed(g.id, true);
-        return text({ groupId: g.id, collapsed: true });
+        s.setContainerCollapsed(c.id, true);
+        const after = useStore.getState();
+        const stat = containerStats(snapshotOf(after), pricingOf(after)).get(c.id);
+        return text({
+          id: c.id,
+          collapsed: true,
+          resources: stat?.resources ?? 0,
+          monthly: stat?.monthly ?? 0,
+        });
       },
     },
     {
-      name: "expand_group",
-      description: "Unfold a collapsed group back to its member nodes.",
+      name: "expand_container",
+      description: "Unfold a collapsed container back to its members.",
       inputSchema: {
         type: "object",
-        properties: { groupId: { type: "string" } },
-        required: ["groupId"],
+        properties: { id: { type: "string" } },
+        required: ["id"],
         additionalProperties: false,
       },
-      execute: ({ groupId }) => {
+      execute: ({ id }) => {
         const s = useStore.getState();
-        const g = s.groups.find((x) => x.id === groupId);
-        if (!g)
-          return errorResult("no_such_group", `No group "${String(groupId)}".`, {
-            groups: s.groups.map((x) => x.id),
+        const c = s.containers.find((x) => x.id === id);
+        if (!c)
+          return errorResult("no_such_container", `No container "${String(id)}".`, {
+            containers: s.containers.map((x) => x.id),
           });
-        s.setGroupCollapsed(g.id, false);
-        return text({ groupId: g.id, collapsed: false });
+        s.setContainerCollapsed(c.id, false);
+        return text({ id: c.id, collapsed: false });
       },
+    },
+    {
+      name: "get_containers",
+      description:
+        "The containment tree: each container with its kind, parent, resource count and cost subtotal, plus which kinds may nest inside which.",
+      inputSchema: { type: "object", properties: {}, additionalProperties: false },
+      readOnly: true,
+      execute: () => {
+        const s = useStore.getState();
+        const stats = containerStats(snapshotOf(s), pricingOf(s));
+        return text({
+          containers: s.containers.map((c) => ({
+            id: c.id,
+            kind: c.kind,
+            name: c.name,
+            ...(c.cidr ? { cidr: c.cidr } : {}),
+            ...(c.parent ? { parent: c.parent } : {}),
+            ...(c.collapsed ? { collapsed: true } : {}),
+            resources: stats.get(c.id)?.resources ?? 0,
+            monthly: stats.get(c.id)?.monthly ?? 0,
+          })),
+          legalChildren: Object.fromEntries(
+            [null, ...CONTAINER_KINDS].map((k) => [
+              k ?? "top",
+              legalChildren(k as ContainerKind | null),
+            ]),
+          ),
+        });
+      },
+    },
+    {
+      name: "add_section",
+      description:
+        "Create a section — your own free-form grouping. No AWS meaning, no validation: it may cross containers freely. Sections are their own layer.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          name: { type: "string" },
+          nodeIds: { type: "array", items: { type: "string" } },
+          color: { type: "string", description: "Hex colour; one is picked if omitted" },
+        },
+        required: ["name"],
+        additionalProperties: false,
+      },
+      execute: ({ name, nodeIds, color }) => {
+        const ids = Array.isArray(nodeIds) ? nodeIds.map(String) : [];
+        const id = useStore
+          .getState()
+          .addSection(String(name), ids, color ? String(color) : undefined);
+        return text({ id, members: ids.length });
+      },
+    },
+    {
+      name: "rename_section",
+      description: "Rename a section.",
+      inputSchema: {
+        type: "object",
+        properties: { id: { type: "string" }, name: { type: "string" } },
+        required: ["id", "name"],
+        additionalProperties: false,
+      },
+      execute: ({ id, name }) => {
+        const s = useStore.getState();
+        if (!s.sections.some((x) => x.id === id))
+          return errorResult("no_such_section", `No section "${String(id)}".`, {
+            sections: s.sections.map((x) => x.id),
+          });
+        s.renameSection(String(id), String(name));
+        return text({ id, name });
+      },
+    },
+    {
+      name: "set_section_nodes",
+      description: "Replace a section's membership. A node may be in many sections.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: { type: "string" },
+          nodeIds: { type: "array", items: { type: "string" } },
+        },
+        required: ["id", "nodeIds"],
+        additionalProperties: false,
+      },
+      execute: ({ id, nodeIds }) => {
+        const s = useStore.getState();
+        if (!s.sections.some((x) => x.id === id))
+          return errorResult("no_such_section", `No section "${String(id)}".`, {
+            sections: s.sections.map((x) => x.id),
+          });
+        const ids = (Array.isArray(nodeIds) ? nodeIds : []).map(String);
+        s.setSectionNodes(String(id), ids);
+        return text({ id, members: ids.length });
+      },
+    },
+    {
+      name: "remove_section",
+      description: "Delete a section. Its members are untouched — only the grouping goes.",
+      inputSchema: {
+        type: "object",
+        properties: { id: { type: "string" } },
+        required: ["id"],
+        additionalProperties: false,
+      },
+      execute: ({ id }) => {
+        const s = useStore.getState();
+        if (!s.sections.some((x) => x.id === id))
+          return errorResult("no_such_section", `No section "${String(id)}".`, {
+            sections: s.sections.map((x) => x.id),
+          });
+        s.removeSection(String(id));
+        return text({ removed: id });
+      },
+    },
+    {
+      name: "get_sections",
+      description: "The user's sections with their members.",
+      inputSchema: { type: "object", properties: {}, additionalProperties: false },
+      readOnly: true,
+      execute: () =>
+        text({
+          sections: useStore.getState().sections.map((x) => ({
+            id: x.id,
+            name: x.name,
+            color: x.color,
+            members: x.nodeIds,
+          })),
+        }),
     },
     {
       name: "get_bill_summary",
@@ -789,7 +978,8 @@ export function coreTools(): ToolSpec[] {
         const snap = parsed as {
           nodes?: unknown[];
           edges?: unknown[];
-          groups?: unknown[];
+          containers?: unknown[];
+          sections?: unknown[];
           traffic?: unknown;
         };
         if (!Array.isArray(snap.nodes) || !Array.isArray(snap.edges))
@@ -803,7 +993,8 @@ export function coreTools(): ToolSpec[] {
         useStore.getState().loadSnapshot({
           nodes: (snap.nodes ?? []) as never,
           edges: (snap.edges ?? []) as never,
-          groups: (snap.groups ?? []) as never,
+          containers: (snap.containers ?? []) as never,
+          sections: (snap.sections ?? []) as never,
           traffic: (snap.traffic ?? useStore.getState().traffic) as never,
         });
         useStore.getState().applyAutoLayout();

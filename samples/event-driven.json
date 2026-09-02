@@ -10,7 +10,8 @@
       "position": {
         "x": 60,
         "y": 60
-      }
+      },
+      "container": "region"
     },
     {
       "id": "api",
@@ -22,7 +23,8 @@
       "position": {
         "x": 60,
         "y": 220
-      }
+      },
+      "container": "region"
     },
     {
       "id": "ingest",
@@ -36,7 +38,8 @@
       "position": {
         "x": 320,
         "y": 220
-      }
+      },
+      "container": "priv-a"
     },
     {
       "id": "bus",
@@ -46,7 +49,8 @@
       "position": {
         "x": 560,
         "y": 220
-      }
+      },
+      "container": "region"
     },
     {
       "id": "flow",
@@ -61,7 +65,8 @@
       "position": {
         "x": 800,
         "y": 140
-      }
+      },
+      "container": "region"
     },
     {
       "id": "fanout",
@@ -73,7 +78,8 @@
       "position": {
         "x": 800,
         "y": 320
-      }
+      },
+      "container": "region"
     },
     {
       "id": "notifier",
@@ -90,7 +96,7 @@
         "x": 1040,
         "y": 320
       },
-      "lane": "workers"
+      "container": "priv-a"
     },
     {
       "id": "state",
@@ -103,7 +109,8 @@
       "position": {
         "x": 1040,
         "y": 140
-      }
+      },
+      "container": "region"
     }
   ],
   "edges": [
@@ -151,9 +158,40 @@
       "kind": "sync"
     }
   ],
-  "groups": [],
   "traffic": {
     "requestsPerMonth": 1000000,
     "avgPayloadKb": 16
-  }
+  },
+  "containers": [
+    {
+      "id": "cloud",
+      "kind": "cloud",
+      "name": "AWS Cloud",
+      "collapsed": false
+    },
+    {
+      "id": "region",
+      "kind": "region",
+      "name": "ap-southeast-1",
+      "parent": "cloud",
+      "collapsed": false
+    },
+    {
+      "id": "vpc",
+      "kind": "vpc",
+      "name": "orders-vpc",
+      "cidr": "10.0.0.0/16",
+      "parent": "region",
+      "collapsed": false
+    },
+    {
+      "id": "priv-a",
+      "kind": "subnetpri",
+      "name": "private-a",
+      "cidr": "10.0.10.0/24",
+      "parent": "vpc",
+      "collapsed": false
+    }
+  ],
+  "sections": []
 }

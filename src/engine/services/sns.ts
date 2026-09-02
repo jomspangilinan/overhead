@@ -6,7 +6,7 @@ export const sns = defineService({
   id: "sns",
   term: "Amazon SNS",
   icon: "aws-sns",
-  lane: "messaging",
+  role: "messaging",
   settings: {
     publishesPerMonth: {
       type: "number",

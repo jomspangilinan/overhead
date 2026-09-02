@@ -27,9 +27,9 @@ import mediaPipeline from "../../samples/media-pipeline.json";
 import eventDriven from "../../samples/event-driven.json";
 
 export const SAMPLES: Record<string, StateSnapshot> = {
-  "api-backend": apiBackend as StateSnapshot,
-  "media-pipeline": mediaPipeline as StateSnapshot,
-  "event-driven": eventDriven as StateSnapshot,
+  "api-backend": apiBackend as unknown as StateSnapshot,
+  "media-pipeline": mediaPipeline as unknown as StateSnapshot,
+  "event-driven": eventDriven as unknown as StateSnapshot,
 };
 
 const AUTOSAVE_KEY = "overhead-state-v2";
@@ -44,7 +44,8 @@ function Autosave() {
           JSON.stringify({
             nodes: s.nodes,
             edges: s.edges,
-            groups: s.groups,
+            containers: s.containers,
+            sections: s.sections,
             traffic: s.traffic,
           }),
         );

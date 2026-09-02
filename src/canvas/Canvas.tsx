@@ -13,11 +13,12 @@ import {
 import { useStore, cardModeOf, type Layer } from "@/store/useStore";
 import type { EdgeKind } from "@/engine/model";
 import { AwsNode, NODE_W, NODE_H } from "./AwsNode";
-import { GroupNode } from "./GroupNode";
+import { ContainerCard, CARD_W, CARD_H } from "./ContainerCard";
 import { TypedEdge } from "./TypedEdge";
-import { GroupFrames } from "./GroupFrames";
+import { ContainerFrames } from "./ContainerFrames";
+import { outermostCollapsedAncestor } from "@/engine/containers";
 
-const nodeTypes: NodeTypes = { aws: AwsNode, awsGroup: GroupNode };
+const nodeTypes: NodeTypes = { aws: AwsNode, container: ContainerCard };
 const edgeTypes: EdgeTypes = { typed: TypedEdge };
 
 const KIND_LAYER: Record<EdgeKind, Layer> = {
@@ -54,18 +55,18 @@ export function Canvas() {
     return lit;
   }, [hoveredId, edges, traceIds]);
 
-  const groups = useStore((s) => s.groups);
+  const containers = useStore((s) => s.containers);
 
-  // Collapsed groups: members hide, one card node appears at their centroid,
-  // and edges re-route to it (deduped).
+  // Collapsed containers: members hide, one card appears at their centroid,
+  // edges re-route to it, and edges wholly inside it are dropped.
   const collapsedByNode = useMemo(() => {
     const map = new Map<string, string>();
-    for (const g of groups) {
-      if (!g.collapsed) continue;
-      for (const n of nodes) if (n.group === g.id) map.set(n.id, g.id);
+    for (const n of nodes) {
+      const host = outermostCollapsedAncestor(containers, n.container);
+      if (host) map.set(n.id, host);
     }
     return map;
-  }, [groups, nodes]);
+  }, [containers, nodes]);
 
   const rfNodes: Node[] = useMemo(() => {
     const visible: Node[] = nodes
@@ -77,32 +78,32 @@ export function Canvas() {
         data: { nodeId: n.id },
         className: litIds?.has(n.id) ? "lit" : undefined,
       }));
-    for (const g of groups) {
-      if (!g.collapsed) continue;
-      const members = nodes.filter((n) => n.group === g.id);
+    const hosts = new Set(collapsedByNode.values());
+    for (const id of hosts) {
+      const members = nodes.filter((n) => collapsedByNode.get(n.id) === id);
       if (!members.length) continue;
       const cx = members.reduce((a, n) => a + n.position.x, 0) / members.length;
       const cy = members.reduce((a, n) => a + n.position.y, 0) / members.length;
       visible.push({
-        id: `group:${g.id}`,
-        type: "awsGroup",
-        position: { x: cx - NODE_W / 2, y: cy - NODE_H / 2 },
-        data: { groupId: g.id },
+        id: `container:${id}`,
+        type: "container",
+        position: { x: cx - CARD_W / 2, y: cy - CARD_H / 2 },
+        data: { containerId: id },
         draggable: false,
       });
     }
     return visible;
-  }, [nodes, groups, collapsedByNode, litIds]);
+  }, [nodes, collapsedByNode, litIds]);
 
   const rfEdges: Edge[] = useMemo(() => {
     const seen = new Set<string>();
     const out: Edge[] = [];
     for (const e of edges) {
       const from = collapsedByNode.has(e.from)
-        ? `group:${collapsedByNode.get(e.from)}`
+        ? `container:${collapsedByNode.get(e.from)}`
         : e.from;
       const to = collapsedByNode.has(e.to)
-        ? `group:${collapsedByNode.get(e.to)}`
+        ? `container:${collapsedByNode.get(e.to)}`
         : e.to;
       if (from === to) continue;
       const rerouted = from !== e.from || to !== e.to;
@@ -231,8 +232,8 @@ export function Canvas() {
           !!c.source &&
           !!c.target &&
           c.source !== c.target &&
-          !c.source.startsWith("group:") &&
-          !c.target.startsWith("group:") &&
+          !c.source.startsWith("container:") &&
+          !c.target.startsWith("container:") &&
           !useStore
             .getState()
             .edges.some((e) => e.from === c.source && e.to === c.target)
@@ -253,7 +254,7 @@ export function Canvas() {
         zoomOnPinch
         panOnScroll
       >
-        <GroupFrames />
+        <ContainerFrames />
       </ReactFlow>
     </div>
   );

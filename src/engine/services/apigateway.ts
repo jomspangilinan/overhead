@@ -6,7 +6,7 @@ export const apigateway = defineService({
   id: "apigateway",
   term: "Amazon API Gateway",
   icon: "aws-apigateway",
-  lane: "ingress",
+  role: "ingress",
   settings: {
     apiType: {
       type: "enum",

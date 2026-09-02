@@ -26,7 +26,7 @@ function node(service: string, settings: Record<string, unknown> = {}): ArchNode
 }
 
 function snap(nodes: ArchNode[], edges: ArchEdge[] = []): StateSnapshot {
-  return { nodes, edges, groups: [], traffic: { ...DEFAULT_TRAFFIC } };
+  return { nodes, edges, containers: [], sections: [], traffic: { ...DEFAULT_TRAFFIC } };
 }
 
 function rulesFired(s: StateSnapshot): string[] {

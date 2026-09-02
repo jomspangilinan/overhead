@@ -51,8 +51,7 @@
       "position": {
         "x": 460,
         "y": 300
-      },
-      "lane": "workers"
+      }
     }
   ],
   "edges": [
@@ -84,9 +83,10 @@
       "label": "thumbnails"
     }
   ],
-  "groups": [],
   "traffic": {
     "requestsPerMonth": 2000000,
     "avgPayloadKb": 128
-  }
+  },
+  "containers": [],
+  "sections": []
 }

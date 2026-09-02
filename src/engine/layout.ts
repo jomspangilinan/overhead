@@ -1,11 +1,11 @@
-// Lane auto-layout: Ingress → Handlers → Messaging → Workers → Data,
+// Role auto-layout: Ingress → Handlers → Messaging → Workers → Data,
 // left to right; rows assigned per lane in node order. Pure function —
 // returns new positions, mutates nothing.
 
-import type { ArchNode, Lane } from "./model";
+import type { ArchNode, Role } from "./model";
 import { getService } from "./services";
 
-export const LANE_ORDER: Lane[] = [
+export const ROLE_ORDER: Role[] = [
   "ingress",
   "handlers",
   "messaging",
@@ -13,7 +13,7 @@ export const LANE_ORDER: Lane[] = [
   "data",
 ];
 
-export const LANE_LABELS: Record<Lane, string> = {
+export const ROLE_LABELS: Record<Role, string> = {
   ingress: "INGRESS",
   handlers: "HANDLERS",
   messaging: "MESSAGING",
@@ -21,22 +21,22 @@ export const LANE_LABELS: Record<Lane, string> = {
   data: "DATA",
 };
 
-const LANE_GAP = 260;
+const ROLE_GAP = 260;
 const ROW_GAP = 150;
 const X0 = 80;
 const Y0 = 80;
 
-export function laneOf(node: ArchNode): Lane {
-  return node.lane ?? getService(node.service)?.lane ?? "handlers";
+export function roleOf(node: ArchNode): Role {
+  return getService(node.service)?.role ?? "handlers";
 }
 
 /** Position for one new node: its lane column, first free row — nothing else moves. */
-export function placeInLane(nodes: ArchNode[], lane: Lane): { x: number; y: number } {
-  const inLane = nodes.filter((n) => laneOf(n) === lane);
+export function placeInRole(nodes: ArchNode[], lane: Role): { x: number; y: number } {
+  const inRole = nodes.filter((n) => roleOf(n) === lane);
   return {
-    x: X0 + LANE_ORDER.indexOf(lane) * LANE_GAP,
-    y: inLane.length
-      ? Math.max(...inLane.map((n) => n.position.y)) + ROW_GAP
+    x: X0 + ROLE_ORDER.indexOf(lane) * ROLE_GAP,
+    y: inRole.length
+      ? Math.max(...inRole.map((n) => n.position.y)) + ROW_GAP
       : Y0,
   };
 }
@@ -44,14 +44,14 @@ export function placeInLane(nodes: ArchNode[], lane: Lane): { x: number; y: numb
 export function autoLayout(
   nodes: ArchNode[],
 ): Record<string, { x: number; y: number }> {
-  const rows = new Map<Lane, number>();
+  const rows = new Map<Role, number>();
   const out: Record<string, { x: number; y: number }> = {};
   for (const node of nodes) {
-    const lane = laneOf(node);
+    const lane = roleOf(node);
     const row = rows.get(lane) ?? 0;
     rows.set(lane, row + 1);
     out[node.id] = {
-      x: X0 + LANE_ORDER.indexOf(lane) * LANE_GAP,
+      x: X0 + ROLE_ORDER.indexOf(lane) * ROLE_GAP,
       y: Y0 + row * ROW_GAP,
     };
   }
