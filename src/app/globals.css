@@ -1,26 +1,103 @@
 @import "tailwindcss";
+@import "@xyflow/react/dist/style.css";
 
+/* Design tokens — OVERHEAD-PLAN.md §11 */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --ground: #f2f3f5;
+  --surface: #ffffff;
+  --surface-2: #e8eaee;
+  --ink: #15181d;
+  --ink-2: #464c56;
+  --ink-3: #737a86;
+  --rule: #d5d8de;
+  --accent: #2450d6;
+  --saving: #1a6b47;
+  --finding: #b57a00;
+  --critical: #a8281c;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --ground: #0f1114;
+    --surface: #171a1f;
+    --surface-2: #20242a;
+    --ink: #eceef2;
+    --ink-2: #b1b7c1;
+    --ink-3: #828997;
+    --rule: #2a2f37;
+    --accent: #8ea8ff;
+    --saving: #6fcf9a;
+    --finding: #e2b45a;
+    --critical: #f08b7f;
   }
 }
 
+@theme inline {
+  --color-ground: var(--ground);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-rule: var(--rule);
+  --color-accent: var(--accent);
+  --color-saving: var(--saving);
+  --color-finding: var(--finding);
+  --color-critical: var(--critical);
+  --font-sans: var(--font-plex-sans);
+  --font-mono: var(--font-plex-mono);
+  --font-head: var(--font-archivo);
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-plex-sans), "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Canvas grid — 1px at 6% ink */
+.overhead-canvas {
+  background: var(--ground);
+}
+
+/* React Flow chrome in our tokens */
+.react-flow__node {
+  transition: opacity 0.15s;
+}
+.react-flow__edge {
+  transition: opacity 0.15s;
+}
+.react-flow__edge-path {
+  stroke: var(--ink);
+}
+.react-flow__handle {
+  opacity: 0;
+  pointer-events: none;
+}
+.react-flow__attribution {
+  background: transparent;
+  color: var(--ink-3);
+}
+
+/* Hover isolation: everything not lit dims to 18% */
+.overhead-canvas.hovering .react-flow__node:not(.lit),
+.overhead-canvas.hovering .react-flow__edge:not(.lit) {
+  opacity: 0.18;
+}
+
+/* Gear appears on node hover */
+.overhead-node .gear {
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.overhead-node:hover .gear,
+.react-flow__node.lit .overhead-node .gear {
+  opacity: 0.85;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
 }

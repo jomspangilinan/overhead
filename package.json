@@ -11,9 +11,11 @@
     "fetch-pricing": "node --experimental-strip-types scripts/fetch-pricing.ts"
   },
   "dependencies": {
+    "@xyflow/react": "^12.11.6",
     "next": "15.5.25",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

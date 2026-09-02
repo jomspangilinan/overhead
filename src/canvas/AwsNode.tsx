@@ -1,0 +1,129 @@
+"use client";
+
+// One custom React Flow node, two renderings: the 56px official icon with
+// the name beneath (default), or the 200×76 card housing the icon when
+// zoomed ≥125% / Cards / Cost. Constant 200×100 hit-box keeps edges stable.
+
+import { memo } from "react";
+import { Handle, Position, type NodeProps, type Node } from "@xyflow/react";
+import { useStore, cardModeOf, pricingOf, snapshotOf } from "@/store/useStore";
+import { getService } from "@/engine/services";
+import { nodeCost } from "@/engine/cost";
+import { toMoney } from "@/engine/model";
+
+export const NODE_W = 200;
+export const NODE_H = 100;
+const ICON = 56;
+
+export type AwsNodeData = { nodeId: string };
+export type AwsNodeType = Node<AwsNodeData, "aws">;
+
+function money(n: number): string {
+  return `$${toMoney(n).toFixed(2)}`;
+}
+
+function settingText(value: unknown, unit?: string): string {
+  if (typeof value === "number") {
+    const s = value >= 1_000_000 ? `${value / 1_000_000}M` : String(value);
+    return unit ? `${s} ${unit}` : s;
+  }
+  return String(value);
+}
+
+export const AwsNode = memo(function AwsNode({ data }: NodeProps<AwsNodeType>) {
+  const node = useStore((s) => s.nodes.find((n) => n.id === data.nodeId));
+  const cardMode = useStore(cardModeOf);
+  const costOn = useStore((s) => s.layers.cost);
+  const monthly = useStore((s) => {
+    if (!s.nodes.some((n) => n.id === data.nodeId)) return 0;
+    try {
+      return nodeCost(snapshotOf(s), data.nodeId, pricingOf(s)).monthly;
+    } catch {
+      return 0;
+    }
+  });
+
+  if (!node) return null;
+  const def = getService(node.service);
+  if (!def) return null;
+
+  const cardSettings = def.cardLines
+    .map((key) => {
+      const s = def.settings[key];
+      const v = node.settings[key];
+      if (v === undefined || !s) return null;
+      return settingText(v, s.type === "number" ? s.unit : undefined);
+    })
+    .filter(Boolean)
+    .join(" · ");
+
+  return (
+    <div
+      className="overhead-node relative"
+      style={{ width: NODE_W, height: NODE_H }}
+    >
+      <Handle type="target" position={Position.Left} style={{ top: NODE_H / 2 }} />
+      <Handle type="source" position={Position.Right} style={{ top: NODE_H / 2 }} />
+      {cardMode ? (
+        <div
+          className="absolute rounded-lg border bg-surface shadow-sm"
+          style={{
+            left: 0,
+            top: (NODE_H - 76) / 2,
+            width: 200,
+            height: 76,
+            borderColor: "var(--rule)",
+          }}
+        >
+          <svg width="48" height="48" className="absolute left-3 top-[14px]">
+            <use href={`#${def.icon}`} width="48" height="48" />
+          </svg>
+          <div className="absolute left-[70px] top-[8px] right-2">
+            <div
+              className="truncate font-head text-[9.5px] font-semibold opacity-65"
+              style={{ fontFamily: "var(--font-archivo)" }}
+            >
+              {def.term}
+            </div>
+            <div className="truncate text-[12.5px] font-medium leading-4">
+              {node.name}
+            </div>
+            <div
+              className="truncate text-[9.5px] opacity-70"
+              style={{ fontFamily: "var(--font-plex-mono)" }}
+            >
+              {cardSettings}
+            </div>
+          </div>
+          <div
+            className="absolute bottom-1.5 right-2.5 text-[11px] font-semibold"
+            style={{ fontFamily: "var(--font-plex-mono)" }}
+          >
+            {money(monthly)}
+          </div>
+        </div>
+      ) : (
+        <div className="absolute inset-0 flex flex-col items-center">
+          <svg
+            width={ICON}
+            height={ICON}
+            style={{ marginTop: (NODE_H - ICON - 22) / 2 }}
+          >
+            <use href={`#${def.icon}`} width={ICON} height={ICON} />
+          </svg>
+          <div className="mt-1 max-w-[190px] truncate text-center text-[12px] font-medium">
+            {node.name}
+          </div>
+          {costOn ? (
+            <div
+              className="text-[10.5px] font-semibold"
+              style={{ fontFamily: "var(--font-plex-mono)" }}
+            >
+              {money(monthly)}
+            </div>
+          ) : null}
+        </div>
+      )}
+    </div>
+  );
+});
