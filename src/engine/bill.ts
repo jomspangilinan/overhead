@@ -57,7 +57,7 @@ export function summarizeBill(rows: string[][]): BillSummary {
   for (const row of rows.slice(start)) {
     const service = (row[sCol] ?? "").trim();
     if (!service || /total/i.test(service)) continue;
-    let cell =
+    const cell =
       amountCol >= 0 ? row[amountCol] : [...row].reverse().find((c) => c && !isNaN(Number(c.replace(/[$,]/g, ""))));
     if (cell === undefined) continue;
     const spend = Number(String(cell).replace(/[$,]/g, ""));
