@@ -16,6 +16,7 @@ import { AwsNode, NODE_W, NODE_H } from "./AwsNode";
 import { ContainerCard, CARD_W, CARD_H } from "./ContainerCard";
 import { TypedEdge } from "./TypedEdge";
 import { ContainerFrames } from "./ContainerFrames";
+import { SectionFrames } from "./SectionFrames";
 import { outermostCollapsedAncestor } from "@/engine/containers";
 
 const nodeTypes: NodeTypes = { aws: AwsNode, container: ContainerCard };
@@ -255,6 +256,7 @@ export function Canvas() {
         panOnScroll
       >
         <ContainerFrames />
+        <SectionFrames />
       </ReactFlow>
     </div>
   );

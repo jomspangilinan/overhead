@@ -41,6 +41,33 @@ export function placeInRole(nodes: ArchNode[], lane: Role): { x: number; y: numb
   };
 }
 
+export interface AutoLayoutResult {
+  positions: Record<string, { x: number; y: number }>;
+  /** One per non-empty role — ordinary sections the user may rename or delete. */
+  sections: { name: string; color: string; nodeIds: string[] }[];
+}
+
+const SECTION_COLORS = ["#3B82F6", "#E7157B", "#F0B34E", "#7AA116", "#8C4FFF"];
+
+/**
+ * Arrange left to right by role and describe the arrangement as sections.
+ * The roles are a suggestion the user can throw away — never structure.
+ */
+export function autoLayoutWithSections(nodes: ArchNode[]): AutoLayoutResult {
+  const positions = autoLayout(nodes);
+  const byRole = new Map<Role, string[]>();
+  for (const n of nodes) {
+    const role = roleOf(n);
+    byRole.set(role, [...(byRole.get(role) ?? []), n.id]);
+  }
+  const sections = ROLE_ORDER.filter((r) => byRole.get(r)?.length).map((r, i) => ({
+    name: ROLE_LABELS[r][0] + ROLE_LABELS[r].slice(1).toLowerCase(),
+    color: SECTION_COLORS[i % SECTION_COLORS.length],
+    nodeIds: byRole.get(r)!,
+  }));
+  return { positions, sections };
+}
+
 export function autoLayout(
   nodes: ArchNode[],
 ): Record<string, { x: number; y: number }> {

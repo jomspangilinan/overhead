@@ -33,8 +33,20 @@ describe("exporters", () => {
     const parsed = JSON.parse(exportJson(base, pricing)) as StateSnapshot;
     expect(parsed.nodes).toEqual(base.nodes);
     expect(parsed.edges).toEqual(base.edges);
+    expect(parsed.containers).toEqual(base.containers);
+    expect(parsed.sections).toEqual(base.sections);
     expect(parsed.traffic).toEqual(base.traffic);
     expect(monthlyTotal(parsed, pricing)).toBe(monthlyTotal(base, pricing));
+  });
+
+  it("carries containment through a round-trip", () => {
+    const withTree = samples["event-driven"];
+    expect(withTree.containers.length).toBeGreaterThan(0);
+    const parsed = JSON.parse(exportJson(withTree, pricing)) as StateSnapshot;
+    expect(parsed.containers.map((c) => c.kind)).toEqual(
+      withTree.containers.map((c) => c.kind),
+    );
+    expect(parsed.nodes.filter((n) => n.container).length).toBeGreaterThan(0);
   });
 
   it("markdown carries total, per-node costs, findings and the mermaid block", () => {

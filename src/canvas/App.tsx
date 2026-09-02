@@ -22,6 +22,7 @@ import { Panel } from "./chrome/Panel";
 import { TopBar } from "./chrome/TopBar";
 import { LayerSwitch, ZoomPill } from "./chrome/Floats";
 import { TitleBlock } from "./chrome/TitleBlock";
+import { StructurePanel } from "./chrome/StructurePanel";
 import apiBackend from "../../samples/api-backend.json";
 import mediaPipeline from "../../samples/media-pipeline.json";
 import eventDriven from "../../samples/event-driven.json";
@@ -114,6 +115,8 @@ export function App() {
 
       <Rail />
       <TopBar />
+
+      <StructurePanel />
 
       <Panel
         id="add"

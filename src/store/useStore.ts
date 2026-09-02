@@ -16,7 +16,7 @@ import type {
 import { DEFAULT_TRAFFIC } from "@/engine/model";
 import type { PricingTable } from "@/engine/pricing";
 import type { BillSummary } from "@/engine/bill";
-import { autoLayout, roleOf, placeInRole } from "@/engine/layout";
+import { autoLayout, autoLayoutWithSections, roleOf, placeInRole } from "@/engine/layout";
 import {
   validateContainerParent,
   validateNodePlacement,
@@ -238,11 +238,22 @@ export const useStore = create<OverheadState>((set, get) => ({
     set({ region });
   },
 
+  /** Re-running replaces the sections it made before; user sections survive. */
   applyAutoLayout: () =>
     set((s) => {
-      const positions = autoLayout(s.nodes);
+      const { positions, sections } = autoLayoutWithSections(s.nodes);
       return {
         nodes: s.nodes.map((n) => ({ ...n, position: positions[n.id] ?? n.position })),
+        sections: [
+          ...s.sections.filter((x) => !x.id.startsWith("auto-")),
+          ...sections.map((x, i) => ({
+            id: `auto-${i}`,
+            name: x.name,
+            color: x.color,
+            nodeIds: x.nodeIds,
+            collapsed: false,
+          })),
+        ],
       };
     }),
 

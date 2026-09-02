@@ -533,7 +533,14 @@ export function coreTools(): ToolSpec[] {
       inputSchema: { type: "object", properties: {}, additionalProperties: false },
       execute: () => {
         useStore.getState().applyAutoLayout();
-        return text({ ok: true, nodes: useStore.getState().nodes.length });
+        const s = useStore.getState();
+        return text({
+          nodes: s.nodes.length,
+          sections: s.sections
+            .filter((x) => x.id.startsWith("auto-"))
+            .map((x) => ({ id: x.id, name: x.name })),
+          note: "These are ordinary sections — rename or delete them.",
+        });
       },
     },
     {
