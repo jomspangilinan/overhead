@@ -43,6 +43,7 @@ export interface OverheadState {
   cardsForced: boolean;
   zoom: number;
   selectedId: string | null;
+  selectedEdgeId: string | null;
   hoveredId: string | null;
   traceIds: string[] | null;
   scenario: { name: string; base: StateSnapshot } | null;
@@ -77,6 +78,7 @@ export interface OverheadState {
   setCardsForced: (on: boolean) => void;
   setZoom: (zoom: number) => void;
   select: (id: string | null) => void;
+  selectEdge: (id: string | null) => void;
   hover: (id: string | null) => void;
   setTrace: (ids: string[] | null) => void;
   setExportPanel: (format: OverheadState["exportPanel"]) => void;
@@ -99,6 +101,7 @@ export const useStore = create<OverheadState>((set, get) => ({
   cardsForced: false,
   zoom: 1,
   selectedId: null,
+  selectedEdgeId: null,
   hoveredId: null,
   traceIds: null,
   scenario: null,
@@ -184,7 +187,8 @@ export const useStore = create<OverheadState>((set, get) => ({
 
   setCardsForced: (on) => set({ cardsForced: on }),
   setZoom: (zoom) => set({ zoom }),
-  select: (id) => set({ selectedId: id }),
+  select: (id) => set({ selectedId: id, ...(id ? { selectedEdgeId: null } : {}) }),
+  selectEdge: (id) => set({ selectedEdgeId: id, ...(id ? { selectedId: null } : {}) }),
   hover: (id) => set({ hoveredId: id }),
   setTrace: (ids) => set({ traceIds: ids }),
   setExportPanel: (format) => set({ exportPanel: format }),

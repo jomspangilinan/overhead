@@ -49,36 +49,6 @@ function Autosave() {
   return null;
 }
 
-function SampleBar() {
-  const loadSnapshot = useStore((s) => s.loadSnapshot);
-  const applyAutoLayout = useStore((s) => s.applyAutoLayout);
-  return (
-    <div className="flex items-center gap-1.5 border-b border-rule bg-surface px-3 py-1.5">
-      <span className="text-[10.5px] uppercase tracking-wider text-ink-3">
-        Samples
-      </span>
-      {Object.keys(SAMPLES).map((name) => (
-        <button
-          key={name}
-          className="rounded border border-rule px-2 py-0.5 text-[11.5px] hover:bg-surface-2"
-          onClick={() => {
-            loadSnapshot(SAMPLES[name]);
-            applyAutoLayout();
-          }}
-        >
-          {name}
-        </button>
-      ))}
-      <button
-        className="ml-auto rounded border border-rule px-2 py-0.5 text-[11.5px] hover:bg-surface-2"
-        onClick={applyAutoLayout}
-      >
-        Auto-layout
-      </button>
-    </div>
-  );
-}
-
 export function App() {
   const loadSnapshot = useStore((s) => s.loadSnapshot);
 
@@ -100,7 +70,9 @@ export function App() {
       // corrupt autosave — fall through to the seed
     }
     if (!restored) {
-      const snap = SAMPLES["api-backend"];
+      // Seed the richest sample: async + data edges and live findings, so
+      // every layer toggle visibly does something on first load.
+      const snap = SAMPLES["event-driven"];
       loadSnapshot({
         ...snap,
         nodes: snap.nodes.map((n) => ({ ...n })),
@@ -116,7 +88,6 @@ export function App() {
     <ReactFlowProvider>
       <div className="flex h-screen flex-col">
         <Toolbar />
-        <SampleBar />
         <div className="flex min-h-0 flex-1">
           <Palette />
           <div className="relative min-w-0 flex-1">

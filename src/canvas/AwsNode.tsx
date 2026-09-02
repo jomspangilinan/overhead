@@ -20,7 +20,22 @@ import { toMoney, type Severity } from "@/engine/model";
 
 export const NODE_W = 200;
 export const NODE_H = 100;
-const ICON = 56;
+export const ICON = 56;
+
+// Security is a node property, not an edge — shown as a badge when the
+// security layer is on.
+const SEC_BADGE: Record<string, string> = {
+  lambda: "IAM role",
+  apigateway: "authorizer",
+  dynamodb: "SSE-KMS",
+  s3: "SSE-S3",
+  cloudfront: "OAC · TLS",
+  sqs: "SSE-SQS",
+  sns: "SSE",
+  eventbridge: "resource policy",
+  stepfunctions: "IAM role",
+  cognito: "JWT issuer",
+};
 
 export type AwsNodeData = { nodeId: string };
 export type AwsNodeType = Node<AwsNodeData, "aws">;
@@ -50,6 +65,7 @@ export const AwsNode = memo(function AwsNode({ data }: NodeProps<AwsNodeType>) {
   const node = useStore((s) => s.nodes.find((n) => n.id === data.nodeId));
   const cardMode = useStore(cardModeOf);
   const costOn = useStore((s) => s.layers.cost);
+  const securityOn = useStore((s) => s.layers.security);
   const monthly = useStore((s) => {
     if (!s.nodes.some((n) => n.id === data.nodeId)) return 0;
     try {
@@ -143,6 +159,18 @@ export const AwsNode = memo(function AwsNode({ data }: NodeProps<AwsNodeType>) {
               {cardSettings}
             </div>
           </div>
+          {securityOn && SEC_BADGE[node.service] ? (
+            <div
+              className="absolute bottom-1.5 left-[70px] rounded border px-1 py-px text-[8.5px] font-semibold"
+              style={{
+                fontFamily: "var(--font-plex-mono)",
+                borderColor: "var(--rule)",
+                color: "var(--ink-2)",
+              }}
+            >
+              {SEC_BADGE[node.service]}
+            </div>
+          ) : null}
           <div
             className="absolute bottom-1.5 right-2.5 text-[11px] font-semibold"
             style={{ fontFamily: "var(--font-plex-mono)" }}
@@ -167,6 +195,19 @@ export const AwsNode = memo(function AwsNode({ data }: NodeProps<AwsNodeType>) {
           <div className="mt-1 max-w-[190px] truncate text-center text-[12px] font-medium">
             {node.name}
           </div>
+          {securityOn && SEC_BADGE[node.service] ? (
+            <div
+              className="rounded border px-1 py-px text-[8.5px] font-semibold"
+              style={{
+                fontFamily: "var(--font-plex-mono)",
+                borderColor: "var(--rule)",
+                color: "var(--ink-2)",
+                background: "var(--surface)",
+              }}
+            >
+              {SEC_BADGE[node.service]}
+            </div>
+          ) : null}
           {costOn ? (
             <div
               className="text-[10.5px] font-semibold"

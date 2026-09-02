@@ -4,68 +4,156 @@
       "id": "auth",
       "service": "cognito",
       "name": "user-pool",
-      "settings": { "monthlyActiveUsers": 25000 },
-      "position": { "x": 60, "y": 60 }
+      "settings": {
+        "monthlyActiveUsers": 25000
+      },
+      "position": {
+        "x": 60,
+        "y": 60
+      }
     },
     {
       "id": "api",
       "service": "apigateway",
       "name": "ingest-api",
-      "settings": { "apiType": "HTTP" },
-      "position": { "x": 60, "y": 220 }
+      "settings": {
+        "apiType": "HTTP"
+      },
+      "position": {
+        "x": 60,
+        "y": 220
+      }
     },
     {
       "id": "ingest",
       "service": "lambda",
       "name": "ingest-handler",
-      "settings": { "architecture": "arm64", "memoryMb": 256, "avgDurationMs": 120 },
-      "position": { "x": 320, "y": 220 }
+      "settings": {
+        "architecture": "arm64",
+        "memoryMb": 256,
+        "avgDurationMs": 120
+      },
+      "position": {
+        "x": 320,
+        "y": 220
+      }
     },
     {
       "id": "bus",
       "service": "eventbridge",
       "name": "domain-bus",
       "settings": {},
-      "position": { "x": 560, "y": 220 }
+      "position": {
+        "x": 560,
+        "y": 220
+      }
     },
     {
       "id": "flow",
       "service": "stepfunctions",
       "name": "order-flow",
-      "settings": { "workflowType": "express", "executionsPerMonth": 500000, "expressAvgDurationMs": 250, "expressMemoryMb": 128 },
-      "position": { "x": 800, "y": 140 }
+      "settings": {
+        "workflowType": "express",
+        "executionsPerMonth": 500000,
+        "expressAvgDurationMs": 250,
+        "expressMemoryMb": 128
+      },
+      "position": {
+        "x": 800,
+        "y": 140
+      }
     },
     {
       "id": "fanout",
       "service": "sns",
       "name": "order-events",
-      "settings": { "subscriberCount": 2 },
-      "position": { "x": 800, "y": 320 }
+      "settings": {
+        "subscriberCount": 2
+      },
+      "position": {
+        "x": 800,
+        "y": 320
+      }
     },
     {
       "id": "notifier",
       "service": "lambda",
       "name": "notifier",
-      "settings": { "architecture": "arm64", "memoryMb": 128, "avgDurationMs": 80, "invocationsPerMonth": 1000000, "dlqConfigured": true },
-      "position": { "x": 1040, "y": 320 }
+      "settings": {
+        "architecture": "arm64",
+        "memoryMb": 128,
+        "avgDurationMs": 80,
+        "invocationsPerMonth": 1000000,
+        "dlqConfigured": true
+      },
+      "position": {
+        "x": 1040,
+        "y": 320
+      },
+      "lane": "workers"
     },
     {
       "id": "state",
       "service": "dynamodb",
       "name": "order-state",
-      "settings": { "capacityMode": "on-demand", "storageGb": 25 },
-      "position": { "x": 1040, "y": 140 }
+      "settings": {
+        "capacityMode": "on-demand",
+        "storageGb": 25
+      },
+      "position": {
+        "x": 1040,
+        "y": 140
+      }
     }
   ],
   "edges": [
-    { "id": "e1", "from": "auth", "to": "api", "kind": "data", "label": "JWT" },
-    { "id": "e2", "from": "api", "to": "ingest", "kind": "sync" },
-    { "id": "e3", "from": "ingest", "to": "bus", "kind": "async" },
-    { "id": "e4", "from": "bus", "to": "flow", "kind": "async" },
-    { "id": "e5", "from": "bus", "to": "fanout", "kind": "async" },
-    { "id": "e6", "from": "fanout", "to": "notifier", "kind": "async" },
-    { "id": "e7", "from": "flow", "to": "state", "kind": "sync" }
+    {
+      "id": "e1",
+      "from": "auth",
+      "to": "api",
+      "kind": "data",
+      "label": "JWT"
+    },
+    {
+      "id": "e2",
+      "from": "api",
+      "to": "ingest",
+      "kind": "sync"
+    },
+    {
+      "id": "e3",
+      "from": "ingest",
+      "to": "bus",
+      "kind": "async"
+    },
+    {
+      "id": "e4",
+      "from": "bus",
+      "to": "flow",
+      "kind": "async"
+    },
+    {
+      "id": "e5",
+      "from": "bus",
+      "to": "fanout",
+      "kind": "async"
+    },
+    {
+      "id": "e6",
+      "from": "fanout",
+      "to": "notifier",
+      "kind": "async"
+    },
+    {
+      "id": "e7",
+      "from": "flow",
+      "to": "state",
+      "kind": "sync"
+    }
   ],
   "groups": [],
-  "traffic": { "requestsPerMonth": 1000000, "avgPayloadKb": 16 }
+  "traffic": {
+    "requestsPerMonth": 1000000,
+    "avgPayloadKb": 16
+  }
 }

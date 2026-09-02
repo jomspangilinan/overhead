@@ -2,17 +2,22 @@
 
 // The three edge kinds, three encodings, nothing else:
 // sync = solid + arrowhead · async = dashed 7 5 + arrowhead ·
-// data = dotted 2 5, no head. All cubic beziers — same-column edges
-// bracket out one side; everything else curves left → right.
+// data = dotted 2 5, no head. Routing is "floating": anchors are computed
+// from the nodes' live positions and visual shape (icon rim / card edge)
+// via edgeGeometry — React Flow's handle coordinates are ignored.
 
 import { memo } from "react";
 import {
   BaseEdge,
   EdgeLabelRenderer,
+  useInternalNode,
   type Edge,
   type EdgeProps,
 } from "@xyflow/react";
 import type { EdgeKind } from "@/engine/model";
+import { useStore, cardModeOf } from "@/store/useStore";
+import { NODE_W, NODE_H } from "./AwsNode";
+import { edgeGeometry, shapeOf } from "./edgeGeometry";
 
 export type TypedEdgeData = {
   kind: EdgeKind;
@@ -37,30 +42,38 @@ function volumeLabel(volume?: number): string | null {
 
 export const TypedEdge = memo(function TypedEdge({
   id,
-  sourceX,
-  sourceY,
-  targetX,
-  targetY,
+  source,
+  target,
   data,
   markerEnd,
 }: EdgeProps<TypedEdgeType>) {
-  const kind = data?.kind ?? "sync";
+  const sourceNode = useInternalNode(source);
+  const targetNode = useInternalNode(target);
+  const cardMode = useStore(cardModeOf);
+  // Bracket edges reach outward — away from the graph's centre of mass.
+  const graphCx = useStore((st) =>
+    st.nodes.length
+      ? st.nodes.reduce((a, n) => a + n.position.x, 0) / st.nodes.length
+      : 0,
+  );
 
-  let d: string;
-  let labX: number;
-  let labY: number;
-  if (targetX - sourceX < 24) {
-    // same column (or backwards): bracket out one side
-    const reach = 80;
-    d = `M${sourceX},${sourceY} C${sourceX + reach},${sourceY} ${targetX + reach},${targetY} ${targetX},${targetY}`;
-    labX = Math.max(sourceX, targetX) + reach * 0.7;
-    labY = (sourceY + targetY) / 2;
-  } else {
-    const dx = Math.max(24, targetX - sourceX);
-    d = `M${sourceX},${sourceY} C${sourceX + dx * 0.5},${sourceY} ${targetX - dx * 0.5},${targetY} ${targetX},${targetY}`;
-    labX = (sourceX + targetX) / 2;
-    labY = (sourceY + targetY) / 2 - 10;
-  }
+  if (!sourceNode || !targetNode) return null;
+
+  const kind = data?.kind ?? "sync";
+  const s = shapeOf(
+    sourceNode.internals.positionAbsolute,
+    sourceNode.measured?.width ?? NODE_W,
+    sourceNode.measured?.height ?? NODE_H,
+    cardMode || sourceNode.type === "awsGroup",
+  );
+  const t = shapeOf(
+    targetNode.internals.positionAbsolute,
+    targetNode.measured?.width ?? NODE_W,
+    targetNode.measured?.height ?? NODE_H,
+    cardMode || targetNode.type === "awsGroup",
+  );
+  const outwardK = (s.cx + t.cx) / 2 >= graphCx ? (1 as const) : (-1 as const);
+  const geo = edgeGeometry(s, t, { outwardK });
 
   const label = data?.label ?? volumeLabel(data?.volumePerMonth);
 
@@ -68,7 +81,7 @@ export const TypedEdge = memo(function TypedEdge({
     <>
       <BaseEdge
         id={id}
-        path={d}
+        path={geo.d}
         markerEnd={kind === "data" ? undefined : markerEnd}
         style={{
           strokeWidth: widthFor(data?.volumePerMonth),
@@ -80,10 +93,11 @@ export const TypedEdge = memo(function TypedEdge({
       {label ? (
         <EdgeLabelRenderer>
           <div
-            className="pointer-events-none absolute text-[10px]"
+            className="pointer-events-none absolute rounded px-1 text-[10px]"
             style={{
-              transform: `translate(-50%, -50%) translate(${labX}px, ${labY}px)`,
+              transform: `translate(-50%, -50%) translate(${geo.label.x}px, ${geo.label.y}px)`,
               color: "var(--ink-2)",
+              background: "var(--ground)",
             }}
           >
             {label}

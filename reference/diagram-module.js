@@ -124,12 +124,12 @@
   var LANES = ['INGRESS', 'HANDLERS', 'MESSAGING', 'WORKERS', 'DATA'];
   var ROWS = [88, 228, 368];
   var N = [
-    { id: 'cdn', lane: 0, row: 0, icon: 'aws-cloudfront', term: 'Amazon CloudFront', name: 'static-site-cdn', settings: 'PriceClass_100 · 40 GB out', cost: '$3.60' },
+    { id: 'cdn', lane: 0, row: 0, icon: 'aws-cloudfront', term: 'Amazon CloudFront', name: 'static-site-cdn', settings: 'PriceClass_100 · 40 GB', cost: '$3.60' },
     { id: 'pool', lane: 0, row: 1, icon: 'aws-cognito', term: 'Amazon Cognito', name: 'user-pool', settings: '12k MAU · JWT', cost: '$0.00' },
     { id: 'http', lane: 0, row: 2, icon: 'aws-apigateway', term: 'Amazon API Gateway', name: 'orders-http', settings: 'HTTP API · 5M req', cost: '$5.00' },
     { id: 'api', lane: 1, row: 2, icon: 'aws-lambda', term: 'AWS Lambda', name: 'orders-api', settings: 'arm64 · 512 MB · 120 ms', cost: '$4.98', sec: 'IAM role' },
     { id: 'sqs', lane: 2, row: 1, icon: 'aws-sqs', term: 'Amazon SQS', name: 'thumbnail-queue', settings: 'Standard · DLQ · 0.4M', cost: '$0.16' },
-    { id: 'sns', lane: 2, row: 2, icon: 'aws-sns', term: 'Amazon SNS', name: 'order-events', settings: 'Standard · 1.2M publishes', cost: '$0.60' },
+    { id: 'sns', lane: 2, row: 2, icon: 'aws-sns', term: 'Amazon SNS', name: 'order-events', settings: 'Standard · 1.2M pub', cost: '$0.60' },
     { id: 'thumb', lane: 3, row: 1, icon: 'aws-lambda', term: 'AWS Lambda', name: 'thumbnail-worker', settings: 'arm64 · 1024 MB · 3 s', cost: '$16.10', sec: 'IAM role' },
     { id: 'notify', lane: 3, row: 2, icon: 'aws-lambda', term: 'AWS Lambda', name: 'notify · analytics', settings: 'arm64 · 256 MB · 80 ms', cost: '$0.40', sec: 'IAM role', stacked: true },
     { id: 'static', lane: 4, row: 0, icon: 'aws-s3', term: 'Amazon S3', name: 'static-site', settings: 'Standard · 2 GB', cost: '$0.05', sec: 'SSE-S3' },
@@ -235,7 +235,7 @@
     function applyZoom() { var vp = after.parentElement; var base = vp.clientWidth || 1000; after.style.width = Math.round(base * zoom) + 'px'; after.style.height = 'auto'; }
     build();
     // layer toggles
-    document.querySelectorAll('button.tg[data-layer]').forEach(function (b) {
+    document.querySelectorAll('button[data-layer]').forEach(function (b) {
       b.addEventListener('click', function () {
         var on = b.getAttribute('aria-pressed') !== 'true'; b.setAttribute('aria-pressed', on ? 'true' : 'false'); after.classList.toggle('l-' + b.dataset.layer, on);
         if (on && b.dataset.layer === 'cost' && mode !== 'card') { forceCards = true; setMode('card'); if (zoom < 1.4) zoomTo(1.4); }

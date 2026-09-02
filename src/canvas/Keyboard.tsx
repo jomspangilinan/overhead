@@ -22,7 +22,11 @@ export function Keyboard() {
       }
       if (e.key === "Delete" || e.key === "Backspace") {
         const s = useStore.getState();
-        if (s.selectedId) {
+        if (s.selectedEdgeId) {
+          e.preventDefault();
+          s.removeEdge(s.selectedEdgeId);
+          s.selectEdge(null);
+        } else if (s.selectedId) {
           e.preventDefault();
           s.removeNode(s.selectedId);
         }

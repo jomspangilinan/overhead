@@ -27,25 +27,15 @@ export function HowTo() {
         <div className="text-[13px] leading-relaxed text-ink-2">
           {empty ? (
             <>
-              <strong className="text-ink">The canvas is empty.</strong> Load a
-              sample above, click services on the left — or open this page in the
-              ChatGPT desktop app and tell it what to build.
+              <strong className="text-ink">Empty canvas.</strong> Drag a service
+              from the left rail — or open this page in the ChatGPT desktop app
+              and describe what to build.
             </>
           ) : (
             <>
-              <strong className="text-ink">Try it with your agent:</strong> open
-              this page in the ChatGPT desktop app&apos;s browser and say{" "}
-              <em>
-                &ldquo;HTTP API → Lambda → DynamoDB, S3 uploads behind
-                CloudFront, SQS for thumbnails, 5M requests a month — then check
-                your own work with get_findings.&rdquo;
-              </em>{" "}
-              The tools panel (bottom right) shows what the agent can call. Also
-              works in Chrome via{" "}
-              <code className="rounded bg-surface-2 px-1 text-[11.5px]">
-                chrome://flags/#enable-webmcp-testing
-              </code>
-              .
+              <strong className="text-ink">Bring your agent:</strong> open this
+              page in the ChatGPT desktop app and describe an architecture — it
+              builds, prices and audits it live. Its tools: bottom right.
             </>
           )}
         </div>

@@ -263,23 +263,46 @@ Use the **official AWS Architecture Icons** (July 2026 package). Copy the 64 px 
 Source on this machine: `~/Downloads/Icon-package_07312026.5846e92413caa21490223536cc97f1269e44fa92/`
 `reference/aws-icon-sprite.svg` already contains the 22 symbols the mock uses.
 
-### Design tokens
+### Design tokens — direction: **Instrument**
 
-| Token | Light | Dark | Used for |
-|---|---|---|---|
-| `--ground` | `#f2f3f5` | `#0f1114` | page/canvas; canvas gets a 1 px grid at 6% ink |
-| `--surface` | `#ffffff` | `#171a1f` | cards, inspector, panels |
-| `--surface-2` | `#e8eaee` | `#20242a` | inputs, code, table headers |
-| `--ink` | `#15181d` | `#eceef2` | text, edges, every number |
-| `--ink-2` | `#464c56` | `#b1b7c1` | secondary text |
-| `--ink-3` | `#737a86` | `#828997` | labels, captions |
-| `--rule` | `#d5d8de` | `#2a2f37` | hairlines |
-| `--accent` | `#2450d6` | `#8ea8ff` | selection, focus, scenario overlay, tool-panel count |
-| `--saving` | `#1a6b47` | `#6fcf9a` | negative delta |
-| `--finding` | `#b57a00` | `#e2b45a` | warning ring/stripe |
-| `--critical` | `#a8281c` | `#f08b7f` | critical ring/stripe, positive delta |
+Dark, dense, pro-tool. Canvas bleeds edge to edge; all chrome floats over it. Left icon rail with keyboard hints,
+floating layer switch and zoom pill, an inspector that only fills in on selection, and a title block in the
+canvas corner. Reference: `reference/overhead-mock.html`.
 
-Type: **Archivo** (headings, tool panel), **IBM Plex Sans** (UI), **IBM Plex Mono** (every number, every export). Tabular figures where digits align.
+| Token | Value | Used for |
+|---|---|---|
+| `--bg` | `#0B0D10` | page ground; canvas is a radial lift to `#141922` at 60/40 |
+| `--panel` | `#111620` | rail, drawer, inspector, floating pills (`E6` alpha + `backdrop-filter: blur(10px)` when floating) |
+| `--panel-2` | `#0D121A` | inputs, code, recessed fields |
+| `--line` / `--line-2` | `#1D2531` / `#222A36` | panel borders / control borders |
+| `--ink` | `#E8ECF2` | primary text, node labels, edges |
+| `--ink-2` | `#9AA6B7` | secondary text |
+| `--ink-3` | `#66738A` | labels, captions |
+| `--ink-4` | `#4E5A6B` | keyboard hints, log text |
+| `--accent` | `#3B82F6` | selection, focus, primary button |
+| `--accent-ink` | `#8FB8FF` | accent text, active rail icon |
+| `--accent-bg` | `#1B2534` | active rail/toggle background |
+| `--good` | `#6FE3B0` | savings, live-tool pulse, title-block total |
+| `--warn` | `#F0B34E` | finding ring / stripe |
+| `--bad` | `#F0796A` | critical finding, positive delta |
+| `--edge` / `--edge-lab` | `#5C6B7F` / `#7C8CA0` | edge stroke / edge label |
+
+Grid: `radial-gradient(circle at 1px 1px, #1E2530 1px, transparent 0)` at 26 px, 55 % opacity, **toggleable**
+(rail button, `⇧G`) — fades to 0 rather than unmounting.
+
+Type: **Archivo** 400/500/600/700 for UI and headings, **JetBrains Mono** 400/500/600 for every number, code
+and log line. Tabular figures where digits align. Uppercase only for 9.5 px labels at `.14em` tracking — never
+for buttons.
+
+**Chrome layout**
+- Left rail 54 px: select · pan / add · connect · group · collapse / trace · then spacer · grid · undo.
+  Keyboard hint bottom-right of each button; active state is `--accent-bg` plus a 2.5 px accent tick on the outer edge.
+- Top bar floats from `left:86px`: brand, breadcrumb, price-list chip, scenario delta chip, monthly total, Scenario, Export.
+- Floating layer switch bottom-left of the canvas; zoom pill bottom-right of the canvas.
+- **Title block** bottom-left, above the layer switch — drawing · region · resources · findings · est. monthly.
+  Borrowed from engineering drawings: it makes exports read as a document of record and keeps the total in frame
+  in any screenshot.
+- Agent strip along the bottom: live tool count and the last three tool calls.
 
 ## 12. Hard constraints
 

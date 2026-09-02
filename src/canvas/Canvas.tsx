@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   ReactFlow,
   Background,
@@ -17,7 +17,6 @@ import type { EdgeKind } from "@/engine/model";
 import { AwsNode, NODE_W, NODE_H } from "./AwsNode";
 import { GroupNode } from "./GroupNode";
 import { TypedEdge } from "./TypedEdge";
-import { Lanes } from "./Lanes";
 import { GroupFrames } from "./GroupFrames";
 
 const nodeTypes: NodeTypes = { aws: AwsNode, awsGroup: GroupNode };
@@ -41,6 +40,9 @@ export function Canvas() {
   const cardMode = useStore(cardModeOf);
 
   const traceIds = useStore((s) => s.traceIds);
+  const selectedEdgeId = useStore((s) => s.selectedEdgeId);
+  const selectEdge = useStore((s) => s.selectEdge);
+  const storeAddEdge = useStore((s) => s.addEdge);
 
   const litIds = useMemo(() => {
     if (traceIds?.length) return new Set(traceIds);
@@ -115,6 +117,7 @@ export function Canvas() {
         type: "typed",
         source: from,
         target: to,
+        selected: e.id === selectedEdgeId,
         hidden: !layers[KIND_LAYER[e.kind]],
         data: {
           kind: e.kind,
@@ -135,16 +138,47 @@ export function Canvas() {
       });
     }
     return out;
-  }, [edges, layers, litIds, hoveredId, traceIds, collapsedByNode]);
+  }, [edges, layers, litIds, hoveredId, traceIds, collapsedByNode, selectedEdgeId]);
 
   const onMove = useCallback(
     (_evt: unknown, viewport: { zoom: number }) => setZoom(viewport.zoom),
     [setZoom],
   );
 
-  const { screenToFlowPosition } = useReactFlow();
+  const { screenToFlowPosition, fitView, getInternalNode } = useReactFlow();
   const addNode = useStore((s) => s.addNode);
-  const showLanes = useStore((s) => s.showLanes);
+
+  // The seed lands after mount, so the built-in fitView fires too early —
+  // and useNodesInitialized never flips in a controlled flow without
+  // onNodesChange. Retry until React Flow's internals have measured every
+  // store node, then fit once.
+  const didFit = useRef(false);
+  useEffect(() => {
+    if (!nodes.length) {
+      didFit.current = false;
+      return;
+    }
+    if (didFit.current) return;
+    let cancelled = false;
+    let tries = 0;
+    const attempt = () => {
+      if (cancelled || didFit.current) return;
+      const allMeasured = nodes.every(
+        (n) => getInternalNode(n.id)?.measured?.width,
+      );
+      if (allMeasured) {
+        fitView({ maxZoom: 1, padding: 0.15 }).then((applied) => {
+          if (!cancelled && applied) didFit.current = true;
+        });
+        return;
+      }
+      if (++tries < 60) requestAnimationFrame(attempt);
+    };
+    requestAnimationFrame(attempt);
+    return () => {
+      cancelled = true;
+    };
+  }, [nodes, fitView, getInternalNode]);
 
   const onDrop = useCallback(
     (e: React.DragEvent) => {
@@ -182,24 +216,43 @@ export function Canvas() {
         }}
         onDrop={onDrop}
         onNodeClick={(_e, n) => select(n.id)}
+        onEdgeClick={(e, edge) => {
+          e.stopPropagation();
+          selectEdge(edge.id);
+        }}
         onPaneClick={() => {
           select(null);
+          selectEdge(null);
           useStore.getState().setTrace(null);
         }}
+        onConnect={(c) => {
+          if (c.source && c.target) storeAddEdge(c.source, c.target, "sync");
+        }}
+        isValidConnection={(c) =>
+          !!c.source &&
+          !!c.target &&
+          c.source !== c.target &&
+          !c.source.startsWith("group:") &&
+          !c.target.startsWith("group:") &&
+          !useStore
+            .getState()
+            .edges.some((e) => e.from === c.source && e.to === c.target)
+        }
+        connectionRadius={90}
+        deleteKeyCode={null}
         onNodeMouseEnter={(_e, n) => hover(n.id)}
         onNodeMouseLeave={() => hover(null)}
         onMove={onMove}
         fitView
+        fitViewOptions={{ maxZoom: 1, padding: 0.15 }}
         minZoom={0.4}
         maxZoom={2}
         zoomOnScroll={false}
         zoomOnPinch
         panOnScroll
-        proOptions={{ hideAttribution: true }}
       >
-        <Background variant={BackgroundVariant.Dots} gap={22} size={1.2} color="var(--rule)" style={{ opacity: 0.5 }} />
+        <Background variant={BackgroundVariant.Lines} gap={24} color="var(--rule)" style={{ opacity: 0.35 }} />
         <GroupFrames />
-        {showLanes ? <Lanes /> : null}
       </ReactFlow>
     </div>
   );

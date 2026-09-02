@@ -32,6 +32,17 @@ Read `OVERHEAD-PLAN.md` first. It is the spec. The interactive reference (diagra
 - Vector always: SVG canvas, `<use>` of the official icon symbols, zoom scales coordinates. Pan/zoom/drag/containers come from React Flow — never reimplement them. Zoom UI: −/+, slider, Fit, ⌘/Ctrl+scroll.
 - `reference/diagram-module.js` implements the geometry in vanilla SVG (cards, bezier routing, layers, hover, trace, drag, groups, collapse). Port to React Flow custom nodes/edges; do not ship it.
 
+## Look and feel
+
+Direction is **Instrument**: dark, dense, pro-tool. Canvas bleeds edge to edge, chrome floats over it, left icon
+rail with keyboard hints, floating layer switch and zoom pill, title block in the canvas corner, agent strip at
+the bottom. Tokens and layout in the plan §11. `reference/overhead-mock.html` is the target — match it.
+
+- Never a row of labelled pill buttons. Tools are icons on a rail with a keyboard hint and a tooltip.
+- Progressive disclosure: the inspector is empty until something is selected; cost only appears in card mode.
+- The grid is toggleable (rail button, ⇧G) and fades rather than unmounting.
+- Uppercase is for 9.5 px labels at .14em tracking only — never for buttons or body.
+
 ## Engine is pure TS
 
 `src/engine/**` imports nothing from React or the DOM. Cost and findings are derived selectors, never stored. Vitest covers: one test per rule, one per exporter, a golden monthly cost for each of the three samples. `cdk synth` runs on all three sample exports in CI.
