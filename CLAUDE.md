@@ -1,546 +1,463 @@
 # Overhead — the whole thing in one document
 
 > **The view from above your AWS architecture — and what it costs to run.**
-> Entry for the WebMCP Challenge (Devpost). Deadline **3 Sep 2026, 1:00 PM PDT** = **Thu 4 Sep, 04:00 Manila**; submit by 03:00.
+> Entry for the WebMCP Challenge (Devpost). Deadline **3 Sep 2026, 1:00 PM PDT** = **Thu 4 Sep, 04:00 Manila**;
+> submit by 03:00.
 >
-> **This file is the only handover doc.** Claude Code loads it automatically. `reference/` holds assets, not
-> documents; `README.md` is the repo's public readme for judges, not a spec.
+> **This file is the only handover doc.** Claude Code loads it automatically. It describes what is *built*, not
+> what was once planned — when the code and this file disagree, fix whichever is wrong and say so.
+> `reference/` holds assets, not documents; `README.md` is the public readme for judges.
 
-**Interactive references** (open in a browser, or fetch with WebFetch):
+**References**
 
 | | |
 |---|---|
-| App mock — current target | https://claude.ai/code/artifact/950995d4-6bba-4566-92c7-3ee0330c32bc |
+| Live app | https://overhead-ecru.vercel.app (Vercel project `overhead`, static export) |
+| Repo | https://github.com/jomspangilinan/overhead — **still private; flip to public before submitting** |
+| App mock (visual reference, now superseded on layout — see §7) | https://claude.ai/code/artifact/950995d4-6bba-4566-92c7-3ee0330c32bc = `reference/overhead-mock.html` |
 | Diagram-language walkthrough | https://claude.ai/code/artifact/a02ba1aa-3893-4fdd-af39-8bf7058c82f3 |
 | Visual directions (Instrument chosen) | https://claude.ai/code/artifact/839f9ec4-06e4-4756-a54b-ff9f880a4cad |
 
-**Local assets** — `reference/overhead-mock.html` (same as the app mock, offline), `reference/diagram-module.js`
-(vanilla-SVG implementation of the geometry: cards, bezier routing, layers, hover, trace, drag, containers,
-collapse), `reference/aws-icon-sprite.svg` (26 official AWS icons as `<symbol>`s).
+Local assets: `reference/overhead-mock.html` (the mock, offline), `reference/diagram-module.js` (vanilla-SVG
+geometry the canvas was ported from — do not ship), `reference/aws-icon-sprite.svg` (26 official AWS icons as
+`<symbol>`s; the copy the app loads is `public/icons/aws/sprite.svg`). Full icon package:
+`~/Downloads/Icon-package_07312026.5846e92413caa21490223536cc97f1269e44fa92/`.
 
 ---
 
-## 0. Start here — paste this into Claude Code
+## 0. State of the build
 
-```
-We're building Overhead — a WebMCP Challenge entry: an AWS architecture canvas where an agent designs
-architectures with live pricing from the AWS Price List, real nested containers (external / cloud / region /
-VPC / AZ / subnet), user-made sections, scenario forking, findings with doc links, and exports (JSON,
-Markdown, Mermaid, SVG, CDK). Next.js 15 + React Flow + Zustand on Vercel. No backend, no auth.
-Deadline Thu 4 Sep 04:00 Manila; submit by 03:00.
+Phases 0–9 (§15) are done under the current spec; what remains is **video, README refresh, submit**.
 
-Read CLAUDE.md first — it is the whole spec. Sections 5 (containment + sections), 6 (diagram language),
-8 (tool surface) and 14 (build order) matter most. Then open reference/overhead-mock.html in a browser: that
-is the UI target. reference/diagram-module.js has the geometry to port into React Flow custom nodes and edges
-— port it, don't ship it. reference/aws-icon-sprite.svg has the icons already as symbols; the full package is
-at ~/Downloads/Icon-package_07312026.5846e92413caa21490223536cc97f1269e44fa92/.
+- Phase 0 passed 2026-09-02: `overhead_ping` registered and **executed from the ChatGPT desktop app's in-app
+  browser** and from Chrome with the WebMCP flag.
+- Engine: ten services, live Price List data for `us-east-1` + `ap-southeast-1`, nine findings, scenarios
+  with dynamic tool registration, exporters (JSON/Markdown/Mermaid/SVG/CDK — `cdk synth` passes on all three
+  samples), bill ingest.
+- Model: **containers + sections** replaced the old lanes/groups (§5). Autosave migrates v1 state.
+- Chrome: Instrument palette in a **docked** shell (§7) — the user overruled the mock's floating panels.
+- 33 tools live, 37 while a scenario is open (§9).
+- Tests: 55 across 9 vitest files.
 
-Then do PHASE 0 ONLY: init the repo with an MIT licence, scaffold Next.js 15 (App Router, static export,
-TypeScript, Tailwind), add a 'use client' provider that registers one trivial tool via a raw
-document.modelContext.registerTool({...}) in src/webmcp/register.ts, deploy to Vercel, and stop. I'll confirm
-the tool appears in the ChatGPT desktop browser's Site tools before we go further.
-
-Use TaskCreate to track the phases from §14 with their acceptance criteria. Commit small and often. Ask me
-before adding any dependency not listed in §12.
-```
+**Workflow the user asked for:** keep `npm run dev` running; the user reviews every change on
+`localhost:3000` **before** anything is deployed. Deploy only when they say "deploy" (`npx vercel deploy
+--prod --yes`). Commit small and often, no attribution trailers. **`npm run build` deletes the dev server's
+`.next` cache** — after any production build, `pkill -f "next dev"; rm -rf .next; npm run dev`.
 
 ---
 
 ## Non-negotiables
 
-- **Prove the pipe first.** No feature work until a deployed page registers one tool that executes from the
-  ChatGPT desktop browser's Site tools. Every failure mode (iframe, SSR-time registration, wrong model,
-  deprecated `navigator.modelContext`) looks identical: no tools appear.
 - **`document.modelContext`**, `navigator.modelContext` as fallback. Never `provideContext`, never
   `unregisterTool` — abort with `AbortSignal`.
-- Register in one `'use client'` provider at the root, after hydration, in the **top-level document**.
-  Imperative API only.
-- `src/webmcp/register.ts` must contain a raw `document.modelContext.registerTool({ name, description,
-  inputSchema, execute })` in that literal shape — the brief says repos should have it.
+- Register in one `'use client'` provider at the root (`src/webmcp/provider.tsx`, mounted in
+  `app/layout.tsx`), after hydration, in the **top-level document**. Imperative API only. The provider renders
+  nothing; it publishes its outcome to the store and the bottom bar reads it.
+- `src/webmcp/register.ts` contains a raw `document.modelContext.registerTool({ name, description,
+  inputSchema, execute })` in that literal shape (`overhead_ping`) — the brief says repos should have it. Keep it.
 - Every mutation updates the store **before** the tool returns.
-- Read tools carry `readOnlyHint: true`; anything returning parsed bill content carries `untrustedContentHint: true`.
-- Tool outputs ≤ ~1.5K characters. Names ≤ 30 chars, descriptions ≤ 500, param descriptions ≤ 150.
+- Read tools carry `readOnlyHint: true`; anything returning parsed bill content carries
+  `untrustedContentHint: true`. Outputs ≤ ~1.5K chars (`text()` in `toolRegistry.ts` errors past that). Names
+  ≤ 30, descriptions ≤ 500, param descriptions ≤ 150.
 - No backend, no auth, no API routes. Static export.
-- **Never hardcode a price.** Numbers come from `data/pricing.<region>.json`, generated by
+- **Never hardcode a price.** Rates come from `data/pricing.<region>.json`, generated by
   `scripts/fetch-pricing.ts` from the AWS Price List Bulk API, each SKU keeping its `sourceUrl`.
-- **Every finding returns a `docUrl`.** No finding without a citation.
-- MIT licence at repo root; official AWS icons in `public/icons/aws/` with a `NOTICE.md` carving them out of it.
-- `src/engine/**` imports nothing from React or the DOM. Cost and findings are derived selectors, never stored.
+- **Every finding returns a `docUrl`.**
+- MIT licence at the root; official AWS icons in `public/icons/aws/` with `NOTICE.md` carving them out of it.
+- `src/engine/**` imports nothing from React or the DOM. Cost, findings, container stats and deltas are
+  **derived selectors**, never stored.
+- **Every affordance the chrome shows must work.** A printed keyboard hint is a binding; a button has an
+  `onClick`; a rail tool changes something. If it can't be made real, remove it.
 
 ---
 
 ## 1. What it is
 
-Sketch a **serverless AWS architecture with your agent on a live canvas**. Every node carries its real AWS price from the AWS Price List. Fork the design, compare the delta, fix what the findings flag, then export as CDK, Markdown, Mermaid, SVG, or a JSON state file that reloads.
+Sketch a **serverless AWS architecture with your agent on a live canvas**. Every node carries its real AWS
+price from the AWS Price List. Fork the design, compare the delta, fix what the findings flag, then export as
+CDK, Markdown, Mermaid, SVG, or a JSON state file that reloads.
 
 Three moves on one canvas:
 
-1. **Sketch** — *"HTTP API → Lambda → DynamoDB, S3 uploads behind CloudFront, SQS for thumbnails, ~5M req/month."* Nodes land one by one; a running monthly figure appears; the agent calls `get_findings` on its own work and fixes what it flagged.
-2. **Tune** — *"What if the thumbnail Lambda runs on ARM at 1024 MB?"* A scenario opens, the scenario tools appear, the delta is drawn. Cost goes **down** because duration halves. You drag CloudFront off; a finding fires; you decide.
+1. **Sketch** — *"HTTP API → Lambda → DynamoDB, S3 uploads behind CloudFront, SQS for thumbnails, ~5M
+   req/month."* Nodes land; a running monthly figure appears; the agent calls `get_findings` on its own work
+   and fixes what it flagged.
+2. **Tune** — *"What if the thumbnail Lambda runs on ARM at 1024 MB?"* A scenario opens, four scenario tools
+   appear, the delta is drawn. Cost goes **down** because duration halves.
 3. **Ground** — drop a Cost Explorer CSV. Parsed in the tab, never uploaded. Real spend lands on real nodes.
 
-**One-line positioning:** a draw.io MCP lets an agent *draw* an AWS diagram. Overhead lets an agent *design* an AWS architecture — the diagram is just the view.
+**Positioning:** a draw.io MCP lets an agent *draw* an AWS diagram. Overhead lets an agent *design* an AWS
+architecture — the diagram is just the view.
 
-**The "open web" line for the write-up:** before WebMCP, only platforms big enough to ship an API and an official MCP server could expose capability to agents. Now any web page can, to whatever agent the visitor brought — no platform's permission, no partnership, no backend.
+**The "open web" line for the write-up:** before WebMCP, only platforms big enough to ship an API and an
+official MCP server could expose capability to agents. Now any web page can, to whatever agent the visitor
+brought — no platform's permission, no partnership, no backend.
 
 ## 2. Who it's for
 
-- **Consultancies quoting a build** — need a defensible monthly figure and a client-readable diagram before the proposal goes out. (Demo persona: a solo cloud consultant pricing a client's serverless backend.)
+- **Consultancies quoting a build** — a defensible monthly figure and a client-readable diagram before the
+  proposal goes out. (Demo persona: a solo cloud consultant pricing a client's serverless backend.)
 - **Teams triaging a bill** — the invoice jumped; which node; cheapest fix.
 - **Engineers learning AWS** — nothing teaches architecture faster than watching a number move.
 
 ## 3. Scope
 
-### v1 — ship this
+**v1 (shipped):** ten services — Lambda, API Gateway, DynamoDB, S3, CloudFront, SQS, SNS, EventBridge, Step
+Functions, Cognito. Driver-based pricing. Scenario forking with delta. Findings with doc links and savings.
+Exports. Live tool readout. Containers (cloud/region/VPC/subnets) and sections.
 
-- Ten services: **Lambda, API Gateway, DynamoDB, S3, CloudFront, SQS, SNS, EventBridge, Step Functions, Cognito**.
-- Driver-based pricing: requests, duration, memory, storage, MAUs.
-- Scenario forking with side-by-side delta.
-- Findings with AWS doc links and estimated savings.
-- Exports: JSON state, Markdown (+ Mermaid inline), Mermaid, SVG/PNG, CDK (TypeScript).
-- Live tool panel (`getTools()` + `toolchange`).
-- Groups: AWS Cloud frame; logical groups; group subtotal; collapse/expand.
+**Deferred:** `external` / `account` / `az` / `asg` container kinds (the validator tables are the only thing to
+extend), NAT/ALB/RDS/ECS, enterprise findings, Terraform, fan-out collapse, `refresh_pricing`.
 
-### v1.5 — only if v1 lands early
-
-- VPC / subnet / AZ frames (official group icons and colours), NAT Gateway, ALB, RDS, ECS Fargate, VPC endpoints.
-- Enterprise findings: RDS in a public subnet, SG open on 22, single-AZ with an HA claim, NAT egress trap.
-- Terraform export.
-
-### Out of scope
-
-Auth, backend, live AWS account connection, EC2 hourly pricing, multi-region.
+**Out of scope:** auth, backend, live AWS account connection, EC2 hourly pricing, multi-region.
 
 ## 4. Judging criteria and how we meet them
 
 | Criterion | Argument |
 |---|---|
-| **WebMCP Leverage** (tiebreak #1) | 30+ semantic tools in six families, not draw primitives. Dynamic registration via `AbortController` (scenario tools exist only while a fork is open). Correct `readOnlyHint` / `untrustedContentHint`. Structured errors the agent must resolve. UI state commits *before* a tool returns. A visible tool panel that shows tools appearing and disappearing. Raw `document.modelContext.registerTool` present in the repo exactly as the brief prints it. |
-| **Execution** | One screen, no login, no backend, no API keys. Seeded sample architecture so a judge sees value in ten seconds. Undo/redo, keyboard, empty states, real exports that `cdk synth`. |
-| **Potential Impact** | Everyone with an AWS account. The gap between "what we'll build" and "what it'll cost" is served today only by the Pricing Calculator (no topology) or a spreadsheet. The bill is the one artifact you can't paste into a chat window. |
-| **Creativity & Ambition** | Architecture + live cost + agent on one canvas; bill → diagram reconstruction; the live tool panel; a diagram language that removes arrow spaghetti. |
-
-Stage One is pass/fail on "applies the required APIs" — the brief literally prints `document.modelContext.registerTool({ name, description, inputSchema, execute })`. Make sure `src/webmcp/register.ts` contains a raw call in that shape.
+| **WebMCP Leverage** (tiebreak #1) | 33 semantic tools in seven families, not draw primitives. Dynamic registration via `AbortController` — four tools exist only while a scenario is open, and the bottom bar's count ticks. Correct `readOnlyHint` / `untrustedContentHint`. Structured errors the agent must resolve (illegal container parent, invalid setting). UI state commits before a tool returns. Raw `registerTool` present exactly as the brief prints it. |
+| **Execution** | One screen, no login, no backend, no keys. Seeded sample with real containment. Undo/redo, full keyboard map, empty state, exports that `cdk synth`. |
+| **Potential Impact** | Everyone with an AWS account. The gap between "what we'll build" and "what it'll cost" is served today only by the Pricing Calculator (no topology) or a spreadsheet. |
+| **Creativity & Ambition** | Architecture + live cost + agent on one canvas; bill → diagram; containers that are semantic (validated, priced) not decorative; a diagram language that removes arrow spaghetti. |
 
 ## 5. Containment and sections
 
-Two kinds of grouping, and conflating them was the original mistake.
+Two kinds of grouping. Conflating them was the original mistake; so was imposing lanes.
 
-### 5a. Containers — structural, AWS-semantic, nested
+### 5a. Containers — structural, AWS-semantic, nested (`src/engine/containers.ts`)
 
-A container is a real thing with real consequences: it changes pricing (cross-AZ transfer, NAT egress),
-it drives findings (RDS in a public subnet), and it appears in the IaC output. Containers nest in a legal order
-and a node lives in exactly one.
-
-```
-world
-├── external            on-prem, corporate DC, third-party SaaS, users, mobile — anything not AWS
-└── cloud               AWS Cloud
-    └── account         optional; multi-account setups
-        └── region      ap-southeast-1 — dashed border, teal
-            ├── (regional services live here: Lambda, DynamoDB, S3, SNS, SQS, API Gateway, CloudFront)
-            └── vpc     prod-vpc · 10.0.0.0/16 — solid, violet
-                └── az  ap-southeast-1a — dashed, teal, no icon
-                    ├── subnetpub   public-a · 10.0.1.0/24 — solid, green
-                    │   └── asg     optional Auto Scaling group — dashed, orange
-                    └── subnetpri   private-a · 10.0.10.0/24 — solid, teal
-```
+A container is a real thing: it changes what's legal, rolls cost up the tree, and will appear in IaC. A node
+lives in exactly one. Five kinds are enabled; the other four from the mock are a data edit in `LEGAL_PARENTS`
+and `KIND_META` plus the `ContainerKind` union.
 
 | Kind | Colour | Border | Icon | Legal parents |
 |---|---|---|---|---|
-| `external` | `#7D8998` | solid | Corporate data center | — |
-| `cloud` | `#8B97A8` | solid | AWS Cloud | — |
-| `account` | `#E7157B` | solid | AWS Account | cloud |
-| `region` | `#00A4A6` | **dashed** | Region | cloud, account |
-| `vpc` | `#8C4FFF` | solid | VPC | region |
-| `az` | `#00A4A6` | **dashed** | none — label only | vpc |
-| `subnetpub` | `#7AA116` | solid | Public subnet | az, vpc |
-| `subnetpri` | `#00A4A6` | solid | Private subnet | az, vpc |
-| `asg` | `#ED7100` | **dashed** | Auto Scaling group | subnet |
+| `cloud` | `#8B97A8` | solid | `aws-group-cloud` | top level |
+| `region` | `#00A4A6` | **dashed** | `aws-group-region` | cloud |
+| `vpc` | `#8C4FFF` | solid | `aws-group-vpc` | region |
+| `subnetpub` | `#7AA116` | solid | `aws-group-public` | vpc |
+| `subnetpri` | `#00A4A6` | solid | `aws-group-private` | vpc |
 
-Rules:
+- `validateContainerParent(kind, parentKind)` and `validateNodePlacement(service, kind)` return
+  `PlacementError { code, message, legalParents? | legalContainers? }` — the same shape the agent gets from
+  `add_container` / `move_into_container`, and the Add panel shows as a tooltip. Regional services sit in
+  `region`/`cloud`; **Lambda may be VPC-attached** (subnets).
+- `containerStats()` rolls resources and monthly cost up subnet → VPC → region → cloud. Derived.
+- `breadcrumb(snap, nodeId)` → `["AWS Cloud", "ap-southeast-1", "orders-vpc", "private-a"]`; `get_node`
+  returns it as `placement`.
+- Frames (`ContainerFrames.tsx`) are painted parents-first via `ViewportPortal`; bounds are **derived** from
+  members and child frames (per-kind padding) unless `bounds` is stored. Double-click the name to rename
+  (`name · cidr`).
+- **Any container collapses** to a 220×84 card (`ContainerCard.tsx`); `outermostCollapsedAncestor` makes a
+  collapsed VPC win over a collapsed subnet inside it. Edges re-route to the card and edges wholly inside are
+  dropped (`Canvas.tsx` `collapsedByNode`).
+- `removeContainer` re-parents children and members upward — never deletes what was inside.
 
-- **A container is a node in the model**, so it carries a resource count and a cost subtotal that rolls up the
-  tree — subnet → AZ → VPC → region → cloud. Turn on the Cost layer and every frame shows its own total.
-- **Any container collapses** to a single card (icon, kind, name, `N resources · $X/mo`) with edges re-routed to
-  it and edges wholly inside it dropped. That is how a forty-resource VPC becomes one box on the overview.
-- **Placement is validated**, loosely in schema and strictly in code: `move_into_container` returns a structured
-  error the agent can recover from ("RDS cannot sit directly in a VPC; it needs a subnet").
-- **Multi-AZ is containment, not a checkbox.** An RDS with `multiAz: on` renders a standby in a second AZ's
-  private subnet; a service spanning AZs pays cross-AZ transfer, which the cost engine charges and a finding
-  flags. This is the strongest argument for containers being semantic rather than decorative.
-- **External is first-class.** On-prem, a corporate DC, a third-party API. Egress to it costs money, and a
-  diagram that stops at the AWS boundary is lying about the bill.
+### 5b. Sections — yours, free-form, orthogonal (`Section` in `src/engine/model.ts`)
 
-### 5b. Sections — yours, free-form, orthogonal
+- `{ id, name, color, bounds?, nodeIds[], collapsed }`. **`nodeIds` is the single source of truth**; nothing is
+  stored on the node.
+- Dotted frame (`2 5`, round caps) with a label chip above it (`SectionFrames.tsx`). Drag the chip: the frame
+  and every member move together in one undo step (`moveSection`). Double-click the chip to rename.
+- Never validated; crosses containers freely; a node may be in many sections or none.
+- `sections` is a layer, default on.
+- A section created with no members gets default bounds so it is visible and draggable at once.
+- `auto_layout` arranges by role and **emits** one section per non-empty role (`auto-*` ids, replaced on
+  re-run, user sections untouched). Roles (`ingress/handlers/messaging/workers/data`) are internal to
+  `src/engine/layout.ts` and `ServiceDef.role` — never a model field, never shown.
 
-The lanes in the first draft (Ingress · Handlers · Messaging · Workers · Data) were **imposed**, and that was
-wrong. People group by whatever they are thinking about: *Checkout flow*, *Owned by Payments*, *Legacy —
-migrating Q4*, *v2 rewrite*. That is a Figma section, not a taxonomy.
+### Migration (`src/engine/migrate.ts`)
 
-- A section is a named, coloured, dashed frame you draw anywhere. It has no AWS meaning and no legal parent.
-- It can cross containers freely — that is the point. "Owned by Payments" may span half a VPC and two Lambdas.
-- Rename inline, recolour, drag (contents move with it), collapse, delete. Nothing validates it.
-- Sections are their own layer, toggled off in one click, so they never fight the architecture.
-- A node can be in many sections, or none.
-- `auto_layout` still exists and can *suggest* a role-based arrangement, but it produces sections you can
-  rename or throw away — it never dictates the structure.
-
-Nodes carry their placement in the inspector as a breadcrumb — `AWS Cloud › ap-southeast-1 › prod-vpc ›
-ap-southeast-1b › public-b` — which is also exactly what `get_node` returns.
-
+Everything loaded from outside the current build (autosave `overhead-state-v2`, legacy `overhead-state-v1`,
+`import_state`, samples) passes through `migrateSnapshot`: `groups[]` → `containers[]`, `logical` → a section
+carrying its members, `az` dissolves upward, `subnet` → `subnetpub`, `node.group` → `node.container`,
+`node.lane` dropped, illegal parents repaired up the chain, dangling containers unset.
 
 ## 6. Diagram language
 
-The problem with AWS diagrams: in every existing tool **a line is just a line**. Nothing in the file knows whether an arrow is an HTTP call or an IAM permission, so they all look alike, the author draws all of them, and the reader drowns. Overhead has a model under the picture, so it enforces a language.
-
-### Rules
-
-1. **Keep the icons.** Nodes are the AWS standard: official Architecture Icon at 56 px, resource name beneath. An AWS engineer reads a Lambda by shape before reading a word.
-2. **One look, then deep dive.** Default view = icons, names, lanes, typed edges. Nothing else. Detail, cost and security are layers you turn on, or the gear you press.
-3. **The card houses the icon.** Zoom past 125% (or press *Cards*, or turn on *Cost*) and each icon moves *inside* a 200×76 card: service term (as AWS names it), resource name, the 2–3 settings that decide price, security badge, monthly cost (monospace, right-aligned). Zoom out and it folds back to the icon. Nothing ever hangs loose outside the icon.
-4. **Three edge kinds, three encodings, nothing else.** `sync` = solid + arrowhead. `async` = dashed (7 5) + arrowhead. `data` = dotted (2 5), no arrowhead. Permissions, logging, encryption are **node properties**, never edges. Inline legend always visible.
-5. **Edges are curves.** Cubic bezier from source right-mid to target left-mid, control points at 50% of Δx. Same-column edges bracket out one side (reach 60). Long hops over intermediate nodes arch low over them (lift 34). No elbows, no 90° corners.
-6. **Layers, default to one.** `request` · `events` · `data` · `security` · `cost`. Opens on request + events + data.
-7. **Position carries meaning, but you choose it.** `auto_layout` suggests a left-to-right arrangement by role and emits it as sections you can rename or delete. Containers and sections do the grouping; nothing is a fixed lane.
-8. **Volume on edges.** Label = req/month or GB/month; stroke width follows volume on a log scale (1.2 → 3.5 px).
-9. **Fan-out collapses.** SNS → N identical consumers = one stacked icon, one edge with `×N`.
-10. **Hover isolates.** A node's edges brighten, the rest dims to 18%. Click pins.
-11. **Trace, don't number.** `trace_request` lights one request's path step by step with a step readout. The agent can drive it.
-12. **Groups are nodes.** AWS Cloud, VPC, subnets use the official group frames and colours (`#242F3E`, `#8C4FFF`, `#7AA116` public, `#00A4A6` private) with the group icon in the top-left corner. A group carries a subtotal and **collapses into one card** (icon, name, `N subnets · M resources`, subtotal) with edges re-routed to it.
-13. **Settings never sit on the diagram.** A gear (on hover) opens the inspector with the console's own fields. The card shows the three that decide price; the inspector shows all.
-14. **Findings are rings and stripes.** Icon mode: amber/red ring around the icon. Card mode: stripe on the card's left edge. Click for the doc link.
-
-`reference/diagram-module.js` is a working vanilla-SVG implementation of rules 3–12 (node cards, bezier routing, layers, hover, trace, groups, collapse). Port its geometry to React Flow custom nodes/edges; don't ship it as-is.
+1. **Keep the icons.** Nodes are the AWS standard: official Architecture Icon at 56 px, resource name beneath.
+2. **One look, then deep dive.** Default view = icons, names, typed edges, containers, sections.
+3. **The card houses the icon.** Zoom ≥ **130%** (or the Cards tool, K, or the Cost layer) and each icon moves
+   inside a 200×76 card: service term, resource name, the 2–3 settings that decide price, security badge,
+   monthly cost. Constant 200×100 hit-box in both modes (`src/canvas/nodeMetrics.ts`).
+4. **Three edge kinds, three encodings, nothing else.** `sync` solid + arrowhead · `async` dashed `7 5` +
+   arrowhead · `data` dotted `2 5`, no head. Permissions, logging, encryption are **node properties** (security
+   badges), never edges.
+5. **Edges are floating beziers** (`edgeGeometry.ts`): anchors computed from node position + visual shape (icon
+   rim ±34, y 39 · card edge ±100, y 50), never from handle coordinates. Cases: forward (right-mid → left-mid,
+   controls at 50% Δx), back (S-curve leaving left, entering right), bracket (same column, out one side).
+   Edges converging on one node **fan** their anchors (`fan` in edge data) so arrowheads never stack.
+   Connections can start from either side (`ConnectionMode.Loose`).
+6. **Layers:** `request` · `events` · `data` · `security` · `cost` · `sections`. Default on: request, events,
+   data, sections.
+7. **Volume on edges.** Stroke width follows `volumePerMonth` on a log scale (1.2 → 3.5 px).
+8. **Hover isolates.** A node's edges brighten, the rest dims to 16%.
+9. **Trace, don't number.** `trace_request` (or the T tool + a click) lights the path from a node.
+10. **Settings never sit on the diagram.** The Inspector shows the schema form; the card shows the three that
+    decide price.
+11. **Findings are rings and stripes.** Icon mode: amber/red ring. Card mode: stripe on the left edge.
 
 ### The spine: one schema per service
 
 ```ts
 // src/engine/services/lambda.ts
 export const lambda = defineService({
-  term: 'AWS Lambda',
-  icon: 'aws-lambda',
-  lane: 'handlers',            // default lane; overridable per node
-  settings: {
-    architecture:  { type: 'enum', values: ['x86_64', 'arm64'], default: 'arm64', label: 'Architecture' },
-    memoryMb:      { type: 'number', min: 128, max: 10240, default: 512, label: 'Memory (MB)' },
-    timeoutSec:    { type: 'number', min: 1, max: 900, default: 3, label: 'Timeout (s)' },
-    avgDurationMs: { type: 'number', min: 1, default: 200, label: 'Avg duration (ms)', driver: true },
-    reservedConcurrency: { type: 'number', min: 0, optional: true, label: 'Reserved concurrency' },
-  },
+  id: 'lambda', term: 'AWS Lambda', icon: 'aws-lambda',
+  role: 'handlers',                    // layout hint only
+  settings: { architecture: { type: 'enum', values: ['arm64','x86_64'], default: 'arm64', label: 'Architecture', driver: true }, … },
   cardLines: ['architecture', 'memoryMb', 'avgDurationMs'],
-  price: (s, traffic, pricing) => { /* GB-s + requests from the price list */ },
-  cdk: (s, name) => { /* construct props */ },
+  price: (s, traffic, pricing) => CostLine[],   // from the price list, never literals
+  cdk:   (s, { varName, resourceName }) => string,
 });
 ```
 
-From this one definition derive: the inspector form, the `set_property` input schema, `list_services` output, the card's three lines, the pricing function's inputs, and the CDK props. **One vocabulary for the human and the agent. No hand-syncing.**
+From this one definition derive: the Inspector form, `set_property`'s validation, `list_services`, the card's
+lines, pricing, and CDK. **One vocabulary for the human and the agent.**
 
-## 7. Chrome — Instrument, with Studio's panels
+## 7. Chrome — Instrument, docked
 
-Direction is **Instrument** (dark, dense, pro-tool) with the panel behaviour taken from **Studio**: every
-panel floats over a canvas that bleeds edge to edge, and every panel is **movable by its header and
-collapsible to a title bar**. Nothing is a fixed sidebar.
+Direction is **Instrument** (dark, dense, pro-tool). The mock floats every panel; **the user overruled that**
+("too many floating things") — panels are **docked** and reserve space. Only two small pills float.
 
-- **Left rail**, 52 px: select · pan / add service · connect · container · section / trace · then a spacer ·
-  grid · undo. Keyboard hint bottom-right of every button; active state is `--accent-bg` plus a 2.5 px accent
-  tick on the outer edge. Never a row of labelled pill buttons.
-- **Panels** — Structure, Add, Inspector, Title block. Drag by the header, collapse with the − button, and they
-  remember position. They overlay the canvas rather than reserving space from it.
-- **Structure panel** is the layers tree: the containment hierarchy with per-container counts (or costs when
-  the Cost layer is on), expand/collapse per row, then a **Sections** list below with a + to add one.
-- **Floating layer switch** bottom-left of the canvas, **zoom pill** bottom-right: − / slider / + / % / Fit,
-  plus ⌘/Ctrl + scroll. Semantic zoom crosses to card mode at 130 %.
-- **Title block** bottom-left — drawing · region · AZs · resources · findings · est. monthly. Borrowed from
-  engineering drawings: it makes an export read as a document of record and keeps the total in any screenshot.
-- **Agent strip** along the bottom: live tool count and the last three tool calls.
-- **Grid** is toggleable (rail button, ⇧G) and fades rather than unmounting.
-- Progressive disclosure throughout: the inspector is empty until something is selected, cost only appears in
-  card mode, the gear only on hover.
+```
+grid-template-columns: 52px  auto(left dock)  1fr(canvas)  auto(right dock)
+grid-template-rows:    46px(top bar)  1fr  36px(bottom bar)
+```
 
-**Tokens**
+- **Rail** (`chrome/Rail.tsx`, 52 px): select V · pan H │ add A · connect C · container B · section S │ trace T
+  · auto-layout L · cards K │ … │ grid ⇧G · undo ⌘Z · redo ⇧⌘Z. Active = `--accent-bg` + a 2.5 px accent tick
+  bleeding out the left edge. A/B/S switch the left dock's tab; C keeps connection handles visible; T makes
+  the next node click trace.
+- **Top bar** (`chrome/TopBar.tsx`): brand · editable **drawing name** · price-list pill with the region
+  select · monthly total (23 px mono — the one loud number) · Scenario (forks via `openScenarioFromUi`, so the
+  tool count ticks) · Export.
+- **Left dock** (`chrome/Dock.tsx`, 248 px, collapsible to a spine), tabs: **Structure** (containment tree with
+  counts or costs, sections list with `+` and `×`) · **Add** (sticky search `/`, services with names, container
+  kinds that create with the validator's verdict as tooltip) · **Templates** (the three samples).
+- **Right dock** (300 px): Inspector — name field, schema-driven settings, cost lines with SKU links, findings;
+  or the **edge inspector** (kind / volume / label / remove) when an edge is selected. `ExportPanel` overlays
+  this dock.
+- **Bottom bar** (`chrome/BottomBar.tsx`): title-block facts (Drawing · Region · Containers · Resources ·
+  Findings · Est. monthly) and the WebMCP readout — live count, last three calls (ring buffer in
+  `toolRegistry.ts`'s execute wrapper), click for the tool list.
+- **Floating:** layer switch (bottom-left) and zoom pill (bottom-right, 50–180%, Fit).
+- Canvas: radial stage lift; React Flow `<Background>` dots (26 px, `#2A3441`) that pan and zoom; ⇧G toggles.
+- Inline editing: double-click a node label or container name on the canvas. Delete/Backspace removes the
+  selected edge, else node. Escape backs out (export → selection/trace → select tool).
+- `HowTo` banner is dismissible; `BillDrop` accepts a CSV anywhere on the canvas.
+
+**Tokens** (`src/app/globals.css`; legacy aliases `--ground/--surface/--rule/--saving/--finding/--critical`
+still resolve pending cleanup):
 
 | Token | Value | Used for |
 |---|---|---|
-| `--bg` | `#0B0D10` | page ground; canvas is a radial lift to `#141922` |
-| `--panel` | `#111620` (`F2` alpha + `blur(12px)` when floating) | rail, panels, floating pills |
-| `--panel-2` | `#0D121A` | inputs, recessed fields |
-| `--line` / `--line-2` | `#1D2531` / `#222A36` | panel borders / control borders |
-| `--ink` / `--ink-2` / `--ink-3` / `--ink-4` | `#E8ECF2` / `#9AA6B7` / `#66738A` / `#4E5A6B` | text ramp |
-| `--accent` / `--accent-ink` / `--accent-bg` | `#3B82F6` / `#8FB8FF` / `#1B2534` | selection, focus, active states |
-| `--good` | `#6FE3B0` | savings, live-tool pulse, title-block total |
-| `--warn` / `--bad` | `#F0B34E` / `#F0796A` | finding ring · critical |
-| `--edge` / `--edge-lab` | `#5C6B7F` / `#7C8CA0` | edge stroke / label |
+| `--bg` | `#0B0D10` | page ground; canvas radial lift to `#141922` |
+| `--panel` / `--panel-2` | `#111620` / `#0D121A` | docks, bars / inputs, recessed fields |
+| `--line` / `--line-2` | `#1D2531` / `#222A36` | borders / control borders |
+| `--ink` / `--ink-15` / `--ink-2` / `--ink-3` / `--ink-4` | `#E8ECF2` / `#C7D0DC` / `#9AA6B7` / `#66738A` / `#4E5A6B` | text ramp |
+| `--accent` / `--accent-ink` / `--accent-bg` | `#3B82F6` / `#8FB8FF` / `#1B2534` | selection, active states |
+| `--good` / `--warn` / `--bad` | `#6FE3B0` / `#F0B34E` / `#F0796A` | savings & live pulse / warn ring / critical |
+| `--edge` / `--edge-lab` | `#5C6B7F` / `#7C8CA0` | edge stroke / labels |
+| `--glass`, `--hover`, `--hover-2` | `#111620F2`, `#161C27`, `#1A212C` | floating pills, hover fills |
 
-Grid: `radial-gradient(circle at 1px 1px, #1E2530 1px, transparent 0)` at 26 px, 50 % opacity.
-Type: **Archivo** 400–700 for UI, **JetBrains Mono** 400–600 for every number, code and log line. Tabular
-figures where digits align. Uppercase only for 9.5 px labels at `.14em` tracking — never for buttons.
+Type: **Archivo** 400–700 (`--font-archivo`) for UI, **JetBrains Mono** 400–600 (`--font-mono-jb`) for every
+number, code and log line. Uppercase only for 9.5 px labels at `.14em` tracking. Dark only.
 
-
-## 8. Data model
+## 8. Data model (`src/engine/model.ts`)
 
 ```ts
-Node      { id, service, name, settings, container, sections[], position }
+Node      { id, service, name, settings, container?, position }
 Edge      { id, from, to, kind: 'sync'|'async'|'data', volumePerMonth?, label? }
-Container { id, kind: 'external'|'cloud'|'account'|'region'|'vpc'|'az'|'subnetpub'|'subnetpri'|'asg',
-            name, cidr?, parent?, collapsed, bounds }        // structural — validated, priced, exported
-Section   { id, name, color, bounds, nodeIds[], collapsed }   // yours — free-form, never validated
+Container { id, kind, name, cidr?, parent?, collapsed, bounds? }      // structural — validated, priced
+Section   { id, name, color, bounds?, nodeIds[], collapsed }          // yours — never validated
 Traffic   { requestsPerMonth, avgPayloadKb }
-Scenario  { id, name, base: StateSnapshot, fork: StateSnapshot }
-Finding   { rule, severity: 'info'|'warn'|'critical', message, docUrl, nodeIds, estimatedSaving }  // derived
-Cost      { nodeId, lines: [{ sku, unit, qty, rate, monthly, sourceUrl }], monthly }              // derived
+StateSnapshot { nodes, edges, containers, sections, traffic }
+Scenario  { name, base: StateSnapshot }                               // the live state IS the fork
+Finding   { rule, severity, message, docUrl, nodeIds, estimatedSaving? }  // derived
+Cost      { nodeId, lines: [{ sku, unit, qty, rate, monthly, sourceUrl }], monthly }  // derived
 ```
 
-Cost and findings are **derived selectors**, recomputed on every mutation, never stored.
+Store (`src/store/useStore.ts`, zustand) also holds UI state: layers, tool, docks, `leftTab`, `drawingName`,
+`gridOn`, `cardsForced`, zoom, selection (`selectedId` / `selectedEdgeId`, mutually exclusive), trace,
+scenario, export panel, bill, `webmcpOutcome`. `snapshotOf(s)` feeds autosave, undo (`store/history.ts`), and
+scenarios. **Selectors must return stable values** — derive objects in `useMemo`, not in `useStore(fn)`
+(returning a fresh object per call is a React #185 render loop; it bit us once).
 
-## 9. Tool surface (40 tools, seven families)
+## 9. Tool surface (33 live · 37 in a scenario)
 
-Read tools: `readOnlyHint: true`. Anything returning parsed bill content: `untrustedContentHint: true`. Every mutation updates the canvas **before** returning. Tool outputs stay under ~1.5K chars — use `get_export_chunk` for anything bigger.
+Read tools: `readOnlyHint`. Mutations update the store before returning. `text()` caps output at 1.5K.
 
-| Tool | Kind | Input → returns |
+| Tool | Kind | Notes |
 |---|---|---|
-| `get_architecture` | read | — → nodes, edges, groups, properties, monthly total |
-| `get_node` | read | id → full settings (console terms), cost lines, findings |
-| `get_cost_breakdown` | read | groupBy: node\|service\|group → sorted cost lines with SKU provenance |
-| `get_findings` | read | severity? → `{ rule, severity, message, docUrl, nodeIds, estimatedSaving }[]` |
-| `list_services` | read | — → supported types with settings schemas and pricing drivers |
-| `get_pricing_source` | read | — → region, fetchedAt, source URLs |
-| `add_service` | write | type, name, settings?, group? → node id |
-| `connect` | write | from, to, kind, volumePerMonth? → edge id |
-| `set_property` | write | id, key, value → new node cost; **structured error** on invalid value |
-| `set_traffic` | write | requestsPerMonth, avgPayloadKb → recalculated total |
-| `remove_node` | write | id → orphaned edges cleaned |
-| `apply_pattern` | write | `arm64` \| `http_api` \| `express_workflows` \| `provisioned_capacity` \| `cdn_in_front` \| `dlq_everywhere` → nodes changed |
-| `auto_layout` | write | — → positions, emitted as renameable sections |
-| `set_layer` | write | request \| events \| data \| security \| cost, on/off → visible layer set |
-| `trace_request` | write | fromNodeId → highlighted path + step list |
-| `collapse_fanout` / `expand_fanout` | write | nodeId → fan-out folded to one edge with count, or unfolded |
-| `add_group` / `move_into_group` | write | kind, name, cidr?, parent? → group id; nodeIds → re-parented |
-| `collapse_group` / `expand_group` | write | groupId → one card with count + subtotal, edges re-routed |
-| `open_scenario` | **dynamic** | name → forks state; **registers the four below** |
-| `scenario_apply` | dynamic | any write above, applied to the fork only |
-| `get_delta` | dynamic | — → per-node and total difference, base vs fork |
-| `commit_scenario` | dynamic | — → fork becomes base; scenario tools abort |
-| `discard_scenario` | dynamic | — → fork dropped; scenario tools abort |
-| `get_bill_summary` | read (untrusted) | — → services and spend found in the dropped CSV |
-| `reconstruct_from_bill` | write | — → nodes created from bill line items, real spend attached |
-| `export` | read | format: json\|markdown\|mermaid\|cdk\|svg → summary + opens export panel |
-| `get_export_chunk` | read | format, index → one ~1.2K slice |
-| `import_state` | write | json → replaces the canvas |
-| `refresh_pricing` | bonus | only if the AWS bulk endpoints send CORS headers |
+| `get_architecture` | read | nodes (id, service, name, container, monthly), edges, containers, sections, traffic, total |
+| `get_node` | read | settings, cost lines, `placement` breadcrumb, findings (≤2) |
+| `get_cost_breakdown` | read | by node or service |
+| `get_findings` | read | severity filter, first 5 |
+| `list_services` | read | ids, terms, roles, drivers; or one service's schema |
+| `get_pricing_source` | read | region, fetch date, files |
+| `add_service` | write | type, name, settings?, container? (validated) |
+| `connect` | write | from, to, kind, volumePerMonth? |
+| `set_property` | write | structured error on invalid value |
+| `rename_node` | write | |
+| `set_traffic` / `remove_node` / `apply_pattern` / `set_layer` / `trace_request` | write | `set_layer` includes `sections` |
+| `auto_layout` | write | arranges by role, emits `auto-*` sections |
+| `add_container` | write | kind, name, cidr?, parent? → id + `legalChildren`; `illegal_parent` names the rule |
+| `move_into_container` | write | nodeIds, containerId\|null → breadcrumb; `illegal_placement` |
+| `collapse_container` / `expand_container` | write | resources + monthly |
+| `get_containers` | read | flat list with `parent` pointers + `legalChildren` map |
+| `add_section` / `rename_section` / `set_section_nodes` / `remove_section` | write | no validation |
+| `get_sections` | read | |
+| `open_scenario` | **dynamic** | forks; registers the four below under one `AbortController` |
+| `scenario_apply` / `get_delta` / `commit_scenario` / `discard_scenario` | dynamic | abort on commit/discard |
+| `get_bill_summary` | read, untrusted | |
+| `reconstruct_from_bill` | write | |
+| `export` / `get_export_chunk` | read | json / markdown / mermaid / cdk / svg; ~1.2K chunks |
+| `import_state` | write | migrated through `migrateSnapshot` |
+| `overhead_ping` | read | the raw brief-shape registration |
 
-### Registration
+Not built: `collapse_fanout` / `expand_fanout`, `refresh_pricing`, `rename_container`, `remove_container`,
+`set_edge` (the store actions exist for the last three; the UI uses them).
 
-```ts
-// src/webmcp/register.ts — raw, exactly as the brief prints it
-const mc = document.modelContext || navigator.modelContext; // navigator.* is deprecated since Chrome 150
+Files: `src/webmcp/register.ts` (raw call + `registerAllTools` + `open_scenario`), `tools.ts` (core specs),
+`scenario.ts` (dynamic four, `openScenarioFromUi`, `closeScenarioFromUi`), `toolRegistry.ts` (`registerSpec`,
+live list, call log, `text()`/`errorResult()`), `provider.tsx`.
 
-const scenario = new AbortController();
-await mc.registerTool({
-  name: 'get_delta',
-  description: 'Cost and topology difference between the base design and the open scenario.',
-  inputSchema: { type: 'object', properties: {}, additionalProperties: false },
-  annotations: { readOnlyHint: true },
-  execute: async () => ({ content: [{ type: 'text', text: JSON.stringify(engine.delta()) }] })
-}, { signal: scenario.signal });
-// commit_scenario / discard_scenario call scenario.abort()
-```
-
-Rules: register in a `'use client'` provider mounted at the root, after hydration, in the **top-level document** (ChatGPT's browser ignores iframe tools). Imperative API only. Abort via `AbortSignal`, never `unregisterTool`. Keep tool names ≤ 30 chars, descriptions ≤ 500, param descriptions ≤ 150.
-
-### The tool panel
-
-A strip in the UI driven by `getTools()` and the `toolchange` event: *"18 tools live · 4 more while a scenario is open."* This makes dynamic registration visible on video and teaches the judge the spec while they use the product.
-
-### Container and section tools
-
-| Tool | Kind | Input → returns |
-|---|---|---|
-| `add_container` | write | kind, name, cidr?, parent? → id; **structured error** on an illegal parent |
-| `move_into_container` | write | nodeIds, containerId → moved; error names the rule when refused |
-| `collapse_container` / `expand_container` | write | id → one card with count + subtotal, edges re-routed |
-| `get_containers` | read | — → the tree with counts, subtotals and legal-child hints |
-| `add_section` | write | name, bounds?, nodeIds?, color? → id (no validation — it is the user's grouping) |
-| `rename_section` / `set_section_nodes` / `remove_section` | write | id, … → the section |
-| `get_sections` | read | — → sections with their members |
-| `set_layer` | write | request \| events \| data \| security \| cost \| sections, on/off → visible set |
-
-`get_node` returns the placement breadcrumb, so the agent always knows where something sits before it moves it.
-
-
-## 10. Findings — every rule cites its doc
-
-Verify every URL during the build. Each rule lives in `src/engine/rules/<rule>.ts`, unit-tested, returning `estimatedSaving` computed from the same pricing table.
+## 10. Findings — every rule cites its doc (`src/engine/rules/`)
 
 | Rule | Fires when | Cites |
 |---|---|---|
-| `rest_where_http_would_do` | REST API with no feature that needs it (no usage plans, request validation, WAF) | https://aws.amazon.com/api-gateway/pricing/ |
-| `standard_workflow_high_volume` | Step Functions Standard, >100k executions/month, no human-wait step | https://aws.amazon.com/step-functions/pricing/ |
+| `rest_where_http_would_do` | REST API with no REST-only feature | https://aws.amazon.com/api-gateway/pricing/ |
+| `standard_workflow_high_volume` | Standard > 100k executions/month, no human wait, Express cheaper | https://aws.amazon.com/step-functions/pricing/ |
 | `x86_lambda` | any Lambda not on arm64 | https://aws.amazon.com/lambda/pricing/ |
-| `memory_duration_tradeoff` | Lambda < 1024 MB with duration > 500 ms — surface the crossover | https://docs.aws.amazon.com/lambda/latest/operatorguide/computing-power.html |
-| `on_demand_steady_state` | DynamoDB on-demand with steady throughput past the provisioned crossover | https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/capacity-mode.html |
-| `no_lifecycle_on_logs` | S3 bucket tagged logs/backup with no lifecycle rule | https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lifecycle-mgmt.html |
-| `s3_public_no_cdn` | S3 serving public assets with no CloudFront upstream | https://docs.aws.amazon.com/AmazonS3/latest/userguide/website-hosting-cloudfront-walkthrough.html |
-| `async_no_dlq` | async Lambda or SQS consumer with no DLQ / destination | https://docs.aws.amazon.com/lambda/latest/dg/invocation-async.html |
-| `unbounded_fanout` | SNS → N Lambdas with no concurrency limit | https://docs.aws.amazon.com/wellarchitected/latest/serverless-applications-lens/welcome.html |
-| `nat_egress` (v1.5) | NAT Gateway with > 100 GB/month processed | https://aws.amazon.com/vpc/pricing/ |
+| `memory_duration_tradeoff` | < 1024 MB with > 500 ms (info) | https://docs.aws.amazon.com/lambda/latest/operatorguide/computing-power.html |
+| `on_demand_steady_state` | on-demand past the provisioned crossover | https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/capacity-mode.html |
+| `no_lifecycle_on_logs` | logs/backup bucket, no lifecycle | https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lifecycle-mgmt.html |
+| `s3_public_no_cdn` | public bucket, no CloudFront upstream | https://docs.aws.amazon.com/AmazonS3/latest/userguide/website-hosting-cloudfront-walkthrough.html |
+| `async_no_dlq` | async consumer, no DLQ (critical) | https://docs.aws.amazon.com/lambda/latest/dg/invocation-async.html |
+| `unbounded_fanout` | SNS → 2+ Lambdas, no reserved concurrency | https://docs.aws.amazon.com/wellarchitected/latest/serverless-applications-lens/welcome.html |
+
+Savings come from the same pricing table. One vitest per rule.
 
 ## 11. Pricing — from AWS, not from us
 
-AWS publishes the Price List Bulk API as public JSON, **no auth**. Use per-region files.
+`npm run fetch-pricing` (`scripts/fetch-pricing.ts`) pulls the AWS Price List Bulk API (public JSON, no auth)
+for the ten services, filters to the 23 SKUs the engine prices, and writes `data/pricing.<region>.json` with
+`generatedAt` and a `sourceUrl` per entry. Gotchas learned: CloudFront CDN rates live only in the **global**
+file (per-geography, `fromLocation`); EventBridge's offer code is `AWSEvents`; Step Functions Express usagetypes
+are `StepFunctions-Request` / `StepFunctions-GB-Second`. Ship `ap-southeast-1` (default) and `us-east-1`;
+region is a select in the top bar. `refresh_pricing` was not built.
 
-```
-https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/index.json
-https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSLambda/current/region_index.json
-https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSLambda/current/ap-southeast-1/index.json
-```
+## 12. Exports (`src/engine/exporters/`)
 
-`scripts/fetch-pricing.ts` runs at build: pulls the ten services, filters to the SKUs the engine prices, writes `data/pricing.<region>.json` with `generatedAt` and a `sourceUrl` per SKU. UI shows *"AWS Price List · ap-southeast-1 · fetched <date>"* with a link; `get_pricing_source` returns the same. Ship `ap-southeast-1` and `us-east-1`; region is a switch.
+| Format | Contents |
+|---|---|
+| JSON | whole model incl. containers + sections + pricing snapshot id; reloads via `import_state` |
+| Markdown | title = drawing name, assumptions, cost table, findings with links, Mermaid inline |
+| Mermaid | `flowchart LR`, labels carry monthly cost |
+| SVG / PNG | `html-to-image` on the React Flow viewport |
+| CDK (TypeScript) | one stack named from the drawing, one construct per node from `defineService().cdk`, header listing every stub; **`npm run synth` runs `cdk synth` on all three samples** |
 
-Test in five minutes whether those endpoints send CORS headers. If yes, add `refresh_pricing`. If no, nothing is lost.
+Three routes: download (filename = drawing name), clipboard, and `export` + `get_export_chunk`. Autosave to
+`localStorage` (`overhead-state-v2`).
 
-## 12. Exports
+## 13. Stack, repo layout, commands
 
-| Format | Contents | How |
-|---|---|---|
-| JSON state | whole model incl. scenarios + pricing snapshot id; reloads exactly via `import_state` | `JSON.stringify(store)` |
-| Markdown | title, assumptions, cost table by node, findings with links, Mermaid block inline | string template |
-| Mermaid | `flowchart LR`, node labels carry monthly figure | string template |
-| SVG / PNG | the canvas as drawn | `html-to-image` on the React Flow viewport |
-| CDK (TypeScript) | one stack, ten constructs, header listing every assumption and stub | templates per construct; **`cdk synth` in CI on the three samples** |
-| Terraform | v1.5 | later |
-
-Three delivery routes for every format: download, clipboard, and the tool result (so the visitor's agent can take CDK straight into their repo). Autosave to `localStorage`.
-
-## 13. Stack and repo layout
-
-- **Next.js 15**, App Router, static export. No API routes, no server, no auth.
-- **TypeScript** end to end; `src/engine` is plain TS with no React in it.
-- **@xyflow/react** (React Flow, MIT) — nodes, edges, drag, parent containers for groups.
-- **Zustand** store; cost and findings are derived selectors.
-- **Tailwind**; tokens as CSS variables so both themes hold.
-- **papaparse** (bill CSV), **html-to-image** (SVG/PNG), **vitest**.
-- **Vercel**.
+Next.js 15 (App Router, `output: "export"`), React 19, TypeScript, `@xyflow/react` v12, Zustand, Tailwind 4,
+papaparse, html-to-image, vitest, puppeteer-core (dev, headless checks). Vercel.
 
 ```
 src/
-  engine/           pure TS: model, pricing, rules, delta, exporters
-    model.ts
-    pricing.ts
-    services/*.ts   defineService() — one per AWS service (the spine)
-    rules/*.ts
-    exporters/{json,markdown,mermaid,cdk}.ts
-  webmcp/
-    register.ts     raw document.modelContext.registerTool
-    provider.tsx    'use client', mounts at root
-    panel.tsx       live tool list via getTools + toolchange
-  canvas/           React Flow nodes (icon / card), edges (bezier, typed), groups, inspector
-  app/
-scripts/fetch-pricing.ts
-data/pricing.*.json
-public/icons/aws/   official Architecture Icons + NOTICE.md
-samples/*.json      three seeded architectures
-tests/
+  engine/           pure TS: model, containers, migrate, layout(roles), pricing, cost, findings, delta, bill,
+                    services/*.ts (defineService), rules/*.ts, exporters/{json,markdown,mermaid,cdk,index}.ts
+  webmcp/           register.ts · tools.ts · scenario.ts · toolRegistry.ts · provider.tsx
+  store/            useStore.ts · history.ts (undo/redo)
+  canvas/           App.tsx (shell) · Canvas.tsx · AwsNode · ContainerCard · ContainerFrames · SectionFrames ·
+                    TypedEdge · edgeGeometry.ts · nodeMetrics.ts · Inspector · Palette · Templates ·
+                    ExportPanel · ScenarioBanner · BillDrop · HowTo · Keyboard · Icon · Sprite
+    chrome/         Rail · Dock · TopBar · BottomBar · Floats (layers, zoom) · StructurePanel
+  app/              layout.tsx (fonts, provider) · page.tsx · globals.css (tokens, shell grid)
+scripts/            fetch-pricing.ts · synth-samples.ts
+data/               pricing.us-east-1.json · pricing.ap-southeast-1.json
+samples/            api-backend · media-pipeline · event-driven (seeded; has cloud›region›vpc›subnet)
+public/icons/aws/   sprite.svg (26 symbols) · Arch_*_64.svg · NOTICE.md
+tests/              containers · migrate(in containers) · rules · exporters · golden-costs · edge-geometry ·
+                    bill · define-service · delta · write-cdk-stacks
 ```
 
-### Icons
+```
+npm run dev            # localhost:3000 — the user reviews here first
+npm run build          # static export (kills the dev cache — restart dev after)
+npm test               # vitest (55)
+npm run synth          # cdk synth on the three sample exports
+npm run fetch-pricing  # refresh data/pricing.*.json
+npx vercel deploy --prod --yes   # only when the user says deploy
+```
 
-Use the **official AWS Architecture Icons** (July 2026 package). Copy the 64 px service SVGs and the 32 px group icons into `public/icons/aws/` and build them into one SVG sprite (`<symbol id="aws-lambda" viewBox="0 0 80 80">…`), referenced with `<use href="#aws-lambda">`. Strip `id` attributes inside each symbol so they don't collide. Add `public/icons/aws/NOTICE.md`: © Amazon Web Services, used under AWS's Architecture Icons terms, **excluded from the repo's MIT licence** (same approach as mingrammer/diagrams and draw.io).
+Headless check pattern (used throughout): puppeteer-core with the installed Chrome against `localhost:3000`,
+capture `pageerror` + console errors, screenshot to the scratchpad, read the PNG. Keep the script inside the
+repo (`.something.mjs`, deleted after) so `puppeteer-core` resolves; do not commit it.
 
-Source on this machine: `~/Downloads/Icon-package_07312026.5846e92413caa21490223536cc97f1269e44fa92/`
-`reference/aws-icon-sprite.svg` already contains the 22 symbols the mock uses.
-
-### Design tokens — direction: **Instrument**
-
-Dark, dense, pro-tool. Canvas bleeds edge to edge; all chrome floats over it. Left icon rail with keyboard hints,
-floating layer switch and zoom pill, an inspector that only fills in on selection, and a title block in the
-canvas corner. Reference: `reference/overhead-mock.html`.
-
-| Token | Value | Used for |
-|---|---|---|
-| `--bg` | `#0B0D10` | page ground; canvas is a radial lift to `#141922` at 60/40 |
-| `--panel` | `#111620` | rail, drawer, inspector, floating pills (`E6` alpha + `backdrop-filter: blur(10px)` when floating) |
-| `--panel-2` | `#0D121A` | inputs, code, recessed fields |
-| `--line` / `--line-2` | `#1D2531` / `#222A36` | panel borders / control borders |
-| `--ink` | `#E8ECF2` | primary text, node labels, edges |
-| `--ink-2` | `#9AA6B7` | secondary text |
-| `--ink-3` | `#66738A` | labels, captions |
-| `--ink-4` | `#4E5A6B` | keyboard hints, log text |
-| `--accent` | `#3B82F6` | selection, focus, primary button |
-| `--accent-ink` | `#8FB8FF` | accent text, active rail icon |
-| `--accent-bg` | `#1B2534` | active rail/toggle background |
-| `--good` | `#6FE3B0` | savings, live-tool pulse, title-block total |
-| `--warn` | `#F0B34E` | finding ring / stripe |
-| `--bad` | `#F0796A` | critical finding, positive delta |
-| `--edge` / `--edge-lab` | `#5C6B7F` / `#7C8CA0` | edge stroke / edge label |
-
-Grid: `radial-gradient(circle at 1px 1px, #1E2530 1px, transparent 0)` at 26 px, 55 % opacity, **toggleable**
-(rail button, `⇧G`) — fades to 0 rather than unmounting.
-
-Type: **Archivo** 400/500/600/700 for UI and headings, **JetBrains Mono** 400/500/600 for every number, code
-and log line. Tabular figures where digits align. Uppercase only for 9.5 px labels at `.14em` tracking — never
-for buttons.
-
-**Chrome layout**
-- Left rail 54 px: select · pan / add · connect · group · collapse / trace · then spacer · grid · undo.
-  Keyboard hint bottom-right of each button; active state is `--accent-bg` plus a 2.5 px accent tick on the outer edge.
-- Top bar floats from `left:86px`: brand, breadcrumb, price-list chip, scenario delta chip, monthly total, Scenario, Export.
-- Floating layer switch bottom-left of the canvas; zoom pill bottom-right of the canvas.
-- **Title block** bottom-left, above the layer switch — drawing · region · resources · findings · est. monthly.
-  Borrowed from engineering drawings: it makes exports read as a document of record and keeps the total in frame
-  in any screenshot.
-- Agent strip along the bottom: live tool count and the last three tool calls.
+**vitest gotcha:** pure-TS modules under test must not import from `.tsx` files (no React transform in
+vitest) — that's why `nodeMetrics.ts` exists.
 
 ## 14. Hard constraints
 
-- HTTPS; tools registered in the **top-level document**, never an iframe.
-- Imperative API only; declarative `<form toolname>` is unsupported in ChatGPT's browser.
+- HTTPS; tools registered in the top-level document, never an iframe. Imperative API only.
 - `document.modelContext` with `navigator.modelContext` fallback.
-- Tool outputs ≤ ~1.5K chars.
-- No login, no paywall. Judges must reach everything.
-- MIT licence at repo root, visible in the About section.
-- Commit history inside the submission window.
+- Tool outputs ≤ ~1.5K chars. No login, no paywall.
+- MIT licence at repo root, visible in the About section. Commit history inside the submission window.
 
-## 15. Build order (with acceptance criteria)
+## 15. Build order — status
 
-| Phase | Hours | Done when |
+| Phase | Done when | Status |
 |---|---|---|
-| **0 · Prove the pipe** | 2 | Repo + MIT licence + Next.js deployed to Vercel; **one trivial tool registered and executed from the ChatGPT desktop browser's Site tools**, and from Chrome with `chrome://flags/#enable-webmcp-testing`. Nothing else starts until this passes. |
-| **1 · Engine, no UI** | 3 | `defineService()` for ten services; pricing script run; `data/pricing.*.json` committed; cost function; three sample architectures with golden costs in vitest. |
-| **2 · Canvas** | 3 | React Flow with icon-mode nodes (official icons), bezier typed edges, lanes, hover isolation, inspector generated from the settings schema. Load a sample; drag works; running total shows. |
-| **3 · Tools, read + write** | 3 | All read/write tools registered; each tested from the ChatGPT browser as added; tool panel live. |
-| **4 · Findings** | 2 | Rules with doc links + savings; rings/stripes on canvas; `get_findings` returns structure the agent acts on. |
-| **5 · Scenarios** | 2 | Fork, dashed overlay, delta, dynamic registration via `AbortController`; panel count changes. |
-| **6 · Cards + zoom + groups** | 2 | Card mode at ≥125% zoom or on demand; AWS Cloud group frame; logical groups; collapse/expand. |
-| **7 · Exports** | 3 | JSON round-trip → Markdown + Mermaid → SVG → CDK with `cdk synth` on samples; chunked tool delivery. |
-| **8 · Bill ingest** | 2 | Drop CSV → parse locally → reconstruct nodes → real spend attached. **Cut first if behind.** |
-| **9 · Polish** | 2 | Empty states, "how to try this" banner, both themes, keyboard, undo. No new features past here. |
-| **10 · Video, README, submit** | 3 | Script in §14; record twice, keep the second; README answers the four prompts; submit with 1 h buffer. |
-| v1.5 | — | Networking only if 0–10 are done. |
+| 0 · Prove the pipe | one tool executed from the ChatGPT desktop app and Chrome | ✅ 2026-09-02 |
+| 1 · Engine | ten services, pricing data, cost, golden tests | ✅ |
+| 2 · Canvas | icon/card nodes, floating typed edges, inspector from schema | ✅ |
+| 3 · Tools | read/write tools, live readout | ✅ (33 live) |
+| 4 · Findings | nine rules, rings/stripes | ✅ |
+| 5 · Scenarios | fork, delta, dynamic registration | ✅ |
+| 6 · Cards + containers + sections | 130% LOD, containers with validation/rollup/collapse, sections | ✅ |
+| 7 · Exports | JSON/MD/Mermaid/SVG/CDK, `cdk synth` on samples, chunking | ✅ |
+| 8 · Bill ingest | CSV → summary → reconstruct | ✅ (lightly signposted) |
+| 9 · Polish | docked chrome, keyboard, undo/redo, rename everything, empty state | ✅ |
+| **10 · Video, README, submit** | script in §16; README answers the four prompts; repo public | **open** |
 
-**Cut order if behind:** bill ingest → Terraform → Cognito/Step Functions → auto-layout.
-**Never cut:** the deployed URL working in the ChatGPT browser, scenario forking, the findings loop, the tool panel, the video, the licence.
+**Cut if behind:** section rubber-band drawing · `rename_container`/`set_edge` tools · empty-canvas gallery ·
+BillDrop signposting. **Never cut:** the deployed URL working in the ChatGPT desktop app, the scenario
+tool-count tick, the findings loop, exports, the licence, the video.
 
-## 16. Video script (< 3:00, with audio, public on YouTube)
+## 16. Testing in the ChatGPT desktop app
+
+ChatGPT Atlas (the standalone browser) was **discontinued Aug 2026**. WebMCP site tools now live in the
+**ChatGPT desktop app's built-in browser**: open the live URL in a tab there, look for the **arrow icon in the
+address bar** (grey = tools available, blue = in use), and ask e.g. *"Use this site's tools to build HTTP API →
+Lambda → DynamoDB, then call get_findings."* Requires GPT-5.6 Sol or Terra (Luna has WebMCP disabled); not
+the Chrome extension. Second path: Chrome with `chrome://flags/#enable-webmcp-testing` + the Model Context Tool
+Inspector extension.
+
+Demo path to verify before recording: build by sentence → `get_findings` → `open_scenario` (count 33 → 37) →
+set the Lambda to arm64/1024 MB → `get_delta` → `commit_scenario` (back to 33) → `export` cdk.
+
+## 17. Video script (< 3:00, with audio, public on YouTube)
 
 | Time | On screen | Said |
 |---|---|---|
 | 0:00–0:15 | AWS Pricing Calculator, then a spreadsheet | This is how we price a build. Neither knows what the architecture looks like. |
-| 0:15–0:50 | Empty canvas → one sentence → nodes land, total appears → agent calls `get_findings`, fixes two | I describe it. It builds it, priced from AWS's own price list. Then it checks its own work. |
-| 0:50–1:30 | Open a scenario; tool panel ticks 18 → 22; ARM + 1024 MB; delta drawn; cost goes down | More memory, lower bill — because it runs faster. Watch the tools appear when the scenario opens: that's WebMCP's dynamic registration. |
-| 1:30–1:55 | Drag CloudFront off; finding fires; keep it anyway | I know this client. I overrule it. It re-prices around me. |
-| 1:55–2:20 | Drop a Cost Explorer CSV; nodes fill with real spend | Your actual bill, parsed here, never uploaded. Now we're tuning the thing you have. |
+| 0:15–0:50 | Empty canvas → one sentence → nodes land inside cloud › region, total appears → agent calls `get_findings`, fixes two | I describe it. It builds it, priced from AWS's own price list. Then it checks its own work. |
+| 0:50–1:30 | Open a scenario; bottom bar ticks 33 → 37; ARM + 1024 MB; delta drawn; cost goes down | More memory, lower bill — because it runs faster. Watch the tools appear when the scenario opens: that's WebMCP's dynamic registration. |
+| 1:30–1:55 | Ask it to put a Lambda in a subnet; it adds a VPC and subnet; try moving DynamoDB in — refused with the rule | Containers are real: it knows what's allowed to live where. |
+| 1:55–2:20 | Drop a Cost Explorer CSV; nodes fill with real spend | Your actual bill, parsed here, never uploaded. |
 | 2:20–2:50 | Export Markdown → paste into a doc; export CDK → agent writes it into a repo | Out as Markdown for the proposal. Out as CDK, and my agent puts it in the repo. |
 
-## 17. Submission checklist
+## 18. Submission checklist
 
-- [ ] Live URL, no login, works in ChatGPT desktop browser **and** Chrome with `#enable-webmcp-testing`
-- [ ] Public repo, MIT licence visible in About, README with run instructions
+- [ ] Live URL, no login, works in the ChatGPT desktop app **and** Chrome with the flag
+- [ ] **Repo public**, MIT visible in About, README with run instructions and the renamed tools
 - [ ] Raw `document.modelContext.registerTool({ name, description, inputSchema, execute })` visible in `src/webmcp/register.ts`
 - [ ] Pricing data with `generatedAt` + source URLs; findings with verified doc links
-- [ ] `cdk synth` passes on the three sample exports
+- [ ] `npm run synth` passes
 - [ ] YouTube video public, < 3:00, with audio
-- [ ] Write-up answers all four prompts (fit for WebMCP; better UX; what people + agents can now do together; how implemented) and includes the "open web" line
+- [ ] Write-up answers all four prompts and includes the "open web" line
 - [ ] Commit history inside the submission window
 - [ ] Submitted by **03:00 Thu 4 Sep, Manila**
-
