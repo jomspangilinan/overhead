@@ -9,7 +9,8 @@ import { Handle, Position, type NodeProps, type Node } from "@xyflow/react";
 import { useStore, cardModeOf, pricingOf, snapshotOf } from "@/store/useStore";
 import { getService } from "@/engine/services";
 import { nodeCost } from "@/engine/cost";
-import { toMoney } from "@/engine/model";
+import { findingsForNode } from "@/engine/findings";
+import { toMoney, type Severity } from "@/engine/model";
 
 export const NODE_W = 200;
 export const NODE_H = 100;
@@ -43,9 +44,25 @@ export const AwsNode = memo(function AwsNode({ data }: NodeProps<AwsNodeType>) {
     }
   });
 
+  const worst = useStore((s): Severity | null => {
+    if (!s.nodes.some((n) => n.id === data.nodeId)) return null;
+    try {
+      const fs = findingsForNode(snapshotOf(s), pricingOf(s), data.nodeId).filter(
+        (f) => f.severity !== "info",
+      );
+      if (fs.some((f) => f.severity === "critical")) return "critical";
+      return fs.length ? "warn" : null;
+    } catch {
+      return null;
+    }
+  });
+
   if (!node) return null;
   const def = getService(node.service);
   if (!def) return null;
+
+  const ringColor =
+    worst === "critical" ? "var(--critical)" : worst === "warn" ? "var(--finding)" : null;
 
   const cardSettings = def.cardLines
     .map((key) => {
@@ -66,7 +83,7 @@ export const AwsNode = memo(function AwsNode({ data }: NodeProps<AwsNodeType>) {
       <Handle type="source" position={Position.Right} style={{ top: NODE_H / 2 }} />
       {cardMode ? (
         <div
-          className="absolute rounded-lg border bg-surface shadow-sm"
+          className="absolute overflow-hidden rounded-lg border bg-surface shadow-sm"
           style={{
             left: 0,
             top: (NODE_H - 76) / 2,
@@ -75,6 +92,12 @@ export const AwsNode = memo(function AwsNode({ data }: NodeProps<AwsNodeType>) {
             borderColor: "var(--rule)",
           }}
         >
+          {ringColor ? (
+            <div
+              className="absolute bottom-2 left-0 top-2 w-[3px] rounded-r"
+              style={{ background: ringColor }}
+            />
+          ) : null}
           <svg width="48" height="48" className="absolute left-3 top-[14px]">
             <use href={`#${def.icon}`} width="48" height="48" />
           </svg>
@@ -104,13 +127,18 @@ export const AwsNode = memo(function AwsNode({ data }: NodeProps<AwsNodeType>) {
         </div>
       ) : (
         <div className="absolute inset-0 flex flex-col items-center">
-          <svg
-            width={ICON}
-            height={ICON}
-            style={{ marginTop: (NODE_H - ICON - 22) / 2 }}
+          <div
+            className="rounded-[11px]"
+            style={{
+              marginTop: (NODE_H - ICON - 22) / 2 - 4,
+              padding: 4,
+              boxShadow: ringColor ? `0 0 0 2.5px ${ringColor}` : undefined,
+            }}
           >
-            <use href={`#${def.icon}`} width={ICON} height={ICON} />
-          </svg>
+            <svg width={ICON} height={ICON} style={{ display: "block" }}>
+              <use href={`#${def.icon}`} width={ICON} height={ICON} />
+            </svg>
+          </div>
           <div className="mt-1 max-w-[190px] truncate text-center text-[12px] font-medium">
             {node.name}
           </div>

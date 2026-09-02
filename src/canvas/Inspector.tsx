@@ -8,6 +8,7 @@ import { useStore, pricingOf, snapshotOf } from "@/store/useStore";
 import { getService } from "@/engine/services";
 import { validateSetting, type SettingDef } from "@/engine/defineService";
 import { nodeCost } from "@/engine/cost";
+import { findingsForNode } from "@/engine/findings";
 import { toMoney } from "@/engine/model";
 import { useState } from "react";
 
@@ -103,6 +104,15 @@ export function Inspector() {
     }
   });
 
+  const findings = useStore((s) => {
+    if (!selectedId || !s.nodes.some((n) => n.id === selectedId)) return [];
+    try {
+      return findingsForNode(snapshotOf(s), pricingOf(s), selectedId);
+    } catch {
+      return [];
+    }
+  });
+
   if (!node) return null;
   const def = getService(node.service);
   if (!def) return null;
@@ -171,6 +181,48 @@ export function Inspector() {
               ))}
             </tbody>
           </table>
+        </div>
+      ) : null}
+
+      {findings.length ? (
+        <div>
+          <div className="mb-1 text-[11px] font-medium text-ink-3">Findings</div>
+          <div className="flex flex-col gap-2">
+            {findings.map((f, i) => (
+              <div
+                key={i}
+                className="rounded border-l-2 bg-surface-2 p-2 text-[11px] leading-snug"
+                style={{
+                  borderColor:
+                    f.severity === "critical"
+                      ? "var(--critical)"
+                      : f.severity === "warn"
+                        ? "var(--finding)"
+                        : "var(--accent)",
+                }}
+              >
+                <p>{f.message}</p>
+                <div className="mt-1 flex items-center justify-between">
+                  <a
+                    className="text-accent underline decoration-dotted"
+                    href={f.docUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    AWS docs
+                  </a>
+                  {f.estimatedSaving ? (
+                    <span
+                      className="font-semibold text-saving"
+                      style={{ fontFamily: "var(--font-plex-mono)" }}
+                    >
+                      −${f.estimatedSaving.toFixed(2)}/mo
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       ) : null}
 

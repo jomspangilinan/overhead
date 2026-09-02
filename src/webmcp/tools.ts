@@ -12,6 +12,7 @@ import {
 import { SERVICES, getService } from "@/engine/services";
 import { validateSetting, defaultSettings } from "@/engine/defineService";
 import { allCosts, monthlyTotal, nodeCost } from "@/engine/cost";
+import { allFindings } from "@/engine/findings";
 import { toMoney, type EdgeKind } from "@/engine/model";
 import { laneOf } from "@/engine/layout";
 import { errorResult, text, type ToolSpec } from "./toolRegistry";
@@ -192,6 +193,40 @@ export function coreTools(): ToolSpec[] {
               .filter(([, v]) => v.driver)
               .map(([k]) => k),
           })),
+        });
+      },
+    },
+    {
+      name: "get_findings",
+      description:
+        "Rule findings on the current design: severity, message, AWS doc link, affected nodes, estimated monthly saving. The agent should act on these.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          severity: {
+            type: "string",
+            enum: ["info", "warn", "critical"],
+            description: "Optional: only this severity",
+          },
+        },
+        additionalProperties: false,
+      },
+      readOnly: true,
+      execute: ({ severity }) => {
+        const s = useStore.getState();
+        let findings = allFindings(snapshotOf(s), pricingOf(s));
+        if (severity) findings = findings.filter((f) => f.severity === severity);
+        return text({
+          count: findings.length,
+          findings: findings.slice(0, 5).map((f) => ({
+            rule: f.rule,
+            severity: f.severity,
+            message: f.message,
+            docUrl: f.docUrl,
+            nodeIds: f.nodeIds,
+            ...(f.estimatedSaving ? { estimatedSaving: f.estimatedSaving } : {}),
+          })),
+          ...(findings.length > 5 ? { note: "showing first 5; filter by severity" } : {}),
         });
       },
     },
