@@ -103,20 +103,6 @@ export function TopBar() {
         <span className="text-[11px] text-ink-3">estimate</span>
       </div>
 
-      <button
-        className="flex items-center gap-[7px] rounded-lg px-3 py-[7px] text-[12px] font-medium hover:bg-[var(--hover)]"
-        style={{
-          border: "1px solid var(--line-2)",
-          background: templatesOpen ? "var(--accent-bg)" : "var(--panel)",
-          color: "var(--ink-15)",
-        }}
-        data-tip="Templates · load a seeded architecture"
-        aria-label="Templates"
-        onClick={() => setTemplatesOpen(!templatesOpen)}
-      >
-        <Icon name="samples" size={14} />
-        Templates
-      </button>
       {/* Forks on the spot · no dialog to answer first. The name is
           editable in the banner over the canvas, the way the drawing name
           is editable here. */}
@@ -136,8 +122,22 @@ export function TopBar() {
           Scenario
         </button>
       )}
-      {/* The door back through the export · a template becomes the drawing,
-          or is reconciled with it. */}
+      {/* Templates and Import are the two ways a drawing arrives · a seeded
+          one, or your own template. They sit together, next to Export. */}
+      <button
+        className="flex items-center gap-[7px] rounded-lg px-3 py-[7px] text-[12px] font-medium hover:bg-[var(--hover)]"
+        style={{
+          border: "1px solid var(--line-2)",
+          background: templatesOpen ? "var(--accent-bg)" : "var(--panel)",
+          color: "var(--ink-15)",
+        }}
+        data-tip="Templates · load a seeded architecture"
+        aria-label="Templates"
+        onClick={() => setTemplatesOpen(!templatesOpen)}
+      >
+        <Icon name="samples" size={14} />
+        Templates
+      </button>
       <button
         className="flex items-center gap-[7px] rounded-lg px-3 py-[7px] text-[12px] font-medium hover:bg-[var(--hover)]"
         style={{ border: "1px solid var(--line-2)", background: "var(--panel)", color: "var(--ink-15)" }}

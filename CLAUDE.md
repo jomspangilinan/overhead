@@ -394,7 +394,9 @@ the palette at bottom-centre, never `display: none`.
   appears only while the tool is armed, so `ModeInternals` calls `updateNodeInternals` on that flip as
   well as the card flip. Without it the handle rendered, took the pointerdown, and did nothing.
 - **Top bar** (`chrome/TopBar.tsx`): brand · editable **drawing name** · price-list pill with the region
-  select · monthly total (23 px mono — the one loud number) · Templates · Scenario · **Import** · Export.
+  select · monthly total (23 px mono — the one loud number) · Scenario · **Templates · Import** · Export.
+  Templates and Import sit together because they are the two ways a drawing arrives: a seeded one, or
+  your own template.
   Import opens `ImportPanel.tsx` (§12b); dropping a template on the canvas opens the same dialog.
 - **Scenario** forks on the click (`openScenarioFromUi("what-if")`, so the tool count ticks) and **asks
   nothing**: a `window.prompt` was the one modal dialog left in the app and it blocked the page to
