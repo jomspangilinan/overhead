@@ -37,7 +37,10 @@ export function Canvas() {
   const setZoom = useStore((s) => s.setZoom);
   const cardMode = useStore(cardModeOf);
 
+  const traceIds = useStore((s) => s.traceIds);
+
   const litIds = useMemo(() => {
+    if (traceIds?.length) return new Set(traceIds);
     if (!hoveredId) return null;
     const lit = new Set<string>([hoveredId]);
     for (const e of edges) {
@@ -45,7 +48,7 @@ export function Canvas() {
       if (e.to === hoveredId) lit.add(e.from);
     }
     return lit;
-  }, [hoveredId, edges]);
+  }, [hoveredId, edges, traceIds]);
 
   const rfNodes: Node[] = useMemo(
     () =>
@@ -69,8 +72,10 @@ export function Canvas() {
         hidden: !layers[KIND_LAYER[e.kind]],
         data: { kind: e.kind, volumePerMonth: e.volumePerMonth, label: e.label },
         className:
-          litIds && (litIds.has(e.from) || litIds.has(e.to)) &&
-          (e.from === hoveredId || e.to === hoveredId)
+          litIds &&
+          (traceIds?.length
+            ? litIds.has(e.from) && litIds.has(e.to)
+            : e.from === hoveredId || e.to === hoveredId)
             ? "lit"
             : undefined,
         markerEnd:
@@ -88,7 +93,7 @@ export function Canvas() {
 
   return (
     <div
-      className={`overhead-canvas h-full w-full ${hoveredId ? "hovering" : ""} ${cardMode ? "cards" : ""}`}
+      className={`overhead-canvas h-full w-full ${hoveredId || traceIds?.length ? "hovering" : ""} ${cardMode ? "cards" : ""}`}
     >
       <ReactFlow
         nodes={rfNodes}
@@ -99,7 +104,10 @@ export function Canvas() {
           moveNode(n.id, n.position.x + NODE_W / 2, n.position.y + NODE_H / 2)
         }
         onNodeClick={(_e, n) => select(n.id)}
-        onPaneClick={() => select(null)}
+        onPaneClick={() => {
+          select(null);
+          useStore.getState().setTrace(null);
+        }}
         onNodeMouseEnter={(_e, n) => hover(n.id)}
         onNodeMouseLeave={() => hover(null)}
         onMove={onMove}

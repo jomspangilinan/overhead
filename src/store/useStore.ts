@@ -43,6 +43,7 @@ export interface OverheadState {
   zoom: number;
   selectedId: string | null;
   hoveredId: string | null;
+  traceIds: string[] | null;
 
   // mutations (synchronous — tools depend on it)
   loadSnapshot: (snap: StateSnapshot) => void;
@@ -70,6 +71,7 @@ export interface OverheadState {
   setZoom: (zoom: number) => void;
   select: (id: string | null) => void;
   hover: (id: string | null) => void;
+  setTrace: (ids: string[] | null) => void;
 }
 
 export const useStore = create<OverheadState>((set, get) => ({
@@ -83,6 +85,7 @@ export const useStore = create<OverheadState>((set, get) => ({
   zoom: 1,
   selectedId: null,
   hoveredId: null,
+  traceIds: null,
 
   loadSnapshot: (snap) =>
     set({
@@ -163,6 +166,7 @@ export const useStore = create<OverheadState>((set, get) => ({
   setZoom: (zoom) => set({ zoom }),
   select: (id) => set({ selectedId: id }),
   hover: (id) => set({ hoveredId: id }),
+  setTrace: (ids) => set({ traceIds: ids }),
 }));
 
 export function snapshotOf(s: OverheadState): StateSnapshot {

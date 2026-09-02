@@ -1,6 +1,7 @@
-// WebMCP registration. The raw document.modelContext.registerTool call below
-// is intentionally kept in the literal { name, description, inputSchema, execute }
-// shape the challenge brief prints — wrap it elsewhere, don't hide it.
+// WebMCP registration. The raw document.modelContext.registerTool call
+// below is intentionally kept in the literal { name, description,
+// inputSchema, execute } shape the challenge brief prints — everything
+// else goes through the registry wrapper, but this one stays visible.
 
 export type ToolContent = { type: "text"; text: string };
 export type ToolResult = { content: ToolContent[] };
@@ -37,70 +38,64 @@ export function getModelContext(): ModelContext | undefined {
   return document.modelContext ?? navigator.modelContext;
 }
 
-export type RegisterOutcome =
-  | "registered"
-  | "no-model-context"
-  | "in-iframe";
+export type RegisterOutcome = "registered" | "no-model-context" | "in-iframe";
 
 /**
- * Phase 0 pipe proof: registers one trivial read-only tool.
- * Must run after hydration, in the top-level document (ChatGPT's browser
- * ignores tools registered from iframes).
+ * Registers the whole core tool surface. Must run after hydration, in the
+ * top-level document (ChatGPT's browser ignores iframe tools). Imperative
+ * API only; dynamic tools are removed by aborting their AbortSignal.
  */
-export async function registerPipeProof(
-  signal?: AbortSignal,
-): Promise<RegisterOutcome> {
+export async function registerAllTools(): Promise<RegisterOutcome> {
   if (window.top !== window.self) return "in-iframe";
-
-  const execute = async (): Promise<ToolResult> => ({
-    content: [
-      {
-        type: "text",
-        text: JSON.stringify({
-          ok: true,
-          app: "overhead",
-          message: "The WebMCP pipe works. Phase 0 passed.",
-          registeredVia: document.modelContext ? "document" : "navigator",
-          at: new Date().toISOString(),
-        }),
-      },
-    ],
-  });
-
-  const descriptor = {
-    name: "overhead_ping",
-    description:
-      "Health check for Overhead, an AWS architecture canvas. Returns proof that this page's WebMCP tool pipe works end to end.",
-    inputSchema: {
-      type: "object",
-      properties: {},
-      additionalProperties: false,
-    },
-    annotations: { readOnlyHint: true },
-    execute,
-  } satisfies ToolDescriptor;
+  const mc = getModelContext();
+  if (!mc) return "no-model-context";
 
   if (document.modelContext) {
-    await document.modelContext.registerTool(
-      {
-        name: descriptor.name,
-        description: descriptor.description,
-        inputSchema: descriptor.inputSchema,
-        annotations: descriptor.annotations,
-        execute: descriptor.execute,
-      },
-      signal ? { signal } : undefined,
-    );
-    return "registered";
+    await document.modelContext.registerTool({
+      name: "overhead_ping",
+      description:
+        "Health check for Overhead, an AWS architecture canvas. Returns proof that this page's WebMCP tool pipe works end to end.",
+      inputSchema: { type: "object", properties: {}, additionalProperties: false },
+      execute: async () => ({
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              ok: true,
+              app: "overhead",
+              message: "The WebMCP pipe works. Phase 0 passed.",
+              at: new Date().toISOString(),
+            }),
+          },
+        ],
+      }),
+    });
+  } else {
+    const { registerSpec } = await import("./toolRegistry");
+    await registerSpec(mc, {
+      name: "overhead_ping",
+      description: "Health check for Overhead. Proves the WebMCP pipe works.",
+      inputSchema: { type: "object", properties: {}, additionalProperties: false },
+      readOnly: true,
+      execute: () => ({
+        content: [{ type: "text", text: JSON.stringify({ ok: true, app: "overhead" }) }],
+      }),
+    });
   }
 
-  if (navigator.modelContext) {
-    await navigator.modelContext.registerTool(
-      descriptor,
-      signal ? { signal } : undefined,
-    );
-    return "registered";
+  const [{ registerSpec }, { coreTools }] = await Promise.all([
+    import("./toolRegistry"),
+    import("./tools"),
+  ]);
+
+  if (document.modelContext) {
+    // reflect the raw-registered ping in the local registry for the panel
+    const { trackExternal } = await import("./toolRegistry");
+    trackExternal("overhead_ping", "Health check — proves the WebMCP pipe works.");
   }
 
-  return "no-model-context";
+  for (const spec of coreTools()) {
+    await registerSpec(mc, spec);
+  }
+  return "registered";
 }
