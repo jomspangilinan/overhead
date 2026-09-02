@@ -272,12 +272,11 @@ body {
   pointer-events: auto;
 }
 
-/* Container frames: header band is the drag handle, corner grip resizes. */
-.oh-frame-head {
-  cursor: grab;
-}
-.oh-frame-head:active {
-  cursor: grabbing;
+/* Frames: the header band selects (only the move grip drags), the corner
+   grip resizes. */
+.oh-frame-head,
+.oh-frame-collapse {
+  cursor: pointer;
 }
 .oh-frame-grip {
   opacity: 0;
@@ -398,8 +397,16 @@ body {
   opacity: 1;
   visibility: visible;
 }
-.oh-frame-collapse {
-  cursor: pointer;
+/* A collapsed frame's card is a landmark, not a resource: hover isolation
+   never dims it, and its expand control is always legible. */
+.overhead-canvas.hovering .react-flow__node.oh-frame-card {
+  opacity: 1;
+}
+.oh-card-expand {
+  opacity: 0.7;
+}
+.oh-card-expand:hover {
+  opacity: 1;
 }
 
 /* Hover isolation: everything not lit dims */

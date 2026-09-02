@@ -11,12 +11,19 @@
 import type { StateSnapshot, Section, ArchNode, ArchEdge } from "./model";
 import type { Container } from "./containers";
 
+/** Where a row sits in the tree: the frame and the section that hold it.
+ *  Dropping between two rows adopts their context. */
+export interface RowContext {
+  container?: string;
+  section?: string;
+}
+
 export type LayerRow =
-  | { key: string; kind: "container"; id: string; depth: number; container: Container; hasChildren: boolean }
-  | { key: string; kind: "section" | "group"; id: string; depth: number; section: Section; members: ArchNode[]; hasChildren: boolean }
-  | { key: string; kind: "node"; id: string; depth: number; node: ArchNode }
-  | { key: string; kind: "connections"; id: "connections"; depth: 0; count: number; hasChildren: boolean }
-  | { key: string; kind: "edge"; id: string; depth: 1; edge: ArchEdge };
+  | { key: string; kind: "container"; id: string; depth: number; ctx: RowContext; container: Container; hasChildren: boolean }
+  | { key: string; kind: "section" | "group"; id: string; depth: number; ctx: RowContext; section: Section; members: ArchNode[]; hasChildren: boolean }
+  | { key: string; kind: "node"; id: string; depth: number; ctx: RowContext; node: ArchNode }
+  | { key: string; kind: "connections"; id: "connections"; depth: 0; ctx: RowContext; count: number; hasChildren: boolean }
+  | { key: string; kind: "edge"; id: string; depth: 1; ctx: RowContext; edge: ArchEdge };
 
 export function layerRows(snap: StateSnapshot, folded: Set<string>): LayerRow[] {
   const { nodes, containers, sections, edges } = snap;
@@ -26,24 +33,26 @@ export function layerRows(snap: StateSnapshot, folded: Set<string>): LayerRow[] 
   const hasAnyMemberIn = (s: Section, containerId: string | undefined): boolean =>
     membersOf(s, containerId).length > 0 || sections.some((c) => c.parentId === s.id && hasAnyMemberIn(c, containerId));
 
-  const walkSection = (s: Section, containerId: string | undefined, depth: number, scope: string) => {
+  const walkSection = (s: Section, containerId: string | undefined, depth: number, scope: string, ctx: RowContext) => {
     const members = membersOf(s, containerId);
     const children = sections.filter((c) => c.parentId === s.id && hasAnyMemberIn(c, containerId));
     const key = `${scope}/${s.id}`;
-    out.push({ key, kind: s.kind === "group" ? "group" : "section", id: s.id, depth, section: s, members, hasChildren: members.length + children.length > 0 });
+    const inner: RowContext = { container: containerId, section: s.id };
+    out.push({ key, kind: s.kind === "group" ? "group" : "section", id: s.id, depth, ctx, section: s, members, hasChildren: members.length + children.length > 0 });
     if (folded.has(key)) return;
-    for (const c of children) walkSection(c, containerId, depth + 1, key);
-    for (const n of members) out.push({ key: `${key}/${n.id}`, kind: "node", id: n.id, depth: depth + 1, node: n });
+    for (const c of children) walkSection(c, containerId, depth + 1, key, inner);
+    for (const n of members) out.push({ key: `${key}/${n.id}`, kind: "node", id: n.id, depth: depth + 1, ctx: inner, node: n });
   };
 
   const walkContainer = (containerId: string | undefined, depth: number, scope: string) => {
+    const ctx: RowContext = { container: containerId };
     for (const c of containers.filter((x) => (x.parent ?? undefined) === containerId)) {
       const key = `${scope}/${c.id}`;
       const kids =
         containers.some((x) => x.parent === c.id) ||
         nodes.some((n) => n.container === c.id) ||
         sections.some((s) => !s.parentId && hasAnyMemberIn(s, c.id));
-      out.push({ key, kind: "container", id: c.id, depth, container: c, hasChildren: kids });
+      out.push({ key, kind: "container", id: c.id, depth, ctx, container: c, hasChildren: kids });
       if (!folded.has(key)) walkContainer(c.id, depth + 1, key);
     }
     const roots = sections.filter((s) => !s.parentId && hasAnyMemberIn(s, containerId));
@@ -53,21 +62,21 @@ export function layerRows(snap: StateSnapshot, folded: Set<string>): LayerRow[] 
       for (const c of sections.filter((x) => x.parentId === s.id)) cover(c);
     };
     for (const s of roots) {
-      walkSection(s, containerId, depth, scope);
+      walkSection(s, containerId, depth, scope, ctx);
       cover(s);
     }
     for (const n of nodes.filter((x) => (x.container ?? undefined) === containerId && !covered.has(x.id)))
-      out.push({ key: `${scope}/${n.id}`, kind: "node", id: n.id, depth, node: n });
+      out.push({ key: `${scope}/${n.id}`, kind: "node", id: n.id, depth, ctx, node: n });
   };
 
   walkContainer(undefined, 0, "");
   // sections with no member anywhere: still objects, listed at the top level
   for (const s of sections.filter((x) => !x.parentId && !nodes.some((n) => x.nodeIds.includes(n.id)) && !sections.some((c) => c.parentId === x.id)))
-    out.push({ key: `/${s.id}`, kind: s.kind === "group" ? "group" : "section", id: s.id, depth: 0, section: s, members: [], hasChildren: false });
+    out.push({ key: `/${s.id}`, kind: s.kind === "group" ? "group" : "section", id: s.id, depth: 0, ctx: {}, section: s, members: [], hasChildren: false });
 
   if (edges.length) {
-    out.push({ key: "/connections", kind: "connections", id: "connections", depth: 0, count: edges.length, hasChildren: true });
-    if (!folded.has("/connections")) for (const e of edges) out.push({ key: `/connections/${e.id}`, kind: "edge", id: e.id, depth: 1, edge: e });
+    out.push({ key: "/connections", kind: "connections", id: "connections", depth: 0, ctx: {}, count: edges.length, hasChildren: true });
+    if (!folded.has("/connections")) for (const e of edges) out.push({ key: `/connections/${e.id}`, kind: "edge", id: e.id, depth: 1, ctx: {}, edge: e });
   }
   return out;
 }

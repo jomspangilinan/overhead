@@ -153,8 +153,8 @@ export interface OverheadState {
   removeWaypoint: (id: string, index: number) => void;
   removeNode: (id: string) => void;
   moveNode: (id: string, x: number, y: number) => void;
-  /** Reorder: put a node right after another in the list and in its container (Layers drag). */
-  placeNodeAfter: (id: string, afterId: string) => void;
+  /** Reorder: put a node beside another in the list (Layers drag). */
+  placeNodeBeside: (id: string, targetId: string, where: "before" | "after") => void;
   setNodeSetting: (id: string, key: string, value: unknown) => void;
   addEdge: (
     from: string,
@@ -225,6 +225,7 @@ export interface OverheadState {
   moveSection: (id: string, dx: number, dy: number) => void;
   setSectionBounds: (id: string, bounds: Section["bounds"] | undefined) => void;
   setSectionColor: (id: string, color: string) => void;
+  setSectionCollapsed: (id: string, collapsed: boolean) => void;
   setSectionStyle: (id: string, patch: Partial<SectionStyle>) => void;
   setSectionParent: (id: string, parentId: string | undefined) => void;
   /** ⌘G: the selected nodes become a group (a frameless section). */
@@ -238,7 +239,7 @@ export interface OverheadState {
   setCostDisplay: (patch: Partial<CostDisplay>) => void;
   /** One anchored popover at a time: a card / section / cost / cards gear.
    *  x,y are canvas-relative. */
-  popover: { kind: "card" | "section" | "container" | "canvas"; id?: string; x: number; y: number } | null;
+  popover: { kind: "card" | "canvas"; id?: string; x: number; y: number } | null;
   setPopover: (p: OverheadState["popover"]) => void;
   /** Multi-selection on the canvas (marquee, shift-click, a selected
    *  section's members). `selectedId` stays the primary selection. */
@@ -600,15 +601,14 @@ export const useStore = create<OverheadState>((set, get) => ({
     return { ok: true as const };
   },
 
-  placeNodeAfter: (id, afterId) =>
+  placeNodeBeside: (id, targetId, where) =>
     set((s) => {
       const node = s.nodes.find((n) => n.id === id);
-      const after = s.nodes.find((n) => n.id === afterId);
-      if (!node || !after || id === afterId) return {};
+      if (!node || !s.nodes.some((n) => n.id === targetId) || id === targetId) return {};
       const rest = s.nodes.filter((n) => n.id !== id);
-      const at = rest.findIndex((n) => n.id === afterId) + 1;
-      const moved = { ...node, container: after.container };
-      return { nodes: [...rest.slice(0, at), moved, ...rest.slice(at)] };
+      const i = rest.findIndex((n) => n.id === targetId);
+      const at = where === "after" ? i + 1 : i;
+      return { nodes: [...rest.slice(0, at), node, ...rest.slice(at)] };
     }),
 
   setContainerBounds: (containerId, bounds) =>
@@ -684,6 +684,9 @@ export const useStore = create<OverheadState>((set, get) => ({
         return { ...x, bounds: bounds ? clampBounds(bounds, floor) : undefined };
       }),
     })),
+
+  setSectionCollapsed: (id, collapsed) =>
+    set((s) => ({ sections: s.sections.map((x) => (x.id === id ? { ...x, collapsed } : x)) })),
 
   setSectionColor: (id, color) =>
     set((s) => ({ sections: s.sections.map((x) => (x.id === id ? { ...x, color } : x)) })),

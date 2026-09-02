@@ -29,7 +29,7 @@ export function ContainerFrames() {
   const setContainerBounds = useStore((s) => s.setContainerBounds);
   const setContainerCollapsed = useStore((s) => s.setContainerCollapsed);
   const renameContainer = useStore((s) => s.renameContainer);
-  const setPopover = useStore((s) => s.setPopover);
+  const select = useStore((s) => s.select);
   const gesture = useFrameGesture("container", setContainerBounds);
 
   const stats = useMemo(() => {
@@ -73,13 +73,6 @@ export function ContainerFrames() {
     return false;
   };
 
-  const openGear = (c: Container) => (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const host = (e.currentTarget as HTMLElement).closest(".oh-main")?.getBoundingClientRect();
-    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    setPopover({ kind: "container", id: c.id, x: r.left - (host?.left ?? 0), y: r.bottom - (host?.top ?? 0) + 6 });
-  };
-
   return (
     <ViewportPortal>
       {ordered.map((c) => {
@@ -105,10 +98,9 @@ export function ContainerFrames() {
             detail={c.cidr}
             detailHint="name · cidr"
             stat={costOn && costDisplay.containers && stat ? `${stat.resources} · ${formatCost(stat.monthly, costDisplay)}` : undefined}
-            collapseTitle={`Collapse ${c.name}`}
+            collapseTitle={`Collapse ${c.name} to a card`}
             onCollapse={() => setContainerCollapsed(c.id, true)}
-            onGear={openGear(c)}
-            gearTitle="Container settings · name, CIDR, collapse"
+            onSelect={() => select(c.id)}
             onRename={(name, cidr) => renameContainer(c.id, name, cidr ?? "")}
             begin={gesture.begin}
             move={gesture.move}

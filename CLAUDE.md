@@ -54,8 +54,13 @@ Phases 0–9 (§15) are done under the current spec; what remains is **video, RE
   drawing on drop, the Layers tree is an accordion (Connections folded by default) with drag-and-drop,
   auto-layout is container-aware, the Connect tool drags from anywhere on a node, and the "+" pads show on
   node hover again (a `pointer-events: none` hover zone never hovered).
+  2026-09-03: **only the move grip moves a frame** (the header band selects), **frames have no gear**
+  (selecting one opens the Inspector, so the popover was a second way to edit the same fields),
+  **sections collapse** like containers, **any collapsed frame is one card** (`FrameCard`) that clicks to
+  select and expands from its own button, an **empty** frame collapses to a card too, and Layers drops
+  show a **Figma-style insertion line** (drop between rows to move out, onto a row to nest).
 - 33 tools live, 37 while a scenario is open (§9).
-- Tests: 97 across 14 vitest files.
+- Tests: 98 across 14 vitest files (`layout` and `sections-drop` are new).
 
 **Workflow the user asked for:** keep `npm run dev` running; the user reviews every change on
 `localhost:3000` **before** anything is deployed. Deploy only when they say "deploy" (`npx vercel deploy
@@ -179,13 +184,14 @@ the `ContainerKind` union.
   a position, never a clip — a member dragged past the edge grows the frame, removing members shrinks it
   back to the stored rectangle and no further. `setContainerBounds` clamps to the content floor.
 - **Direct manipulation** (`canvas/frames/FrameChrome.tsx` + `useFrameGesture.ts`, shared with sections):
-  the header band and the **move grip** drag the frame and everything inside (`frameDrag` preview,
-  `moveContainer` → `translateFrame` commits once on release → one undo step); the corner grip resizes;
-  click selects the frame; double-click the name renames (`name · cidr`); the gear opens a popover (name,
-  CIDR, collapse, open in Inspector). The right-hand cluster (**collapse · gear · move**) and the resize
-  grip are **never permanent**: `.oh-frame-cluster` is hidden until the frame is selected
-  (`data-selected`) or its header is hovered (`.oh-frame:hover`, reached through the header band since
-  the wrapper itself takes no pointer events). **Moving a frame also moves every section
+  **only the move grip** drags the frame and everything inside (`frameDrag` preview, `moveContainer` →
+  `translateFrame` commits once on release → one undo step). The header band and the name **select**, so
+  a stray press never shifts the drawing; double-click the name renames (`name · cidr`); the corner grip
+  resizes. **There is no gear on a frame**: selecting it opens it in the Inspector, and a popover
+  editing the same fields was redundant. The right-hand cluster (**collapse · move**) and the resize grip
+  are **never permanent**: `.oh-frame-cluster` is hidden until the frame is selected (`data-selected`) or
+  its header is hovered (`.oh-frame:hover`, reached through the header band since the wrapper itself
+  takes no pointer events). **Moving a frame also moves every section
   whose members are all inside it** (`movedSectionIds`); a section spanning in and out stays and stretches.
   **Gotcha:** everything rendered through `ViewportPortal` inherits React Flow's
   `.react-flow__viewport { pointer-events: none }` — `globals.css` opts the handles back in
@@ -195,9 +201,14 @@ the `ContainerKind` union.
   The same drop updates section membership (`sectionsAfterDrop`, §5b).
 - An empty container gets `DEFAULT_SIZE` bounds placed inside its parent (or clear of everything) — this is
   why "Add AWS Cloud" used to look like it did nothing: a memberless frame had nothing to derive from.
-- **Any container collapses** to a 220×84 card (`ContainerCard.tsx`); `outermostCollapsedAncestor` makes a
-  collapsed VPC win over a collapsed subnet inside it. Edges re-route to the card and edges wholly inside are
-  dropped (`Canvas.tsx` `collapsedByNode`).
+- **Any frame collapses** to one 220×84 card (`FrameCard.tsx`, React Flow type `frame`, ids
+  `container:<id>` / `section:<id>`): containers and sections alike. `outermostCollapsedAncestor` makes a
+  collapsed VPC win over a collapsed subnet inside it, and a collapsed container wins over a section
+  holding the same node. Edges re-route to the card and edges wholly inside are dropped (`Canvas.tsx`
+  `collapsedByNode`, a node → host card id map). A frame with **nothing inside** collapses too, to a card
+  at its own rectangle, so collapsing an empty VPC never makes it vanish. Clicking a card selects the
+  frame itself (the Inspector shows it, with Expand); its expand button and a double-click both open it;
+  hover isolation never dims a card (`.oh-frame-card`).
 - `removeContainer` re-parents children and members upward — never deletes what was inside.
 
 ### 5b. Sections and groups — yours, free-form, orthogonal (`Section` in `src/engine/model.ts`)
@@ -223,6 +234,8 @@ the `ContainerKind` union.
 - **Folds with its container.** Members hidden inside a collapsed container leave the section's box
   (`FrameOpts.hidden`); a section whose every member is hidden is not drawn at all. Before this a
   collapsed container's card sat inside a still-drawn section, which read as the section owning it.
+- **Sections collapse** exactly as containers do (`setSectionCollapsed`; the collapse control on the
+  frame, the Layers row, and the Inspector): members hide and the section becomes a `FrameCard`.
 - A **group** (`kind: 'group'`, ⌘G on a multi-selection, ⇧⌘G ungroups) draws nothing: a folder in Layers
   whose members select and move together. Same model, `addGroup` / `ungroup`.
 - `parentId` nests sections/groups under a section **in the tree only** (`layers.ts`).
@@ -338,11 +351,14 @@ the palette at bottom-centre, never `display: none`.
   Disclosure triangles fold the tree, not the canvas; the top level is an **accordion**: Connections
   starts folded, opening it folds every other top-level row, opening any top-level object folds
   Connections. Click selects the object itself; hover reveals collapse-on-canvas and remove. **Rows
-  drag**: a resource onto a frame (`moveIntoContainer`) or a section (`setSectionNodes`), a frame onto a
-  frame (`setContainerParent`, cycles refused), a section onto a section (`setSectionParent`) or a frame
-  (its members move in), a resource onto a resource (`placeNodeAfter`: reorder, same frame), anything
-  onto the header line (top level). No header buttons (the toolbar's A and S already add frames and
-  sections). No tabs.
+  drag, Figma-style**: the pointer's height over a row decides (`whereIn`) · the middle third **nests**
+  it (a resource into a frame with `moveIntoContainer` or a section with `setSectionNodes`, a frame into
+  a frame with `setContainerParent` where only a cycle is refused, a section under a section with
+  `setSectionParent`), the top and bottom quarters draw an **insertion line** and drop it *beside* that
+  row, adopting that row's own frame and section (`LayerRow.ctx`, from `engine/layers.ts`). That is how
+  a row moves **out** of something: drop it beside a shallower row, or on the header line for the top
+  level. Two resources beside each other also reorder (`placeNodeBeside`). No header buttons (the
+  toolbar's A and S already add frames and sections). No tabs.
 - **Palette** (`Palette.tsx`, floating above the toolbar, A or `/`): search, the ten services (click adds —
   inside a selected region/cloud — or drag onto the canvas) and the container kinds, which create with the
   validator's verdict as tooltip, select the new frame and **pan to it when it lands off-screen** (a second
@@ -378,8 +394,9 @@ select and a held drag a move; ⇧/⌘-click adds to the selection, marquee sele
 **Gears open one anchored popover** (`Popovers.tsx`, `store.popover`): the **View** gear on the toolbar
 (Layers: sections / security badges / cost figures / request-events-data edges / grid · Cards: card view
 and what every card shows, `cardShow` · Cost: period, decimals, where it shows, `costDisplay`); the card
-gear on a node (Security settings + this card's lines, cost, badge → `node.card`); the frame gear on a
-container (name, CIDR, collapse) or a section (colour, border, fill). The UI slice (`cardShow`,
+gear on a node (Security settings + this card's lines, cost, badge → `node.card`). **Frames have no
+gear** and `popover.kind` is only `card | canvas`: a frame's name, CIDR, appearance and collapse live in
+the Inspector, which selecting it already opens. The UI slice (`cardShow`,
 `costDisplay`) autosaves under `ui`. **Tooltip CSS lives in `@layer components`** so Tailwind's `absolute`
 still wins on the element.
 
@@ -521,11 +538,12 @@ src/
   engine/layers.ts  layerRows() — the Layers tree as rows (positional nesting of sections/groups)
   engine/frames.ts  container + section geometry, hit-test, translateFrame / movedNodeIds / movedSectionIds
   canvas/           App.tsx (shell) · Canvas.tsx (sides + fans, multi-select, section drawing, drag → drop
-                    re-parent, connect start/end) · AwsNode (4 handles, + pads, gear, badge) · ContainerCard ·
+                    re-parent, connect start/end) · AwsNode (4 handles, + pads, body handle, gear, badge) ·
+                    FrameCard (any collapsed frame) ·
                     ContainerFrames · SectionFrames · frames/FrameChrome + frames/useFrameGesture (shared) ·
                     TypedEdge (waypoints, + mids, styling toolbar, label edit) · EdgeStylePicker ·
                     edgeGeometry.ts · edgeStyle.ts · nodeMetrics.ts · Inspector (node/container/section/edge)
-                    · Popovers (view / card / container / section gears) · Palette (floating, connect-from) ·
+                    · Popovers (view + card gears only) · Palette (floating, connect-from) ·
                     Templates (dialog) · Notice · ExportPanel · ScenarioBanner · BillDrop · HowTo · Keyboard ·
                     Icon · Sprite
     chrome/         Toolbar (bottom-centre, View gear) · Dock · TopBar · BottomBar · Floats (zoom) · LayersPanel

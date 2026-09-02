@@ -1,12 +1,14 @@
 "use client";
 
 // The chrome every frame shares, containers and sections alike: the border,
-// a header band that drags, an optional kind icon and kind label, the name
-// (double-click to rename), a right-hand cluster (stat · collapse · gear ·
-// move grip) that shows only while the frame is selected or its header is
-// hovered, and the corner resize grip. Rendered inside a ViewportPortal;
-// the interactive parts opt back into pointer events (globals.css) and
-// carry nopan/nodrag.
+// a header band that *selects* (never drags · the user asked that only the
+// move grip move a frame), an optional kind icon and kind label, the name
+// (double-click to rename), a right-hand cluster (stat · collapse · move
+// grip) that shows only while the frame is selected or its header is
+// hovered, and the corner resize grip. There is no gear: selecting a frame
+// already opens it in the Inspector, and two ways to edit the same fields
+// read as redundant. Rendered inside a ViewportPortal; the interactive
+// parts opt back into pointer events (globals.css) and carry nopan/nodrag.
 
 import { useState } from "react";
 import type { Box } from "@/engine/frames";
@@ -31,21 +33,13 @@ export interface FrameChromeProps {
   stat?: string;
   collapseTitle?: string;
   onCollapse?: () => void;
-  onGear: (e: React.MouseEvent) => void;
-  gearTitle: string;
+  onSelect: () => void;
   onRename: (name: string, detail?: string) => void;
   begin: (e: React.PointerEvent, id: string, mode: "move" | "resize", box: Box) => void;
   move: (e: React.PointerEvent) => void;
   end: (e: React.PointerEvent) => void;
   moveTitle: string;
 }
-
-const Gear = () => (
-  <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="8" cy="8" r="2.4" />
-    <path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4" />
-  </svg>
-);
 
 const Move = () => (
   <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -73,7 +67,9 @@ export function FrameChrome(p: FrameChromeProps) {
     border: `1px solid ${stroke}`,
     color: p.selected ? "var(--accent-ink)" : p.color,
   };
-  const gestures = {
+  // Only the move grip drags. The header band and the name select, so a
+  // stray press on a frame never shifts the drawing.
+  const grip = {
     onPointerDown: (e: React.PointerEvent) => {
       if (editing) return;
       p.begin(e, p.id, "move", box);
@@ -81,6 +77,13 @@ export function FrameChrome(p: FrameChromeProps) {
     onPointerMove: p.move,
     onPointerUp: p.end,
     onPointerCancel: p.end,
+  };
+  const pick = {
+    onPointerDown: (e: React.PointerEvent) => e.stopPropagation(),
+    onClick: (e: React.MouseEvent) => {
+      e.stopPropagation();
+      p.onSelect();
+    },
   };
   return (
     <div className="oh-frame" data-selected={p.selected ? "true" : "false"}>
@@ -101,8 +104,8 @@ export function FrameChrome(p: FrameChromeProps) {
       <div
         className="oh-frame-head nopan nodrag absolute"
         style={{ left: box.l, top: box.t, width: w, height: HEAD_H, borderRadius: `${p.radius ?? 10}px ${p.radius ?? 10}px 0 0` }}
-        title={`${p.kindLabel} · drag to move with its contents · click to select`}
-        {...gestures}
+        title={`${p.kindLabel} · click to select · use the move grip to move it with its contents`}
+        {...pick}
       />
       {p.icon ? (
         <svg className="pointer-events-none absolute" style={{ left: box.l + 7, top: box.t + 7 }} width="24" height="24">
@@ -138,7 +141,7 @@ export function FrameChrome(p: FrameChromeProps) {
           className="oh-frame-name nopan nodrag absolute cursor-text select-none whitespace-nowrap text-[11.5px] font-medium"
           style={{ left: labelLeft, top: box.t + 19, maxWidth: Math.max(60, w - 130), overflow: "hidden", textOverflow: "ellipsis", color: "var(--ink-15)" }}
           title={`Double-click to rename${p.detailHint ? ` (${p.detailHint})` : ""}`}
-          {...gestures}
+          {...pick}
           onDoubleClick={(e) => {
             e.stopPropagation();
             setEditing(true);
@@ -169,17 +172,7 @@ export function FrameChrome(p: FrameChromeProps) {
             <Collapse />
           </button>
         ) : null}
-        <button
-          className="oh-frame-gear nopan nodrag grid w-[22px] place-items-center rounded-md"
-          style={btn}
-          title={p.gearTitle}
-          aria-label={p.gearTitle}
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={p.onGear}
-        >
-          <Gear />
-        </button>
-        <div className="oh-frame-move nopan nodrag grid w-[22px] place-items-center rounded-md" style={btn} title={p.moveTitle} {...gestures}>
+        <div className="oh-frame-move nopan nodrag grid w-[22px] place-items-center rounded-md" style={btn} title={p.moveTitle} {...grip}>
           <Move />
         </div>
       </div>

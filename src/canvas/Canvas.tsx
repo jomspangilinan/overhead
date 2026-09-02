@@ -17,15 +17,19 @@ import { useStore, cardModeOf, type Layer } from "@/store/useStore";
 import { arrowModeOf, type EdgeKind, type Side } from "@/engine/model";
 import { pickSides, shapeAt, type Side4 } from "./edgeGeometry";
 import { AwsNode, NODE_W, NODE_H } from "./AwsNode";
-import { ContainerCard, CARD_W, CARD_H } from "./ContainerCard";
+import { FrameCard, CARD_W, CARD_H } from "./FrameCard";
 import { TypedEdge } from "./TypedEdge";
 import { ContainerFrames } from "./ContainerFrames";
 import { SectionFrames } from "./SectionFrames";
 import { outermostCollapsedAncestor } from "@/engine/containers";
 import { frameBoxes, hitContainer, movedNodeIds, sectionsAfterDrop } from "@/engine/frames";
 
-const nodeTypes: NodeTypes = { aws: AwsNode, container: ContainerCard };
+const nodeTypes: NodeTypes = { aws: AwsNode, frame: FrameCard };
 const edgeTypes: EdgeTypes = { typed: TypedEdge };
+
+/** React Flow ids for the collapsed-frame cards · `container:<id>` / `section:<id>`. */
+const isFrameCard = (id: string) => id.startsWith("container:") || id.startsWith("section:");
+const frameIdOf = (id: string) => id.slice(id.indexOf(":") + 1);
 
 const sideOf = (handle: string | null | undefined): Exclude<Side, "auto"> | undefined =>
   handle === "left" || handle === "right" || handle === "top" || handle === "bottom" ? handle : undefined;
@@ -129,20 +133,28 @@ export function Canvas() {
   const moveIntoContainer = useStore((s) => s.moveIntoContainer);
   const notify = useStore((s) => s.notify);
 
-  // Collapsed containers: members hide, one card appears at their centroid,
-  // edges re-route to it, and edges wholly inside it are dropped.
+  const sections = useStore((s) => s.sections);
+
+  // Collapsed frames: members hide, one card appears at their centroid (or
+  // at the frame's own rectangle when it holds nothing), edges re-route to
+  // it, and edges wholly inside it are dropped. A collapsed container wins
+  // over a collapsed section holding the same node.
   const collapsedByNode = useMemo(() => {
     const map = new Map<string, string>();
     for (const n of nodes) {
       const host = outermostCollapsedAncestor(containers, n.container);
-      if (host) map.set(n.id, host);
+      if (host) {
+        map.set(n.id, `container:${host}`);
+        continue;
+      }
+      const sec = sections.find((s) => s.collapsed && s.kind !== "group" && s.nodeIds.includes(n.id));
+      if (sec) map.set(n.id, `section:${sec.id}`);
     }
     return map;
-  }, [containers, nodes]);
+  }, [containers, nodes, sections]);
 
   // A container frame mid-drag carries its members visually; the store
   // moves them once, on release, so undo sees a single step.
-  const sections = useStore((s) => s.sections);
   const frameDragMembers = useMemo(
     () => (frameDrag ? movedNodeIds({ nodes, containers, sections }, frameDrag) : null),
     [frameDrag, containers, nodes, sections],
@@ -172,25 +184,43 @@ export function Canvas() {
           measured: { width: NODE_W, height: NODE_H },
         };
       });
-    const hosts = new Set(collapsedByNode.values());
-    for (const id of hosts) {
-      const members = nodes.filter((n) => collapsedByNode.get(n.id) === id);
-      if (!members.length) continue;
-      const cx = members.reduce((a, n) => a + n.position.x, 0) / members.length;
-      const cy = members.reduce((a, n) => a + n.position.y, 0) / members.length;
+    // One card per collapsed frame, including a frame holding nothing (it
+    // sits where its own rectangle is · collapsing an empty VPC must not
+    // make it vanish). A frame inside an already-collapsed one draws none.
+    const card = (key: string, kind: "container" | "section", id: string, bounds: { x: number; y: number; w: number; h: number } | undefined) => {
+      const members = nodes.filter((n) => collapsedByNode.get(n.id) === key);
+      const centre = members.length
+        ? {
+            x: members.reduce((a, n) => a + n.position.x, 0) / members.length,
+            y: members.reduce((a, n) => a + n.position.y, 0) / members.length,
+          }
+        : bounds
+          ? { x: bounds.x + bounds.w / 2, y: bounds.y + bounds.h / 2 }
+          : null;
+      if (!centre) return;
       visible.push({
-        id: `container:${id}`,
-        type: "container",
-        position: { x: cx - CARD_W / 2, y: cy - CARD_H / 2 },
-        data: { containerId: id },
+        id: key,
+        type: "frame",
+        position: { x: centre.x - CARD_W / 2, y: centre.y - CARD_H / 2 },
+        data: { frameKind: kind, frameId: id },
+        selected: selectedId === id,
+        className: "oh-frame-card",
         draggable: false,
         width: CARD_W,
         height: CARD_H,
         measured: { width: CARD_W, height: CARD_H },
       });
+    };
+    for (const c of containers) {
+      if (!c.collapsed || outermostCollapsedAncestor(containers, c.parent)) continue;
+      card(`container:${c.id}`, "container", c.id, c.bounds);
+    }
+    for (const s of sections) {
+      if (!s.collapsed || s.kind === "group") continue;
+      card(`section:${s.id}`, "section", s.id, s.bounds);
     }
     return visible;
-  }, [nodes, collapsedByNode, litIds, frameDrag, frameDragMembers, selectedId, selectedIds]);
+  }, [nodes, containers, sections, collapsedByNode, litIds, frameDrag, frameDragMembers, selectedId, selectedIds]);
 
   const rfEdges: Edge[] = useMemo(() => {
     // Shapes as currently drawn (carried frame offsets included) so the
@@ -206,12 +236,8 @@ export function Canvas() {
     // First pass: resolve endpoints (collapsed hosts) and drop duplicates.
     const resolved: { e: (typeof edges)[number]; from: string; to: string; rerouted: boolean }[] = [];
     for (const e of edges) {
-      const from = collapsedByNode.has(e.from)
-        ? `container:${collapsedByNode.get(e.from)}`
-        : e.from;
-      const to = collapsedByNode.has(e.to)
-        ? `container:${collapsedByNode.get(e.to)}`
-        : e.to;
+      const from = collapsedByNode.get(e.from) ?? e.from;
+      const to = collapsedByNode.get(e.to) ?? e.to;
       const rerouted = from !== e.from || to !== e.to;
       // a genuine self-loop draws; a loop created by collapsing is dropped
       if (from === to && rerouted) continue;
@@ -351,7 +377,7 @@ export function Canvas() {
   const connectFrom = useRef<{ x: number; y: number } | null>(null);
   const onNodeDragStart = useCallback(
     (_e: unknown, n: Node) => {
-      if (n.id.startsWith("container:")) return;
+      if (isFrameCard(n.id)) return;
       const cur = useStore.getState().nodes.find((x) => x.id === n.id);
       dragStart.current = cur ? { ...cur.position } : null;
       setDragging(n.id);
@@ -363,13 +389,13 @@ export function Canvas() {
       const cx = n.position.x + NODE_W / 2;
       const cy = n.position.y + NODE_H / 2;
       for (const d of dragged ?? [n]) {
-        if (d.id.startsWith("container:")) continue;
+        if (isFrameCard(d.id)) continue;
         moveNode(d.id, d.position.x + NODE_W / 2, d.position.y + NODE_H / 2);
       }
       setDragging(null);
       // re-parenting applies to a lone drag; a multi-drag keeps its frames
       if (dragged && dragged.length > 1) return;
-      if (n.id.startsWith("container:")) return;
+      if (isFrameCard(n.id)) return;
       const st = useStore.getState();
       const node = st.nodes.find((x) => x.id === n.id);
       if (!node) return;
@@ -423,7 +449,7 @@ export function Canvas() {
         onNodeDragStart={onNodeDragStart}
         onNodeDrag={(_e, _n, dragged) => {
           for (const n of dragged) {
-            if (n.id.startsWith("container:")) continue;
+            if (isFrameCard(n.id)) continue;
             moveNode(n.id, n.position.x + NODE_W / 2, n.position.y + NODE_H / 2);
           }
         }}
@@ -439,7 +465,7 @@ export function Canvas() {
             if (c.selected) next.add(c.id);
             else next.delete(c.id);
           }
-          setSelectedIds([...next].filter((id) => !id.startsWith("container:")));
+          setSelectedIds([...next].filter((id) => !isFrameCard(id)));
         }}
         onNodeDragStop={onNodeDragStop}
         onDragOver={(e) => {
@@ -453,7 +479,7 @@ export function Canvas() {
         onNodeClick={(e, n) => {
           // ⇧ / ⌘ click adds to the selection (React Flow has already
           // applied its own select change through onNodesChange)
-          if ((e.shiftKey || e.metaKey || e.ctrlKey) && !n.id.startsWith("container:")) {
+          if ((e.shiftKey || e.metaKey || e.ctrlKey) && !isFrameCard(n.id)) {
             const st = useStore.getState();
             const ids = new Set(st.selectedIds);
             if (st.selectedId && st.nodes.some((x) => x.id === st.selectedId)) ids.add(st.selectedId);
@@ -461,7 +487,7 @@ export function Canvas() {
             useStore.setState({ selectedId: n.id, selectedEdgeId: null, selectedIds: [...ids] });
             return;
           }
-          if (tool === "trace" && !n.id.startsWith("container:")) {
+          if (tool === "trace" && !isFrameCard(n.id)) {
             const st = useStore.getState();
             const visited = new Set<string>([n.id]);
             const queue = [n.id];
@@ -477,7 +503,9 @@ export function Canvas() {
             st.setTrace([...visited]);
             return;
           }
-          select(n.id);
+          // a collapsed frame's card selects the frame itself, so the
+          // Inspector shows it (with Expand) instead of nothing
+          select(isFrameCard(n.id) ? frameIdOf(n.id) : n.id);
         }}
         onEdgeClick={(e, edge) => {
           e.stopPropagation();
@@ -500,7 +528,7 @@ export function Canvas() {
         }}
         onConnectEnd={(evt, state) => {
           setConnecting(false);
-          if (state.isValid || !state.fromNode || state.fromNode.id.startsWith("container:")) return;
+          if (state.isValid || !state.fromNode || isFrameCard(state.fromNode.id)) return;
           const client = "clientX" in evt ? { x: evt.clientX, y: evt.clientY } : { x: evt.changedTouches[0].clientX, y: evt.changedTouches[0].clientY };
           // With the Connect tool the whole node is a handle, so a plain
           // click (no drag) is a select, not "connect from here".
@@ -526,8 +554,8 @@ export function Canvas() {
         isValidConnection={(c) =>
           !!c.source &&
           !!c.target &&
-          !c.source.startsWith("container:") &&
-          !c.target.startsWith("container:") &&
+          !isFrameCard(c.source) &&
+          !isFrameCard(c.target) &&
           !useStore
             .getState()
             .edges.some((e) => e.from === c.source && e.to === c.target)

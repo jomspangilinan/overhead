@@ -32,6 +32,22 @@ describe("layer rows", () => {
     expect(bare).toEqual(["c"]);
   });
 
+  it("every row carries the frame and section that hold it, so a drop beside it can adopt them", () => {
+    const s = snap({
+      containers: [{ id: "vpc", kind: "vpc", name: "vpc", collapsed: false }],
+      nodes: [node("a", "vpc"), node("b")],
+      sections: [{ id: "s1", name: "Payments", color: "#f00", nodeIds: ["a"], collapsed: false }],
+    });
+    const rows = layerRows(s, new Set());
+    const ctxOf = (kind: string, id: string) => rows.find((r) => r.kind === kind && r.id === id)!.ctx;
+    // the frame itself sits at the top level; the section sits in the frame
+    expect(ctxOf("container", "vpc")).toEqual({ container: undefined });
+    expect(ctxOf("section", "s1")).toEqual({ container: "vpc" });
+    // a member of the section carries both; a loose node carries neither
+    expect(ctxOf("node", "a")).toEqual({ container: "vpc", section: "s1" });
+    expect(ctxOf("node", "b")).toEqual({ container: undefined });
+  });
+
   it("a memberless section is still an object at the top level", () => {
     const rows = layerRows(snap({ sections: [{ id: "s", name: "Empty", color: "#000", nodeIds: [], collapsed: false }] }), new Set());
     expect(rows).toEqual([expect.objectContaining({ kind: "section", id: "s", depth: 0 })]);

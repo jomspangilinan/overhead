@@ -25,16 +25,18 @@ export function SectionFrames() {
   const selectedId = useStore((s) => s.selectedId);
   const setSectionBounds = useStore((s) => s.setSectionBounds);
   const renameSection = useStore((s) => s.renameSection);
-  const setPopover = useStore((s) => s.setPopover);
+  const setSectionCollapsed = useStore((s) => s.setSectionCollapsed);
+  const select = useStore((s) => s.select);
   const gesture = useFrameGesture("section", setSectionBounds);
 
   // Members hidden inside a collapsed container leave the section's box;
   // a section whose every member is hidden is not drawn at all (it folds
   // with the container it is in).
-  const hidden = useMemo(
-    () => new Set(nodes.filter((n) => outermostCollapsedAncestor(containers, n.container)).map((n) => n.id)),
-    [nodes, containers],
-  );
+  const hidden = useMemo(() => {
+    const out = new Set(nodes.filter((n) => outermostCollapsedAncestor(containers, n.container)).map((n) => n.id));
+    for (const s of sections) if (s.collapsed && s.kind !== "group") for (const id of s.nodeIds) out.add(id);
+    return out;
+  }, [nodes, containers, sections]);
 
   // Boxes as drawn; a frame mid-drag shifts every section riding along
   // (the dragged section's tree, or sections wholly inside a dragged
@@ -56,7 +58,8 @@ export function SectionFrames() {
   return (
     <ViewportPortal>
       {sections.map((s) => {
-        if (s.kind === "group") return null;
+        // a collapsed section draws a card (Canvas) instead of a frame
+        if (s.kind === "group" || s.collapsed) return null;
         const box: Box | undefined = boxes.get(s.id);
         if (!box) return null;
         return (
@@ -72,13 +75,9 @@ export function SectionFrames() {
             selected={selectedId === s.id}
             kindLabel={`Section · ${s.nodeIds.length}`}
             name={s.name}
-            onGear={(e) => {
-              e.stopPropagation();
-              const host = (e.currentTarget as HTMLElement).closest(".oh-main")?.getBoundingClientRect();
-              const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-              setPopover({ kind: "section", id: s.id, x: r.left - (host?.left ?? 0), y: r.bottom - (host?.top ?? 0) + 6 });
-            }}
-            gearTitle="Section appearance · colour, border, fill"
+            collapseTitle={`Collapse ${s.name} to a card`}
+            onCollapse={() => setSectionCollapsed(s.id, true)}
+            onSelect={() => select(s.id)}
             onRename={(name) => renameSection(s.id, name)}
             begin={gesture.begin}
             move={gesture.move}

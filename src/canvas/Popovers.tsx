@@ -1,17 +1,17 @@
 "use client";
 
-// One anchored popover at a time, opened by a gear: a node's card & security
-// settings, a section's appearance, the cost display, or what cards show
-// globally. Positioned in canvas coordinates (store.popover), clamped to
-// the canvas; closes on outside click or Escape.
+// One anchored popover at a time, opened by a gear: a node's card and
+// security settings, or the View gear (layers, cards, cost display).
+// Frames have no gear · selecting one opens it in the Inspector, and two
+// ways to edit the same fields read as redundant. Positioned in canvas
+// coordinates (store.popover), clamped to the canvas; closes on outside
+// click or Escape.
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useStore } from "@/store/useStore";
 import { getService } from "@/engine/services";
 import { validateSetting, settingsInGroup, defaultSettings, type SettingDef } from "@/engine/defineService";
 import { DEFAULT_CARD_SHOW, DEFAULT_COST_DISPLAY } from "@/engine/model";
-
-const SWATCHES = ["#3B82F6", "#E7157B", "#F0B34E", "#7AA116", "#8C4FFF", "#00A4A6", "#F0796A", "#9AA6B7"];
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -158,61 +158,6 @@ function CardPopover({ nodeId }: { nodeId: string }) {
   );
 }
 
-export function SectionAppearance({ sectionId }: { sectionId: string }) {
-  const section = useStore((s) => s.sections.find((x) => x.id === sectionId));
-  const renameSection = useStore((s) => s.renameSection);
-  const setSectionColor = useStore((s) => s.setSectionColor);
-  const setSectionStyle = useStore((s) => s.setSectionStyle);
-  if (!section) return null;
-  const style = section.style ?? {};
-  const dash = style.dash ?? "dashed";
-  const width = style.width ?? 1.4;
-  const fill = style.fill ?? true;
-  return (
-    <div className="flex flex-col gap-2">
-      <input
-        className="oh-field text-[12px] font-semibold"
-        value={section.name}
-        onChange={(e) => renameSection(section.id, e.target.value)}
-        aria-label="Section name"
-      />
-      <Row label="Colour">
-        <div className="flex flex-wrap items-center gap-1">
-          {SWATCHES.map((c) => (
-            <button key={c} aria-label={c} className="h-4 w-4 rounded-[4px]" style={{ background: c, outline: section.color.toLowerCase() === c.toLowerCase() ? "2px solid var(--ink)" : undefined, outlineOffset: 1 }} onClick={() => setSectionColor(section.id, c)} />
-          ))}
-          <input type="color" value={section.color} onChange={(e) => setSectionColor(section.id, e.target.value)} className="h-5 w-6 cursor-pointer rounded border-0 bg-transparent p-0" aria-label="Custom colour" />
-        </div>
-      </Row>
-      {section.kind === "group" ? null : (
-        <>
-          <Row label="Border">
-            <div className="flex gap-1">
-              {(["solid", "dashed", "dotted"] as const).map((d) => (
-                <button key={d} aria-pressed={dash === d} className="grid h-6 flex-1 place-items-center rounded-md" style={{ background: dash === d ? "var(--accent-bg)" : "var(--panel-2)", border: "1px solid var(--line)", color: dash === d ? "var(--accent-ink)" : "var(--ink-2)" }} onClick={() => setSectionStyle(section.id, { dash: d === "dashed" ? undefined : d })} title={d}>
-                  <svg width="26" height="8" viewBox="0 0 26 8" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-                    <path d="M1 4h24" strokeDasharray={d === "dashed" ? "6 4" : d === "dotted" ? "1.5 4" : undefined} />
-                  </svg>
-                </button>
-              ))}
-            </div>
-          </Row>
-          <Row label="Width">
-            <div className="flex items-center gap-2">
-              <input type="range" min={1} max={4} step={0.5} className="w-full" style={{ accentColor: "var(--accent)" }} value={width} onChange={(e) => setSectionStyle(section.id, { width: Number(e.target.value) === 1.4 ? undefined : Number(e.target.value) })} aria-label="Border width" />
-              <span className="mono w-8 text-right text-[11px]" style={{ color: "var(--ink-2)" }}>
-                {width.toFixed(1)}
-              </span>
-            </div>
-          </Row>
-          <Check checked={fill} onChange={(v) => setSectionStyle(section.id, { fill: v ? undefined : false })}>
-            Tint the frame
-          </Check>
-        </>
-      )}
-    </div>
-  );
-}
 
 function ViewPopover() {
   const layers = useStore((s) => s.layers);
@@ -260,43 +205,6 @@ function ViewPopover() {
         <CostPopover />
       )}
     </>
-  );
-}
-
-function ContainerPopover({ containerId }: { containerId: string }) {
-  const container = useStore((s) => s.containers.find((c) => c.id === containerId));
-  const renameContainer = useStore((s) => s.renameContainer);
-  const setContainerCollapsed = useStore((s) => s.setContainerCollapsed);
-  const select = useStore((s) => s.select);
-  const setRightDock = useStore((s) => s.setRightDock);
-  const setPopover = useStore((s) => s.setPopover);
-  if (!container) return null;
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="text-[10px] uppercase tracking-[0.12em]" style={{ color: "var(--ink-4)" }}>
-        {container.kind}
-      </div>
-      <input className="oh-field text-[12px] font-semibold" value={container.name} onChange={(e) => renameContainer(container.id, e.target.value)} aria-label="Name" />
-      {container.kind === "vpc" || container.kind === "subnetpub" || container.kind === "subnetpri" ? (
-        <Row label="CIDR">
-          <input className="oh-field mono" value={container.cidr ?? ""} placeholder="10.0.0.0/16" onChange={(e) => renameContainer(container.id, container.name, e.target.value)} />
-        </Row>
-      ) : null}
-      <Check checked={container.collapsed} onChange={(v) => setContainerCollapsed(container.id, v)}>
-        Collapse to a card on the canvas
-      </Check>
-      <button
-        className="self-start rounded border px-2 py-0.5 text-[10.5px] hover:bg-panel-2"
-        style={{ borderColor: "var(--line)", color: "var(--ink-2)" }}
-        onClick={() => {
-          select(container.id);
-          setRightDock(true);
-          setPopover(null);
-        }}
-      >
-        Open in the Inspector
-      </button>
-    </div>
   );
 }
 
@@ -367,7 +275,7 @@ function CardsPopover() {
         Security badge (when the layer is on)
       </Check>
       <div className="text-[10.5px]" style={{ color: "var(--ink-4)" }}>
-        A card's own gear overrides these for that resource.
+        The gear on a card overrides these for that resource.
       </div>
       <button className="self-start rounded border px-2 py-0.5 text-[10.5px] hover:bg-panel-2" style={{ borderColor: "var(--line)", color: "var(--ink-2)" }} onClick={() => set({ ...DEFAULT_CARD_SHOW })}>
         Reset
@@ -416,8 +324,6 @@ export function Popovers() {
       onPointerDown={(e) => e.stopPropagation()}
     >
       {popover.kind === "card" && popover.id ? <CardPopover nodeId={popover.id} /> : null}
-      {popover.kind === "section" && popover.id ? <SectionAppearance sectionId={popover.id} /> : null}
-      {popover.kind === "container" && popover.id ? <ContainerPopover containerId={popover.id} /> : null}
       {popover.kind === "canvas" ? <ViewPopover /> : null}
     </div>
   );

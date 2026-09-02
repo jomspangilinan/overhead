@@ -385,7 +385,7 @@ function ContainerInspector({ containerId }: { containerId: string }) {
               b={{ label: "H", value: box.b - box.t, onChange: (v) => setContainerBounds(container.id, { x: box.l, y: box.t, w: box.r - box.l, h: v }) }}
             />
             <p className="text-[10.5px] leading-snug" style={{ color: "var(--ink-4)" }}>
-              Never smaller than what it holds{floor ? ` (${Math.round(floor.r - floor.l)}×${Math.round(floor.b - floor.t)})` : ""}. Drag the header on the canvas to move it with its contents.
+              Never smaller than what it holds{floor ? ` (${Math.round(floor.r - floor.l)}×${Math.round(floor.b - floor.t)})` : ""}. Drag the move grip on the canvas to move it with its contents.
             </p>
             {container.bounds && floor ? (
               <button className="self-start rounded border px-2 py-1 text-[11px] hover:bg-panel-2" style={{ borderColor: "var(--line)", color: "var(--ink-2)" }} onClick={() => setContainerBounds(container.id, undefined)}>
@@ -616,6 +616,7 @@ function SectionInspector({ sectionId }: { sectionId: string }) {
   const setSectionNodes = useStore((s) => s.setSectionNodes);
   const setSectionBounds = useStore((s) => s.setSectionBounds);
   const setSectionParent = useStore((s) => s.setSectionParent);
+  const setSectionCollapsed = useStore((s) => s.setSectionCollapsed);
   const removeSection = useStore((s) => s.removeSection);
   const ungroup = useStore((s) => s.ungroup);
   const select = useStore((s) => s.select);
@@ -749,6 +750,15 @@ function SectionInspector({ sectionId }: { sectionId: string }) {
             ))}
           </select>
         </Row>
+        {isGroup ? null : (
+          <button
+            className="self-start rounded border px-2 py-1 text-[11px] hover:bg-panel-2"
+            style={{ borderColor: "var(--line)", color: "var(--ink-2)" }}
+            onClick={() => setSectionCollapsed(section.id, !section.collapsed)}
+          >
+            {section.collapsed ? "Expand" : "Collapse to a card"}
+          </button>
+        )}
       </Section>
 
       {isGroup ? null : (
