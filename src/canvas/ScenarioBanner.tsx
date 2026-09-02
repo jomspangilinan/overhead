@@ -4,20 +4,27 @@
 // drawn in saving/critical colour, commit/discard that also retire the
 // scenario tools.
 
+import { useMemo } from "react";
 import { useStore, snapshotOf, pricingOf } from "@/store/useStore";
 import { computeDelta } from "@/engine/delta";
 import { closeScenarioFromUi } from "@/webmcp/scenario";
 
 export function ScenarioBanner() {
   const scenario = useStore((s) => s.scenario);
-  const delta = useStore((s) => {
-    if (!s.scenario) return null;
+  const nodes = useStore((s) => s.nodes);
+  const edges = useStore((s) => s.edges);
+  const traffic = useStore((s) => s.traffic);
+  const region = useStore((s) => s.region);
+  const delta = useMemo(() => {
+    if (!scenario) return null;
     try {
-      return computeDelta(s.scenario.base, snapshotOf(s), pricingOf(s));
+      const s = useStore.getState();
+      return computeDelta(scenario.base, snapshotOf(s), pricingOf(s));
     } catch {
       return null;
     }
-  });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scenario, nodes, edges, traffic, region]);
 
   if (!scenario || !delta) return null;
   const sign = delta.delta > 0 ? "+" : "";

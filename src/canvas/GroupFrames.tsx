@@ -4,6 +4,7 @@
 // and each expanded logical/network group around its members, with the
 // official colour, corner icon, and a member-count + subtotal readout.
 
+import { useMemo } from "react";
 import { ViewportPortal } from "@xyflow/react";
 import { useStore, pricingOf, snapshotOf } from "@/store/useStore";
 import { allCosts } from "@/engine/cost";
@@ -100,15 +101,20 @@ function Frame({
 export function GroupFrames() {
   const nodes = useStore((s) => s.nodes);
   const groups = useStore((s) => s.groups);
-  const costs = useStore((s) => {
+  const edges = useStore((s) => s.edges);
+  const traffic = useStore((s) => s.traffic);
+  const region = useStore((s) => s.region);
+  const costs = useMemo(() => {
     try {
+      const s = useStore.getState();
       return new Map(
         allCosts(snapshotOf(s), pricingOf(s)).map((c) => [c.nodeId, c.monthly]),
       );
     } catch {
       return new Map<string, number>();
     }
-  });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nodes, edges, traffic, region]);
 
   const cloudBox = boxAround(
     nodes.map((n) => n.position),

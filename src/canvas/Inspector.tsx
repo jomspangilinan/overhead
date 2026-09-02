@@ -10,7 +10,7 @@ import { validateSetting, type SettingDef } from "@/engine/defineService";
 import { nodeCost } from "@/engine/cost";
 import { findingsForNode } from "@/engine/findings";
 import { toMoney } from "@/engine/model";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 function Field({
   nodeId,
@@ -95,23 +95,31 @@ export function Inspector() {
   const node = useStore((s) => s.nodes.find((n) => n.id === selectedId));
   const removeNode = useStore((s) => s.removeNode);
   const select = useStore((s) => s.select);
-  const cost = useStore((s) => {
-    if (!selectedId || !s.nodes.some((n) => n.id === selectedId)) return null;
+  const edges = useStore((s) => s.edges);
+  const traffic = useStore((s) => s.traffic);
+  const region = useStore((s) => s.region);
+
+  const cost = useMemo(() => {
+    if (!node) return null;
     try {
-      return nodeCost(snapshotOf(s), selectedId, pricingOf(s));
+      const s = useStore.getState();
+      return nodeCost(snapshotOf(s), node.id, pricingOf(s));
     } catch {
       return null;
     }
-  });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [node, traffic, region]);
 
-  const findings = useStore((s) => {
-    if (!selectedId || !s.nodes.some((n) => n.id === selectedId)) return [];
+  const findings = useMemo(() => {
+    if (!node) return [];
     try {
-      return findingsForNode(snapshotOf(s), pricingOf(s), selectedId);
+      const s = useStore.getState();
+      return findingsForNode(snapshotOf(s), pricingOf(s), node.id);
     } catch {
       return [];
     }
-  });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [node, edges, traffic, region]);
 
   if (!node) return null;
   const def = getService(node.service);

@@ -3,7 +3,7 @@
 // A collapsed group as one card: cluster of member icons, name,
 // "N resources", subtotal. Edges re-route to it in Canvas.
 
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import { Handle, Position, type NodeProps, type Node } from "@xyflow/react";
 import { useStore, pricingOf, snapshotOf } from "@/store/useStore";
 import { allCosts } from "@/engine/cost";
@@ -18,10 +18,17 @@ export const GroupNode = memo(function GroupNode({
   data,
 }: NodeProps<GroupNodeType>) {
   const group = useStore((s) => s.groups.find((g) => g.id === data.groupId));
-  const members = useStore((s) => s.nodes.filter((n) => n.group === data.groupId));
+  const nodes = useStore((s) => s.nodes);
+  const traffic = useStore((s) => s.traffic);
+  const region = useStore((s) => s.region);
   const setGroupCollapsed = useStore((s) => s.setGroupCollapsed);
-  const sum = useStore((s) => {
+  const members = useMemo(
+    () => nodes.filter((n) => n.group === data.groupId),
+    [nodes, data.groupId],
+  );
+  const sum = useMemo(() => {
     try {
+      const s = useStore.getState();
       const costs = new Map(
         allCosts(snapshotOf(s), pricingOf(s)).map((c) => [c.nodeId, c.monthly]),
       );
@@ -29,7 +36,8 @@ export const GroupNode = memo(function GroupNode({
     } catch {
       return 0;
     }
-  });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [members, traffic, region]);
 
   if (!group) return null;
   const icons = members
