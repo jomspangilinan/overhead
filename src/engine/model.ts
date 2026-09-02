@@ -25,7 +25,13 @@ export type ServiceId =
   | "sns"
   | "eventbridge"
   | "stepfunctions"
-  | "cognito";
+  | "cognito"
+  | "kinesis"
+  | "firehose"
+  | "kms"
+  | "secretsmanager"
+  | "ssmparameter"
+  | "cloudwatchlogs";
 
 export interface ArchNode {
   id: string;

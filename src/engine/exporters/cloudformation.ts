@@ -66,6 +66,9 @@ export function cloudFormationTemplate(
     }
     const settings = { ...defaultSettings(def), ...node.settings };
     const emitted: CfnResource[] = def.cfn(settings, { logicalId, resourceName: safeName(node.name) });
+    // Some settings mean "AWS makes this for you" · an AWS managed KMS key
+    // has no resource, and inventing one would deploy a second key.
+    if (!emitted.length) unmapped.push(node.name);
     for (const r of emitted) {
       const key = r.suffix ? `${logicalId}${r.suffix}` : logicalId;
       // The node id rides on its own resource, so a template that has been

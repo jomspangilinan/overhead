@@ -7,8 +7,28 @@ import {
 } from "../src/engine/defineService";
 
 describe("the spine", () => {
-  it("defines all ten services", () => {
-    expect(Object.keys(SERVICES)).toHaveLength(10);
+  it("defines every service, keyed by its own id", () => {
+    expect(Object.keys(SERVICES).sort()).toEqual(
+      [
+        "apigateway",
+        "cloudfront",
+        "cloudwatchlogs",
+        "cognito",
+        "dynamodb",
+        "eventbridge",
+        "firehose",
+        "kinesis",
+        "kms",
+        "lambda",
+        "s3",
+        "secretsmanager",
+        "sns",
+        "sqs",
+        "ssmparameter",
+        "stepfunctions",
+      ].sort(),
+    );
+    for (const [key, def] of Object.entries(SERVICES)) expect(def.id).toBe(key);
   });
 
   it("every cardLine is a real setting and every default validates", () => {

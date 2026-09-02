@@ -16,7 +16,7 @@ reloadable JSON state.
 1. Open the live URL in the **ChatGPT desktop app's built-in browser**
    (site tools work out of the box) — or in **Chrome** with
    `chrome://flags/#enable-webmcp-testing` enabled.
-2. Check the tool pill (bottom right): it should read **“20+ tools live”**.
+2. Check the tool pill (bottom right): it should read **“35 tools live”**.
 3. Tell the agent:
 
    > HTTP API → Lambda → DynamoDB, S3 uploads behind CloudFront, SQS for
@@ -33,9 +33,9 @@ reloadable JSON state.
 Before WebMCP, only platforms big enough to ship an API and an official
 MCP server could expose capability to agents. Now any web page can, to
 whatever agent the visitor brought — no platform's permission, no
-partnership, no backend. Overhead leans into exactly that: ~30 semantic
-tools in six families (read, write, findings, scenarios, bill, export) —
-not draw-primitives. A draw.io MCP lets an agent *draw* an AWS diagram;
+partnership, no backend. Overhead leans into exactly that: 35 semantic
+tools in eight families (read, write, findings, scenarios, bill, export,
+import, reconcile) — not draw-primitives. A draw.io MCP lets an agent *draw* an AWS diagram;
 Overhead lets an agent *design* an AWS architecture — the diagram is just
 the view.
 
@@ -63,14 +63,22 @@ becomes a diagram both of you can point at.
   No API routes, no auth.
 - `src/engine/**` is pure TypeScript: one `defineService()` per AWS
   service derives the inspector form, tool schemas, card lines, pricing
-  function and CDK props from a single definition.
+  function, CDK props and CloudFormation (written *and* read back) from a
+  single definition.
 - Pricing comes from the **AWS Price List Bulk API** at build time
   (`scripts/fetch-pricing.ts`) — every SKU line keeps its `sourceUrl`;
   nothing is hardcoded.
 - Findings are unit-tested rules citing AWS docs, with savings computed
   from the same pricing table.
-- The CDK exporter's output passes `cdk synth` on all three bundled
-  samples (`npm run synth`).
+- The CDK exporter's output passes `cdk synth` on the three bundled
+  samples plus a fixture holding one node of every service
+  (`npm run synth`).
+- **CloudFormation goes both ways.** Export writes deployable YAML;
+  Import reads YAML or JSON — ours round-trips exactly, anyone else's is
+  read structurally (types become services, `Properties` become priced
+  settings, VPCs and subnets become containers, and `Ref` / `Fn::GetAtt`
+  become the arrows). When the drawing is not empty you get a diff first,
+  then Replace or Merge.
 
 ## Develop
 

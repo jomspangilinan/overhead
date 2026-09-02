@@ -62,6 +62,12 @@ const OFFER_CODES: Record<string, string[]> = {
   eventbridge: ["AWSEvents"],
   stepfunctions: ["AmazonStates"],
   cognito: ["AmazonCognito"],
+  kms: ["awskms"],
+  secretsmanager: ["AWSSecretsManager"],
+  ssm: ["AWSSystemsManager"],
+  cloudwatchlogs: ["AmazonCloudWatch"],
+  kinesis: ["AmazonKinesis"],
+  firehose: ["AmazonKinesisFirehose"],
 };
 
 function matchersFor(region: string): Matcher[] {
@@ -188,6 +194,95 @@ function matchersFor(region: string): Matcher[] {
       key: "cognito.maus",
       offer: "cognito",
       match: (_p, u) => u.includes("MonthlyActiveUsers") || u.includes("MAU"),
+    },
+    // KMS names its usagetypes with the full region ("ap-southeast-1-KMS-Keys"),
+    // which norm() does not strip · match the raw suffix instead.
+    {
+      key: "kms.keyMonth",
+      offer: "kms",
+      match: (p) => (p.attributes.usagetype ?? "").endsWith("KMS-Keys"),
+    },
+    {
+      key: "kms.requests",
+      offer: "kms",
+      match: (p) => (p.attributes.usagetype ?? "").endsWith("-KMS-Requests"),
+    },
+    {
+      key: "secretsmanager.secretMonth",
+      offer: "secretsmanager",
+      // "…-Secret" in some regions, "…-Secrets" in others.
+      match: (_p, u) => u.startsWith("AWSSecretsManager-Secret"),
+    },
+    {
+      key: "secretsmanager.apiRequests",
+      offer: "secretsmanager",
+      match: (_p, u) => u === "AWSSecretsManagerAPIRequest",
+    },
+    // Parameter Store lives inside Systems Manager · PS- is its prefix.
+    {
+      key: "ssm.advancedParamHour",
+      offer: "ssm",
+      match: (_p, u) => u === "PS-Advanced-Param-Tier1",
+    },
+    {
+      key: "ssm.paramApiRequests",
+      offer: "ssm",
+      match: (_p, u) => u.startsWith("PS-Param-Processed"),
+    },
+    {
+      key: "logs.ingestGb",
+      offer: "cloudwatchlogs",
+      match: (p, u) => u === "DataProcessing-Bytes" && p.attributes.operation === "PutLogEvents",
+    },
+    {
+      key: "logs.ingestIaGb",
+      offer: "cloudwatchlogs",
+      match: (p, u) => u === "DataProcessingIA-Bytes" && p.attributes.operation === "PutLogEvents",
+    },
+    {
+      key: "logs.storageGbMonth",
+      offer: "cloudwatchlogs",
+      match: (p, u) => u === "TimedStorage-ByteHrs" && (p.productFamily ?? "") === "Storage Snapshot",
+    },
+    {
+      key: "logs.scannedGb",
+      offer: "cloudwatchlogs",
+      match: (p, u) => u === "DataScanned-Bytes" && p.attributes.operation === "StartQuery",
+    },
+    {
+      key: "kinesis.onDemandStreamHour",
+      offer: "kinesis",
+      match: (_p, u) => u === "OnDemand-StreamHour",
+    },
+    {
+      key: "kinesis.onDemandIngestGb",
+      offer: "kinesis",
+      match: (_p, u) => u === "OnDemand-BilledIncomingBytes",
+    },
+    {
+      key: "kinesis.onDemandEgressGb",
+      offer: "kinesis",
+      match: (_p, u) => u === "OnDemand-BilledOutgoingBytes",
+    },
+    {
+      key: "kinesis.shardHour",
+      offer: "kinesis",
+      match: (p, u) => u === "Storage-ShardHour" && (p.attributes.group ?? "") === "Provisioned shard hour",
+    },
+    {
+      key: "kinesis.putPayloadUnits",
+      offer: "kinesis",
+      match: (_p, u) => u === "PutRequestPayloadUnits",
+    },
+    {
+      key: "firehose.ingestGb",
+      offer: "firehose",
+      match: (p, u) => u === "BilledBytes" && (p.attributes.group ?? "") === "Batch Processing",
+    },
+    {
+      key: "firehose.formatConversionGb",
+      offer: "firehose",
+      match: (_p, u) => u === "DFCBilledBytes",
     },
   ];
 }

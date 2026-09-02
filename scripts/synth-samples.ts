@@ -28,7 +28,9 @@ execSync("npx vitest run tests/write-cdk-stacks.test.ts", {
   env: { ...process.env, WRITE_CDK_STACKS: outDir },
 });
 
-const samples = ["api-backend", "media-pipeline", "event-driven"];
+// all-services holds one node of every service · the gate that a newly
+// added service ships CDK that actually compiles.
+const samples = ["api-backend", "media-pipeline", "event-driven", "all-services"];
 
 writeFileSync(
   join(outDir, "package.json"),
@@ -87,4 +89,4 @@ new ${className}(app, "${name}");
   process.stderr.write(`  ok\n`);
 }
 
-process.stderr.write("All three samples synthesize.\n");
+process.stderr.write(`All ${samples.length} stacks synthesize.\n`);

@@ -6,7 +6,9 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { monthlyTotal, allCosts } from "../src/engine/cost";
-import { toMoney, type StateSnapshot } from "../src/engine/model";
+import { DEFAULT_TRAFFIC, toMoney, type StateSnapshot } from "../src/engine/model";
+import { SERVICES } from "../src/engine/services";
+import { defaultSettings } from "../src/engine/defineService";
 import type { PricingTable } from "../src/engine/pricing";
 
 function load<T>(...p: string[]): T {
@@ -28,6 +30,46 @@ const GOLDEN: Record<keyof typeof samples, [number, number]> = {
   "media-pipeline": [39.29, 49.24],
   "event-driven": [385.73, 511.89],
 };
+
+// One node per service at its defaults, priced in both regions. This is the
+// test that fails the moment a service's price() names a key the pricing
+// data does not have · which is the only way a new service can be wrong and
+// still look right on the canvas.
+// The one service that is genuinely free at its defaults, and says so.
+const FREE_AT_DEFAULTS = new Set(["ssmparameter"]);
+
+describe("every service prices at its defaults", () => {
+  for (const [id, def] of Object.entries(SERVICES)) {
+    it(id, () => {
+      const settings = defaultSettings(def);
+      for (const table of [use1, aps1]) {
+        const lines = def.price(settings, DEFAULT_TRAFFIC, table);
+        if (!FREE_AT_DEFAULTS.has(id)) expect(lines.length, id).toBeGreaterThan(0);
+        for (const l of lines) {
+          expect(l.rate, `${id} ${l.sku}`).toBeGreaterThan(0);
+          expect(l.qty, `${id} ${l.sku}`).toBeGreaterThanOrEqual(0);
+          expect(l.sourceUrl, `${id} ${l.sku}`).toMatch(/^https:\/\/pricing\./);
+        }
+      }
+    });
+  }
+
+  it("encryption is not free · a customer managed key costs a dollar a month before it is used", () => {
+    const kms = SERVICES.kms;
+    const idle = { ...defaultSettings(kms), requestsPerMonth: 0 };
+    expect(toMoney(kms.price(idle, DEFAULT_TRAFFIC, use1).reduce((n, l) => n + l.monthly, 0))).toBe(1);
+    // an AWS managed key is free to hold · only its requests are billed
+    const awsManaged = { ...idle, keyType: "aws-managed" };
+    expect(kms.price(awsManaged, DEFAULT_TRAFFIC, use1).reduce((n, l) => n + l.monthly, 0)).toBe(0);
+  });
+
+  it("a standard parameter at standard throughput costs nothing, which is the point of it", () => {
+    const ps = SERVICES.ssmparameter;
+    expect(ps.price(defaultSettings(ps), DEFAULT_TRAFFIC, use1)).toEqual([]);
+    const advanced = { ...defaultSettings(ps), tier: "advanced" };
+    expect(ps.price(advanced, DEFAULT_TRAFFIC, use1).length).toBe(2);
+  });
+});
 
 describe("golden monthly costs", () => {
   for (const [name, snap] of Object.entries(samples) as [

@@ -1,6 +1,6 @@
 {
   "region": "ap-southeast-1",
-  "generatedAt": "2026-09-02T01:35:39.813Z",
+  "generatedAt": "2026-09-02T22:09:58.866Z",
   "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/index.json",
   "entries": {
     "lambda.requests": {
@@ -186,6 +186,142 @@
       "sku": "QNYPX6543PGX6QVD",
       "description": "Cognito Plus ap-southeast-1 tier 1 pricing",
       "sourceUrl": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonCognito/20260831092148/ap-southeast-1/index.json"
+    },
+    "kms.keyMonth": {
+      "key": "kms.keyMonth",
+      "rate": 1,
+      "unit": "Keys",
+      "sku": "R8AEZWXXE7G5EHRZ",
+      "description": "$1 per customer managed KMS key version in Asia Pacific (Singapore)",
+      "sourceUrl": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/awskms/20260831092318/ap-southeast-1/index.json"
+    },
+    "kms.requests": {
+      "key": "kms.requests",
+      "rate": 0.000003,
+      "unit": "Requests",
+      "sku": "7AVHXGCZK6D9ARBK",
+      "description": "$0.03 per 10000 KMS requests in Asia Pacific (Singapore)",
+      "sourceUrl": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/awskms/20260831092318/ap-southeast-1/index.json"
+    },
+    "secretsmanager.secretMonth": {
+      "key": "secretsmanager.secretMonth",
+      "rate": 0.4,
+      "unit": "Secrets",
+      "sku": "J5PMSXRJZ3HNHFEV",
+      "description": "$0.40 per Secret",
+      "sourceUrl": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSSecretsManager/20260831092330/ap-southeast-1/index.json"
+    },
+    "secretsmanager.apiRequests": {
+      "key": "secretsmanager.apiRequests",
+      "rate": 0.000005,
+      "unit": "API Requests",
+      "sku": "KAUJ7G87ND7HD8N8",
+      "description": "$0.05 per 10000 API Requests",
+      "sourceUrl": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSSecretsManager/20260831092330/ap-southeast-1/index.json"
+    },
+    "ssm.advancedParamHour": {
+      "key": "ssm.advancedParamHour",
+      "rate": 0.00007,
+      "unit": "Hour",
+      "sku": "6TEAN5R2GATAJ3ZA",
+      "description": "$0.05 per Advanced Parameter per Month in Asia Pacific (Singapore)",
+      "sourceUrl": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSSystemsManager/20260831092336/ap-southeast-1/index.json"
+    },
+    "ssm.paramApiRequests": {
+      "key": "ssm.paramApiRequests",
+      "rate": 0.000005,
+      "unit": "API Request",
+      "sku": "KTMMTSBHFQF4FTPQ",
+      "description": "$0.05 per 10,000 Parameter API Interaction_Higher throughput in Asia Pacific (Singapore)",
+      "sourceUrl": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSSystemsManager/20260831092336/ap-southeast-1/index.json"
+    },
+    "logs.ingestGb": {
+      "key": "logs.ingestGb",
+      "rate": 0.7,
+      "unit": "GB",
+      "sku": "ZEKCE7VGMSM5XZPW",
+      "description": "$0.70 per GB custom log data ingested in Standard log class - Asia Pacific (Singapore)",
+      "sourceUrl": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonCloudWatch/20260831092148/ap-southeast-1/index.json"
+    },
+    "logs.ingestIaGb": {
+      "key": "logs.ingestIaGb",
+      "rate": 0.35,
+      "unit": "GB",
+      "sku": "V5HPH6AJGNTRBA74",
+      "description": "$0.35 per GB custom log data ingested in Infrequent Access log class -Asia Pacific (Singapore)",
+      "sourceUrl": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonCloudWatch/20260831092148/ap-southeast-1/index.json"
+    },
+    "logs.storageGbMonth": {
+      "key": "logs.storageGbMonth",
+      "rate": 0.03,
+      "unit": "GB-Mo",
+      "sku": "RKCBFFXUWXG8KUQY",
+      "description": "$0.03 per GB-mo of log storage - Asia Pacific (Singapore)",
+      "sourceUrl": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonCloudWatch/20260831092148/ap-southeast-1/index.json"
+    },
+    "logs.scannedGb": {
+      "key": "logs.scannedGb",
+      "rate": 0.007,
+      "unit": "GB",
+      "sku": "Q6A7EP9HFGQMKFWC",
+      "description": "$0.007 per GB log data scanned by CloudWatch Logs Insights queries - Asia Pacific (Singapore)",
+      "sourceUrl": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonCloudWatch/20260831092148/ap-southeast-1/index.json"
+    },
+    "kinesis.onDemandStreamHour": {
+      "key": "kinesis.onDemandStreamHour",
+      "rate": 0.049,
+      "unit": "StreamHr",
+      "sku": "MHNHQD3UDBN495AQ",
+      "description": "0.049 per Stream Hour Used",
+      "sourceUrl": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonKinesis/20260831092209/ap-southeast-1/index.json"
+    },
+    "kinesis.onDemandIngestGb": {
+      "key": "kinesis.onDemandIngestGb",
+      "rate": 0.098,
+      "unit": "GB",
+      "sku": "K99DV36SY566D3SJ",
+      "description": "0.098 per GB of data written",
+      "sourceUrl": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonKinesis/20260831092209/ap-southeast-1/index.json"
+    },
+    "kinesis.onDemandEgressGb": {
+      "key": "kinesis.onDemandEgressGb",
+      "rate": 0.049,
+      "unit": "GB",
+      "sku": "KMHGGGSQZWGJ74JS",
+      "description": "0.049 per GB of data read using GetRecords Consumer",
+      "sourceUrl": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonKinesis/20260831092209/ap-southeast-1/index.json"
+    },
+    "kinesis.shardHour": {
+      "key": "kinesis.shardHour",
+      "rate": 0.0184,
+      "unit": "ShardHour",
+      "sku": "38JZRH7RRTEKJBNM",
+      "description": "$0.0184 per provisioned shard-hour",
+      "sourceUrl": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonKinesis/20260831092209/ap-southeast-1/index.json"
+    },
+    "kinesis.putPayloadUnits": {
+      "key": "kinesis.putPayloadUnits",
+      "rate": 1.95e-8,
+      "unit": "PutRequest",
+      "sku": "XJ3CHVUJTPY2RCE4",
+      "description": "$0.0195 per 1 million payload units",
+      "sourceUrl": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonKinesis/20260831092209/ap-southeast-1/index.json"
+    },
+    "firehose.ingestGb": {
+      "key": "firehose.ingestGb",
+      "rate": 0.037,
+      "unit": "GB",
+      "sku": "JJYQWMTQ5NEQEERJ",
+      "description": "Tier 1 $0.037 per GB of data ingested",
+      "sourceUrl": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonKinesisFirehose/20260831092209/ap-southeast-1/index.json"
+    },
+    "firehose.formatConversionGb": {
+      "key": "firehose.formatConversionGb",
+      "rate": 0.023,
+      "unit": "GB",
+      "sku": "U783ADYFGWA2CQYH",
+      "description": "$0.023 per GB of data format conversion",
+      "sourceUrl": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonKinesisFirehose/20260831092209/ap-southeast-1/index.json"
     }
   }
 }

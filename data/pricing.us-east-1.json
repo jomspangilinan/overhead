@@ -1,6 +1,6 @@
 {
   "region": "us-east-1",
-  "generatedAt": "2026-09-02T01:35:39.470Z",
+  "generatedAt": "2026-09-02T22:09:50.633Z",
   "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/index.json",
   "entries": {
     "lambda.requests": {
@@ -186,6 +186,142 @@
       "sku": "MJVKEDY4DD2B6Y58",
       "description": "Cognito User Pools us-east-1 enterprise users tier 1 pricing",
       "sourceUrl": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonCognito/20260831092148/us-east-1/index.json"
+    },
+    "kms.keyMonth": {
+      "key": "kms.keyMonth",
+      "rate": 1,
+      "unit": "Keys",
+      "sku": "U553K98XGDXCYHWS",
+      "description": "$1 per customer managed KMS key version in US East (N. Virginia)",
+      "sourceUrl": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/awskms/20260831092318/us-east-1/index.json"
+    },
+    "kms.requests": {
+      "key": "kms.requests",
+      "rate": 0.000003,
+      "unit": "Requests",
+      "sku": "MFEBZPX8NHM5FY7Z",
+      "description": "$0.03 per 10000 KMS requests in US East (N. Virginia)",
+      "sourceUrl": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/awskms/20260831092318/us-east-1/index.json"
+    },
+    "secretsmanager.secretMonth": {
+      "key": "secretsmanager.secretMonth",
+      "rate": 0.4,
+      "unit": "Secrets",
+      "sku": "BJ3PQ9BYGU6P632F",
+      "description": "$0.40 per Secret",
+      "sourceUrl": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSSecretsManager/20260831092330/us-east-1/index.json"
+    },
+    "secretsmanager.apiRequests": {
+      "key": "secretsmanager.apiRequests",
+      "rate": 0.000005,
+      "unit": "API Requests",
+      "sku": "4MDZ5VNEJPMUTG9B",
+      "description": "$0.05 per 10000 API Requests",
+      "sourceUrl": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSSecretsManager/20260831092330/us-east-1/index.json"
+    },
+    "ssm.advancedParamHour": {
+      "key": "ssm.advancedParamHour",
+      "rate": 0.00007,
+      "unit": "Hour",
+      "sku": "3XW4UVEQHA78KWS2",
+      "description": "$0.05 per Advanced Parameter per Month in US East (N. Virginia)",
+      "sourceUrl": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSSystemsManager/20260831092336/us-east-1/index.json"
+    },
+    "ssm.paramApiRequests": {
+      "key": "ssm.paramApiRequests",
+      "rate": 0.000005,
+      "unit": "API Request",
+      "sku": "9B46YR6Q6NZSXEU8",
+      "description": "$0.05 per 10,000 Advanced Parameter API interaction_Standard throughput in US East (N. Virginia)",
+      "sourceUrl": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSSystemsManager/20260831092336/us-east-1/index.json"
+    },
+    "logs.ingestGb": {
+      "key": "logs.ingestGb",
+      "rate": 0.5,
+      "unit": "GB",
+      "sku": "S8QGXX5R2BKKMDSJ",
+      "description": "$0.50 per GB custom log data ingested in Standard log class - US East (Northern Virginia)",
+      "sourceUrl": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonCloudWatch/20260831092148/us-east-1/index.json"
+    },
+    "logs.ingestIaGb": {
+      "key": "logs.ingestIaGb",
+      "rate": 0.25,
+      "unit": "GB",
+      "sku": "WMNA5ZB3WX336Z89",
+      "description": "$0.25 per GB custom log data ingested in Infrequent Access log class -US East (Northern Virginia)",
+      "sourceUrl": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonCloudWatch/20260831092148/us-east-1/index.json"
+    },
+    "logs.storageGbMonth": {
+      "key": "logs.storageGbMonth",
+      "rate": 0.03,
+      "unit": "GB-Mo",
+      "sku": "JRHJQ2UMPUB5K73A",
+      "description": "$0.03 per GB-mo of log storage - US East (Northern Virginia)",
+      "sourceUrl": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonCloudWatch/20260831092148/us-east-1/index.json"
+    },
+    "logs.scannedGb": {
+      "key": "logs.scannedGb",
+      "rate": 0.005,
+      "unit": "GB",
+      "sku": "466C636KV6VS3849",
+      "description": "$0.005 per GB log data scanned by CloudWatch Logs Insights queries - US East (Northern Virginia)",
+      "sourceUrl": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonCloudWatch/20260831092148/us-east-1/index.json"
+    },
+    "kinesis.onDemandStreamHour": {
+      "key": "kinesis.onDemandStreamHour",
+      "rate": 0.04,
+      "unit": "StreamHr",
+      "sku": "S69RFKAH58MYJ6TF",
+      "description": "0.04 per Stream Hour Used",
+      "sourceUrl": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonKinesis/20260831092209/us-east-1/index.json"
+    },
+    "kinesis.onDemandIngestGb": {
+      "key": "kinesis.onDemandIngestGb",
+      "rate": 0.08,
+      "unit": "GB",
+      "sku": "826E7FJQWVKN3CBH",
+      "description": "0.08 per GB of data written",
+      "sourceUrl": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonKinesis/20260831092209/us-east-1/index.json"
+    },
+    "kinesis.onDemandEgressGb": {
+      "key": "kinesis.onDemandEgressGb",
+      "rate": 0.04,
+      "unit": "GB",
+      "sku": "PNHYMNK9TM59MTU8",
+      "description": "0.04 per GB of data read using GetRecords Consumer",
+      "sourceUrl": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonKinesis/20260831092209/us-east-1/index.json"
+    },
+    "kinesis.shardHour": {
+      "key": "kinesis.shardHour",
+      "rate": 0.015,
+      "unit": "ShardHour",
+      "sku": "7RXVY4V5SG8NQC38",
+      "description": "$0.015 per provisioned shard-hour",
+      "sourceUrl": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonKinesis/20260831092209/us-east-1/index.json"
+    },
+    "kinesis.putPayloadUnits": {
+      "key": "kinesis.putPayloadUnits",
+      "rate": 1.4e-8,
+      "unit": "PutRequest",
+      "sku": "MAFXKQJ2YAQM6UDY",
+      "description": "$0.014 per 1 million payload units",
+      "sourceUrl": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonKinesis/20260831092209/us-east-1/index.json"
+    },
+    "firehose.ingestGb": {
+      "key": "firehose.ingestGb",
+      "rate": 0.029,
+      "unit": "GB",
+      "sku": "B674W3KVY282C9AV",
+      "description": "Tier 1 $0.029 per GB of data ingested",
+      "sourceUrl": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonKinesisFirehose/20260831092209/us-east-1/index.json"
+    },
+    "firehose.formatConversionGb": {
+      "key": "firehose.formatConversionGb",
+      "rate": 0.018,
+      "unit": "GB",
+      "sku": "MHBWEUY8DCMVQ66Y",
+      "description": "$0.018 per GB of data format conversion",
+      "sourceUrl": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonKinesisFirehose/20260831092209/us-east-1/index.json"
     }
   }
 }

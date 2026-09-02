@@ -11,7 +11,9 @@ import { parseYaml } from "../src/engine/iac/yaml";
 import { importCloudFormation } from "../src/engine/iac/cloudformation";
 import { applyReconciliation, reconcile } from "../src/engine/iac/reconcile";
 import { migrateSnapshot } from "../src/engine/migrate";
-import type { StateSnapshot } from "../src/engine/model";
+import { DEFAULT_TRAFFIC, type StateSnapshot } from "../src/engine/model";
+import { SERVICES } from "../src/engine/services";
+import { defaultSettings } from "../src/engine/defineService";
 import type { PricingTable } from "../src/engine/pricing";
 import { monthlyTotal } from "../src/engine/cost";
 
@@ -56,6 +58,41 @@ describe("CloudFormation export", () => {
       expect(monthlyTotal(back.snapshot, pricing)).toBeCloseTo(monthlyTotal(snap, pricing), 6);
     });
   }
+});
+
+describe("every service, through CloudFormation and back", () => {
+  const snap: StateSnapshot = {
+    nodes: Object.values(SERVICES).map((def, i) => ({
+      id: def.id,
+      service: def.id,
+      name: `${def.id}-one`,
+      settings: defaultSettings(def),
+      position: { x: i * 240, y: 0 },
+    })),
+    edges: [],
+    containers: [],
+    sections: [],
+    traffic: DEFAULT_TRAFFIC,
+  };
+
+  it("round-trips settings and names for all of them", () => {
+    const back = ok(importCloudFormation(exportCloudFormation(snap, pricing, "all services")));
+    expect(back.snapshot.nodes.map((n) => n.name)).toEqual(snap.nodes.map((n) => n.name));
+    expect(back.snapshot.nodes.map((n) => n.settings)).toEqual(snap.nodes.map((n) => n.settings));
+  });
+
+  it("reads its own resources structurally, without the metadata block", () => {
+    const template = cloudFormationTemplate(snap, pricing, "all services") as { Metadata?: unknown };
+    delete template.Metadata;
+    const back = ok(importCloudFormation(JSON.stringify(template)));
+    expect(back.report.source).toBe("foreign");
+    // an AWS managed KMS key has no resource to find · everything else does
+    const found = new Set(back.snapshot.nodes.map((n) => n.service));
+    for (const def of Object.values(SERVICES)) {
+      if (!def.cfn?.(defaultSettings(def), { logicalId: "X", resourceName: "x" }).length) continue;
+      expect(found.has(def.id), def.id).toBe(true);
+    }
+  });
 });
 
 const FOREIGN = JSON.stringify({

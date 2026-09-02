@@ -31,7 +31,7 @@ Phases 0–9 (§15) are done under the current spec; what remains is **video, RE
 
 - Phase 0 passed 2026-09-02: `overhead_ping` registered and **executed from the ChatGPT desktop app's in-app
   browser** and from Chrome with the WebMCP flag.
-- Engine: ten services, live Price List data for `us-east-1` + `ap-southeast-1`, nine findings, scenarios
+- Engine: sixteen services, live Price List data for `us-east-1` + `ap-southeast-1`, nine findings, scenarios
   with dynamic tool registration, exporters (JSON/Markdown/Mermaid/SVG/CDK — `cdk synth` passes on all three
   samples), bill ingest.
 - Model: **containers + sections** replaced the old lanes/groups (§5). Autosave migrates v1 state.
@@ -67,8 +67,8 @@ Phases 0–9 (§15) are done under the current spec; what remains is **video, RE
   the hops and what that path costs, and the tool disarms after one trace), and **Export is a dialog**
   with named formats, a live preview and **PNG · SVG · PDF of the whole drawing** (§12) instead of a
   tab strip hidden inside the right dock.
-- 33 tools live, 37 while a scenario is open (§9).
-- Tests: 103 across 14 vitest files.
+- 35 tools live, 39 while a scenario is open (§9).
+- Tests: 142 across 15 vitest files.
 
 **Workflow the user asked for:** keep `npm run dev` running; the user reviews every change on
 `localhost:3000` **before** anything is deployed. Deploy only when they say "deploy" (`npx vercel deploy
@@ -137,8 +137,12 @@ brought — no platform's permission, no partnership, no backend.
 
 ## 3. Scope
 
-**v1 (shipped):** ten services — Lambda, API Gateway, DynamoDB, S3, CloudFront, SQS, SNS, EventBridge, Step
-Functions, Cognito. Driver-based pricing. Scenario forking with delta. Findings with doc links and savings.
+**v1 (shipped):** sixteen services — Lambda, API Gateway, DynamoDB, S3, CloudFront, SQS, SNS, EventBridge,
+Step Functions, Cognito, Kinesis Data Streams, Data Firehose, KMS, Secrets Manager, Parameter Store,
+CloudWatch Logs. The last six answer "what does the plumbing cost": **encryption is not free** (a customer
+managed key is $1 per key version per month before it is used, and every request is billed), a secret is
+$0.40 a month against a standard parameter's nothing, and CloudWatch Logs ingestion routinely beats the
+Lambda that wrote the log. Driver-based pricing. Scenario forking with delta. Findings with doc links and savings.
 Exports. Live tool readout. Containers (cloud/region/VPC/subnets) and sections.
 
 **Deferred:** `external` / `account` / `az` / `asg` container kinds (the validator tables are the only thing to
@@ -150,7 +154,7 @@ extend), NAT/ALB/RDS/ECS, enterprise findings, Terraform, fan-out collapse, `ref
 
 | Criterion | Argument |
 |---|---|
-| **WebMCP Leverage** (tiebreak #1) | 33 semantic tools in seven families, not draw primitives. Dynamic registration via `AbortController` — four tools exist only while a scenario is open, and the bottom bar's count ticks. Correct `readOnlyHint` / `untrustedContentHint`. Structured errors the agent must resolve (unknown container, a frame nested in itself, invalid setting). UI state commits before a tool returns. Raw `registerTool` present exactly as the brief prints it. |
+| **WebMCP Leverage** (tiebreak #1) | 35 semantic tools in eight families, not draw primitives. Dynamic registration via `AbortController` — four tools exist only while a scenario is open, and the bottom bar's count ticks. Correct `readOnlyHint` / `untrustedContentHint`. Structured errors the agent must resolve (unknown container, a frame nested in itself, invalid setting). UI state commits before a tool returns. Raw `registerTool` present exactly as the brief prints it. |
 | **Execution** | One screen, no login, no backend, no keys. Seeded sample with real containment. Undo/redo, full keyboard map, empty state, exports that `cdk synth`. |
 | **Potential Impact** | Everyone with an AWS account. The gap between "what we'll build" and "what it'll cost" is served today only by the Pricing Calculator (no topology) or a spreadsheet. |
 | **Creativity & Ambition** | Architecture + live cost + agent on one canvas; bill → diagram; containers that are semantic (priced, exported as IaC) not decorative; a diagram language that removes arrow spaghetti. |
@@ -261,8 +265,16 @@ the `ContainerKind` union.
   layout. Sections are emitted **per column of resources outside every frame, and only when the
   column holds two or more** (`auto-*` ids, replaced on re-run, user sections untouched): a dashed box
   around one icon says nothing, and a four-node chain used to come back wearing four of them.
+  **Widths and gaps are measured, not constant** (2026-09-03): a column is as wide as the widest thing
+  drawn in it, which is often the resource *name* and not the node, and the gap between two columns is
+  opened by the widest edge label that has to sit in it (`textWidth`, base `COL_GAP` 44 / `ROW_GAP` 40).
+  The column pitch still reserves the **card** width, because cards appear on their own at 130% zoom and
+  a layout tuned to the icon would overlap the moment you zoomed in.
+  Auto-layout also **says what it did** ("Arranged 13 resources in 5 columns by dependency · 1 section"),
+  including when it removes `auto-` sections a previous run left behind: a four-node chain has no column
+  worth a section, so re-running looked like it was deleting them for no reason.
   `tests/layout.test.ts` checks containment, no sibling overlap, edge-driven columns, the ignored back
-  edge, row order and the section rule.
+  edge, row order, the section rule, and the two measured-spacing rules.
 
 ### Migration (`src/engine/migrate.ts`)
 
@@ -325,12 +337,16 @@ export const lambda = defineService({
   badge: (s) => 'IAM role' | 'IAM role · VPC' | …,   // the security badge, from the security settings
   price: (s, traffic, pricing) => CostLine[],   // from the price list, never literals
   cdk:   (s, { varName, resourceName }) => string,  // security settings become construct props or comments
+  cfnTypes: ['AWS::Lambda::Function'],              // what this service is called in a template
+  cfn:   (s, { logicalId, resourceName }) => CfnResource[],  // the template resources, incl. its execution role
+  fromCfn: (properties, type) => Partial<Settings>, // and the way back · only what the template states
 });
 ```
 
 From this one definition derive: the Inspector form (Settings + Security), the card gear, the badge,
-`set_property`'s validation, `list_services` (security settings flagged), the card's lines, pricing, and
-CDK. **One vocabulary for the human and the agent.** Security settings are never priced unless the SKU is
+`set_property`'s validation, `list_services` (security settings flagged), the card's lines, pricing, CDK,
+**and CloudFormation in both directions** (`defineService()` refuses a `cfn` without a `fromCfn`, so no
+service can write a template it cannot read back). **One vocabulary for the human and the agent.** Security settings are never priced unless the SKU is
 already in the price list (none are today).
 
 ## 7. Chrome — Instrument, docked
@@ -370,7 +386,8 @@ the palette at bottom-centre, never `display: none`.
   appears only while the tool is armed, so `ModeInternals` calls `updateNodeInternals` on that flip as
   well as the card flip. Without it the handle rendered, took the pointerdown, and did nothing.
 - **Top bar** (`chrome/TopBar.tsx`): brand · editable **drawing name** · price-list pill with the region
-  select · monthly total (23 px mono — the one loud number) · Scenario · Export.
+  select · monthly total (23 px mono — the one loud number) · Templates · Scenario · **Import** · Export.
+  Import opens `ImportPanel.tsx` (§12b); dropping a template on the canvas opens the same dialog.
 - **Scenario** forks on the click (`openScenarioFromUi("what-if")`, so the tool count ticks) and **asks
   nothing**: a `window.prompt` was the one modal dialog left in the app and it blocked the page to
   collect a name that is editable anyway. The button is **hidden while a fork is open** (the banner owns
@@ -397,7 +414,7 @@ the palette at bottom-centre, never `display: none`.
   a row moves **out** of something: drop it beside a shallower row, or on the header line for the top
   level. Two resources beside each other also reorder (`placeNodeBeside`). No header buttons (the
   toolbar's A and S already add frames and sections). No tabs.
-- **Palette** (`Palette.tsx`, floating above the toolbar, A or `/`): search, the ten services (click adds —
+- **Palette** (`Palette.tsx`, floating above the toolbar, A or `/`): search, the sixteen services (click adds —
   inside a selected region/cloud — or drag onto the canvas) and the container kinds, which create with the
   validator's verdict as tooltip, select the new frame and **pan to it when it lands off-screen** (a second
   AWS Cloud is placed clear of everything, to the right). With a `pendingConnection` it opens at that point
@@ -493,7 +510,7 @@ actions keep semantics and style apart: `setEdge` (kind/label/volume) vs `setEdg
 (`migrateEdge`) turns the old single `route` into `waypoints` and boolean `arrow` into a mode. **Selectors must return stable values** — derive objects in `useMemo`, not in `useStore(fn)`
 (returning a fresh object per call is a React #185 render loop; it bit us once).
 
-## 9. Tool surface (33 live · 37 in a scenario)
+## 9. Tool surface (35 live · 39 in a scenario)
 
 Read tools: `readOnlyHint`. Mutations update the store before returning. `text()` caps output at 1.5K.
 
@@ -523,6 +540,8 @@ Read tools: `readOnlyHint`. Mutations update the store before returning. `text()
 | `reconstruct_from_bill` | write | |
 | `export` / `get_export_chunk` | read | json / markdown / mermaid / cdk / svg; ~1.2K chunks |
 | `import_state` | write | migrated through `migrateSnapshot` |
+| `diff_cloudformation` | read | what a template would add, drop and change · nothing is applied |
+| `import_cloudformation` | write | YAML or JSON → the drawing, priced. `mode` replace or merge (§12b) |
 | `overhead_ping` | read | the raw brief-shape registration |
 
 Not built: `collapse_fanout` / `expand_fanout`, `refresh_pricing`, `rename_container`, `remove_container`,
@@ -551,11 +570,16 @@ Savings come from the same pricing table. One vitest per rule.
 ## 11. Pricing — from AWS, not from us
 
 `npm run fetch-pricing` (`scripts/fetch-pricing.ts`) pulls the AWS Price List Bulk API (public JSON, no auth)
-for the ten services, filters to the 23 SKUs the engine prices, and writes `data/pricing.<region>.json` with
+for the sixteen services, filters to the 40 SKUs the engine prices, and writes `data/pricing.<region>.json` with
 `generatedAt` and a `sourceUrl` per entry. Gotchas learned: CloudFront CDN rates live only in the **global**
 file (per-geography, `fromLocation`); EventBridge's offer code is `AWSEvents`; Step Functions Express usagetypes
 are `StepFunctions-Request` / `StepFunctions-GB-Second`. Ship `ap-southeast-1` (default) and `us-east-1`;
-region is a select in the top bar. `refresh_pricing` was not built.
+region is a select in the top bar. More gotchas from the second batch of services: the KMS offer code is
+lower-case `awskms` and its usagetypes carry the **full** region name (`ap-southeast-1-KMS-Keys`), which
+`norm()` does not strip; Secrets Manager writes `…-Secret` in one region and `…-Secrets` in another;
+Parameter Store lives inside `AWSSystemsManager` under the `PS-` prefix; CloudWatch Logs shares
+`AmazonCloudWatch` with a hundred other line items, so ingest is matched on `operation: PutLogEvents` and
+storage on `productFamily: Storage Snapshot`. `refresh_pricing` was not built.
 
 ## 12. Exports (`src/engine/exporters/`)
 
@@ -564,15 +588,44 @@ region is a select in the top bar. `refresh_pricing` was not built.
 | JSON | whole model incl. containers + sections + pricing snapshot id; reloads via `import_state` |
 | Markdown | title = drawing name, assumptions, cost table, findings with links, Mermaid inline |
 | Mermaid | `flowchart LR`, labels carry monthly cost |
-| PNG / SVG / PDF | `canvas/exportImage.ts` · the **whole drawing**, not the current viewport: the union of every node and every stored frame rectangle becomes the picture, and `getViewportForBounds` gives the viewport element a fitting transform for the duration of the `html-to-image` capture. PNG at 1×/2×/3× with an optional transparent ground; SVG vector; **PDF is built here** (`jpegToPdf`: a JPEG wrapped in a one-page PDF · catalog, page tree, DCTDecode XObject, content stream, hand-counted xref) so there is no print dialog and no new dependency |
-| CDK (TypeScript) | one stack named from the drawing, one construct per node from `defineService().cdk`, header listing every stub; **`npm run synth` runs `cdk synth` on all three samples** |
+| PNG / SVG / PDF | `canvas/exportImage.ts` · the **whole drawing**, not the current viewport: the union of every node and every stored frame rectangle becomes the picture, and `getViewportForBounds` gives the viewport element a fitting transform for the duration of the `html-to-image` capture. PNG at 1×/2×/3× with an optional transparent ground; SVG vector; **PDF is built here** (`jpegToPdf`: a JPEG wrapped in a one-page PDF · catalog, page tree, DCTDecode XObject, content stream, hand-counted xref) so there is no print dialog and no new dependency. **The sprite has to ride along**: every icon is a `<use href="#aws-…">` into the sprite injected at the app root, and `html-to-image` serialises only the captured element into an isolated document where those ids resolve to nothing · pictures came out as labels with no icons until `captureDrawing` began appending a clone of `[data-oh-sprite]` inside the captured subtree for the length of the capture |
+| CDK (TypeScript) | one stack named from the drawing, one construct per node from `defineService().cdk`, header listing every stub. Variable names never shadow an imported namespace (a node called `logs` or `secretsmanager` used to emit a stack that failed at "cannot access before initialization" · `varNames()` in `cdk.ts` resolves it), and **`npm run synth` runs `cdk synth` on the three samples plus an `all-services` fixture holding one node of every service** |
+| CloudFormation (YAML) | deployable template from `defineService().cfn`, so it cannot drift from the CDK. A `Metadata.Overhead` block carries what a template has no place for (positions, containers, sections, traffic, the settings that only drive price) and each resource carries its `nodeId`, which is what makes the round-trip exact. YAML is written by `iac/yaml.ts` (no dependency); §12b is the way back |
 
 Three routes: download (filename = drawing name), clipboard, and `export` + `get_export_chunk`. Autosave to
 `localStorage` (`overhead-state-v2`). The UI surface is `ExportPanel.tsx`, a **centred dialog** (rendered
 from `App`, not inside the right dock, where it did nothing while that dock was collapsed): a named list
-grouped Picture / Document / Build, one line each saying what the file is for, the artefact itself
-previewed beside it, then Download and Copy. `export`/`get_export_chunk` stay text-only (`EXPORT_FORMATS`
-is unchanged) · a picture is not a tool output.
+grouped **Picture / Document / Build / Project**, one line each saying what the file is for, the artefact
+itself previewed beside it, then Download and Copy. JSON sits under **Project**, not Build: it is the
+drawing, not a build artefact. `export`/`get_export_chunk` stay text-only · a picture is not a tool output.
+
+### 12b. Import and reconciliation (`src/engine/iac/`)
+
+CloudFormation is the only format that goes both ways, and it was chosen because it is the interchange
+format: CDK and SAM both synthesise to it, so reading it works for all three without parsing anybody's
+TypeScript.
+
+- `yaml.ts` · a YAML writer and reader for the subset a template uses, short-form intrinsics included
+  (`!Ref`, `!GetAtt a.b`, `!Sub`). No dependency. Round-trip tested against our own output.
+- `cloudformation.ts` · `importCloudFormation(text, { region })` reads YAML **or** JSON and takes one of two
+  paths. **Ours**: the `Metadata.Overhead` block rebuilds the snapshot exactly, through `migrateSnapshot`.
+  **Anyone else's**: resources match services by `cfnTypes`, `Properties` become settings through
+  `fromCfn()`, `AWS::EC2::VPC` / `::Subnet` become containers (a function's `VpcConfig.SubnetIds` puts it in
+  one), and edges are inferred from what references what · `referencedIds` walks `Ref` / `Fn::GetAtt` /
+  `Fn::Sub`, and `CONNECTORS` turns the resources that *are* a connection (`EventSourceMapping`,
+  `SNS::Subscription`, `Events::Rule`, an API integration, `Lambda::Permission`) into the edge they mean.
+  It also returns **`stated`**: which settings the template actually said, per node.
+- `reconcile.ts` · `reconcile(current, incoming, stated)` names every difference (added / removed / changed,
+  with the settings that changed and the connections added or dropped); `applyReconciliation(…, mode)`
+  applies it. **`replace`** takes the template. **`merge`** takes it only where it speaks: resources the
+  template lacks stay, positions and sections stay, and settings outside `stated` are never reset · a
+  template says a Lambda is 512 MB and says nothing about how often it runs, and resetting that would
+  quietly rewrite the estimate. `placeNewNodes` gives merged-in resources a column to the right.
+- UI: **Import** in the top bar, or drop a `.yaml` / `.yml` / `.json` / `.template` on the canvas
+  (`BillDrop` routes by extension · a `.csv` is still the bill). `ImportPanel.tsx` shows the resources, the
+  estimate, and the full diff **before** anything happens, then Replace or Merge.
+- Not built, and named as not built in `SCRIPT.md`: a live sync. Nothing watches a repo and nothing writes
+  to one.
 
 ## 13. Stack, repo layout, commands
 
@@ -583,7 +636,9 @@ papaparse, html-to-image, vitest, puppeteer-core (dev, headless checks). Vercel.
 src/
   engine/           pure TS: model, containers, frames(boxes/hit-test/translate), migrate, layout(roles),
                     pricing, cost, findings, delta, bill, services/*.ts (defineService), rules/*.ts,
-                    exporters/{json,markdown,mermaid,cdk,index}.ts
+                    exporters/{json,markdown,mermaid,cdk,cloudformation,index}.ts
+  engine/iac/       yaml.ts (writer + reader, short-form intrinsics) · cloudformation.ts (import, ours and
+                    foreign) · reconcile.ts (diff + replace/merge · what stands in for a sync)
   webmcp/           register.ts · tools.ts · scenario.ts · toolRegistry.ts · provider.tsx
   store/            useStore.ts · history.ts (undo/redo)
   engine/layers.ts  layerRows() — the Layers tree as rows (positional nesting of sections/groups)
@@ -613,7 +668,7 @@ tests/              containers · migrate(in containers) · migrate-edges · fra
 ```
 npm run dev            # localhost:3000 — the user reviews here first
 npm run build          # static export (kills the dev cache — restart dev after)
-npm test               # vitest (91)
+npm test               # vitest (142)
 npm run synth          # cdk synth on the three sample exports
 npm run fetch-pricing  # refresh data/pricing.*.json
 npx vercel deploy --prod --yes   # only when the user says deploy
@@ -638,9 +693,9 @@ vitest) — that's why `nodeMetrics.ts` exists.
 | Phase | Done when | Status |
 |---|---|---|
 | 0 · Prove the pipe | one tool executed from the ChatGPT desktop app and Chrome | ✅ 2026-09-02 |
-| 1 · Engine | ten services, pricing data, cost, golden tests | ✅ |
+| 1 · Engine | sixteen services, pricing data, cost, golden tests | ✅ |
 | 2 · Canvas | icon/card nodes, floating typed edges, inspector from schema | ✅ |
-| 3 · Tools | read/write tools, live readout | ✅ (33 live) |
+| 3 · Tools | read/write tools, live readout | ✅ (35 live) |
 | 4 · Findings | nine rules, rings/stripes | ✅ |
 | 5 · Scenarios | fork, delta, dynamic registration | ✅ |
 | 6 · Cards + containers + sections | 130% LOD, containers with validation/rollup/collapse, sections | ✅ |
@@ -662,7 +717,7 @@ Lambda → DynamoDB, then call get_findings."* Requires GPT-5.6 Sol or Terra (Lu
 the Chrome extension. Second path: Chrome with `chrome://flags/#enable-webmcp-testing` + the Model Context Tool
 Inspector extension.
 
-Demo path to verify before recording: build by sentence → `get_findings` → `open_scenario` (count 33 → 37) →
+Demo path to verify before recording: build by sentence → `get_findings` → `open_scenario` (count 35 → 39) →
 set the Lambda to arm64/1024 MB → `get_delta` → `commit_scenario` (back to 33) → `export` cdk.
 
 ## 17. Video script (< 3:00, with audio, public on YouTube)
@@ -678,7 +733,7 @@ the original outline; where they differ, `SCRIPT.md` wins.
 |---|---|---|
 | 0:00–0:15 | AWS Pricing Calculator, then a spreadsheet | This is how we price a build. Neither knows what the architecture looks like. |
 | 0:15–0:50 | Empty canvas → one sentence → nodes land inside cloud › region, total appears → agent calls `get_findings`, fixes two | I describe it. It builds it, priced from AWS's own price list. Then it checks its own work. |
-| 0:50–1:30 | Open a scenario; bottom bar ticks 33 → 37; ARM + 1024 MB; delta drawn; cost goes down | More memory, lower bill — because it runs faster. Watch the tools appear when the scenario opens: that's WebMCP's dynamic registration. |
+| 0:50–1:30 | Open a scenario; bottom bar ticks 35 → 39; ARM + 1024 MB; delta drawn; cost goes down | More memory, lower bill — because it runs faster. Watch the tools appear when the scenario opens: that's WebMCP's dynamic registration. |
 | 1:30–1:55 | Ask it to put a Lambda in a subnet; it adds a VPC and subnet; try moving DynamoDB in — refused with the rule | Containers are real: it knows what's allowed to live where. |
 | 1:55–2:20 | Drop a Cost Explorer CSV; nodes fill with real spend | Your actual bill, parsed here, never uploaded. |
 | 2:20–2:50 | Export Markdown → paste into a doc; export CDK → agent writes it into a repo | Out as Markdown for the proposal. Out as CDK, and my agent puts it in the repo. |

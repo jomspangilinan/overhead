@@ -22,15 +22,68 @@ const IMPORTS: Record<string, string> = {
   eventbridge: 'import * as events from "aws-cdk-lib/aws-events";',
   stepfunctions: 'import * as sfn from "aws-cdk-lib/aws-stepfunctions";',
   cognito: 'import * as cognito from "aws-cdk-lib/aws-cognito";',
+  kinesis: 'import * as kinesis from "aws-cdk-lib/aws-kinesis";',
+  firehose: 'import * as firehose from "aws-cdk-lib/aws-kinesisfirehose";',
+  kms: 'import * as kms from "aws-cdk-lib/aws-kms";',
+  secretsmanager: 'import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";',
+  ssmparameter: 'import * as ssm from "aws-cdk-lib/aws-ssm";',
+  cloudwatchlogs: 'import * as logs from "aws-cdk-lib/aws-logs";',
 };
 
-function varName(id: string): string {
+/** Every name the generated file already binds · a construct variable that
+ *  collides with one of these shadows the import and the stack fails at
+ *  `new secretsmanager.Secret(...)` with "cannot access before
+ *  initialization". A node called "logs" or "lambda" is entirely ordinary,
+ *  so the collision is resolved here rather than forbidden upstream. */
+const RESERVED = new Set([
+  "cdk",
+  "Construct",
+  "lambda",
+  "apigateway",
+  "apigwv2",
+  "dynamodb",
+  "s3",
+  "cloudfront",
+  "origins",
+  "sqs",
+  "sns",
+  "events",
+  "sfn",
+  "cognito",
+  "kinesis",
+  "firehose",
+  "kms",
+  "secretsmanager",
+  "ssm",
+  "logs",
+  "this",
+  "props",
+  "scope",
+  "id",
+]);
+
+function camel(id: string): string {
   return id
     .split(/[^a-zA-Z0-9]+/)
     .filter(Boolean)
     .map((w, i) => (i ? w[0].toUpperCase() + w.slice(1) : w))
     .join("")
     .replace(/^([0-9])/, "n$1");
+}
+
+/** Unique, non-shadowing variable names, one per node id. */
+function varNames(ids: string[]): Map<string, string> {
+  const out = new Map<string, string>();
+  const used = new Set(RESERVED);
+  for (const id of ids) {
+    const base = camel(id) || "resource";
+    let name = RESERVED.has(base) ? `${base}Resource` : base;
+    let n = 2;
+    while (used.has(name)) name = `${base}${n++}`;
+    used.add(name);
+    out.set(id, name);
+  }
+  return out;
 }
 
 function safeName(name: string): string {
@@ -48,13 +101,14 @@ export function exportCdk(
     .filter(Boolean)
     .join("\n");
 
+  const names = varNames(snapshot.nodes.map((n) => n.id));
   const blocks = snapshot.nodes
     .map((node) => {
       const def = getService(node.service);
       if (!def?.cdk) return `// ${node.name}: no CDK mapping`;
       const settings = { ...defaultSettings(def), ...node.settings };
       const code = def.cdk(settings, {
-        varName: varName(node.id),
+        varName: names.get(node.id)!,
         resourceName: safeName(node.name),
       });
       return `// ── ${def.term}: ${node.name}\n${code}`;

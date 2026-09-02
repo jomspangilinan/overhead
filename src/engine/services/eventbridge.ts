@@ -17,6 +17,13 @@ export const eventbridge = defineService({
       driver: true,
       description: "Defaults to the canvas traffic figure",
     },
+    rules: {
+      type: "number",
+      min: 0,
+      default: 1,
+      label: "Rules",
+      description: "Rules and their targets cost nothing · you pay per event published, and on the target",
+    },
     resourcePolicy: {
       type: "boolean",
       default: false,

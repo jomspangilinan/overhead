@@ -7,7 +7,9 @@ import { describe, expect, it } from "vitest";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { exportCdk } from "../src/engine/exporters";
-import type { StateSnapshot } from "../src/engine/model";
+import { DEFAULT_TRAFFIC, type StateSnapshot } from "../src/engine/model";
+import { SERVICES } from "../src/engine/services";
+import { defaultSettings } from "../src/engine/defineService";
 import type { PricingTable } from "../src/engine/pricing";
 
 const pricing = JSON.parse(
@@ -15,6 +17,24 @@ const pricing = JSON.parse(
 ) as PricingTable;
 
 const SAMPLES = ["api-backend", "media-pipeline", "event-driven"];
+
+/** One node per service, at its defaults · the fixture that keeps a newly
+ *  added service from shipping CDK that does not compile. */
+function allServices(): StateSnapshot {
+  return {
+    nodes: Object.values(SERVICES).map((def, i) => ({
+      id: def.id,
+      service: def.id,
+      name: `${def.id}-one`,
+      settings: defaultSettings(def),
+      position: { x: i * 240, y: 0 },
+    })),
+    edges: [],
+    containers: [],
+    sections: [],
+    traffic: DEFAULT_TRAFFIC,
+  };
+}
 
 describe("cdk stack generation", () => {
   it("generates a stack for every sample (and writes them when asked)", () => {
@@ -28,5 +48,12 @@ describe("cdk stack generation", () => {
       expect(ts).toContain("cdk.Stack");
       if (outDir) writeFileSync(join(outDir, `${name}.ts`), ts);
     }
+  });
+
+  it("generates a stack holding every service", () => {
+    const outDir = process.env.WRITE_CDK_STACKS;
+    const ts = exportCdk(allServices(), pricing);
+    for (const def of Object.values(SERVICES)) expect(ts, def.id).toContain(`${def.id}-one`);
+    if (outDir) writeFileSync(join(outDir, "all-services.ts"), ts);
   });
 });

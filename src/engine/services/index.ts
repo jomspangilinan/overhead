@@ -10,6 +10,12 @@ import { sns } from "./sns";
 import { eventbridge } from "./eventbridge";
 import { stepfunctions } from "./stepfunctions";
 import { cognito } from "./cognito";
+import { kms } from "./kms";
+import { secretsmanager } from "./secretsmanager";
+import { ssmparameter } from "./ssmparameter";
+import { cloudwatchlogs } from "./cloudwatchlogs";
+import { kinesis } from "./kinesis";
+import { firehose } from "./firehose";
 
 export const SERVICES: Record<ServiceId, ServiceDef> = {
   lambda,
@@ -22,6 +28,12 @@ export const SERVICES: Record<ServiceId, ServiceDef> = {
   eventbridge,
   stepfunctions,
   cognito,
+  kinesis,
+  firehose,
+  kms,
+  secretsmanager,
+  ssmparameter,
+  cloudwatchlogs,
 };
 
 export function getService(id: string): ServiceDef | undefined {

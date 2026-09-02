@@ -24,11 +24,11 @@ so it does not have to guess its way through the UI.*
 Overhead is built so that the agent and the person are working the **same document**, not two copies
 of it:
 
-- **33 tools live, 37 with a scenario open.** They are semantic (`add_service`, `connect`,
+- **35 tools live, 39 with a scenario open.** They are semantic (`add_service`, `connect`,
   `set_property`, `get_findings`, `open_scenario`, `move_into_container`, `export`), never drawing
   primitives. The agent never says "draw a rectangle at 420, 180".
 - **Dynamic registration is visible.** `open_scenario` registers four more tools under one
-  `AbortController`; the bottom bar's count ticks 33 → 37 and back on commit or discard. That is a
+  `AbortController`; the bottom bar's count ticks 35 → 39 and back on commit or discard. That is a
   capability appearing because the app's state changed, which is the part of WebMCP a screenshot
   cannot fake.
 - **Every mutation commits to the store before the tool returns**, so the canvas the person is
@@ -77,10 +77,10 @@ banner). Speak in short sentences over each action, do not read the UI aloud.
 | Time | On screen | Said |
 |---|---|---|
 | 0:00 – 0:12 | AWS Pricing Calculator in one tab, a spreadsheet in the other. Close both. | "This is how we price a build today. Neither of these knows what the architecture looks like." |
-| 0:12 – 0:22 | Overhead, empty canvas, in the ChatGPT desktop app's browser. The address-bar arrow icon goes grey. Bottom bar reads the live tool count. | "This is one web page. No backend, no login. It offers thirty-three tools to whatever agent you brought." |
+| 0:12 – 0:22 | Overhead, empty canvas, in the ChatGPT desktop app's browser. The address-bar arrow icon goes grey. Bottom bar reads the live tool count. | "This is one web page. No backend, no login. It offers thirty-five tools to whatever agent you brought." |
 | 0:22 – 0:55 | Type one sentence: *"HTTP API to Lambda to DynamoDB, S3 uploads behind CloudFront, SQS for thumbnails, about five million requests a month."* Nodes land inside AWS Cloud › ap-southeast-1. The monthly total in the top bar counts up. | "I describe it. It builds it, and prices every resource from AWS's own price list, not from a number we typed in." |
 | 0:55 – 1:12 | Ask: *"Now check your own work."* Agent calls `get_findings`; two rings appear; it switches the Lambda to arm64 and adds a DLQ. Total drops. | "Then it audits what it just built. Nine rules, each citing an AWS doc. It fixed two of them itself." |
-| 1:12 – 1:40 | Click **Scenario**. Banner appears, the change list says nothing has changed yet, bottom bar ticks **33 → 37**. Set the thumbnail Lambda to 1024 MB. The node takes a ring, the change list shows `memoryMb 512 → 1024` and the per-resource delta; the total goes **down**. Click **Commit**. Count ticks back to 33. | "A scenario is a fork of the whole design. More memory, lower bill, because it finishes faster. And watch the tool count: four tools exist only while this fork is open. That is WebMCP's dynamic registration, live." |
+| 1:12 – 1:40 | Click **Scenario**. Banner appears, the change list says nothing has changed yet, bottom bar ticks **35 → 39**. Set the thumbnail Lambda to 1024 MB. The node takes a ring, the change list shows `memoryMb 512 → 1024` and the per-resource delta; the total goes **down**. Click **Commit**. Count ticks back to 35. | "A scenario is a fork of the whole design. More memory, lower bill, because it finishes faster. And watch the tool count: four tools exist only while this fork is open. That is WebMCP's dynamic registration, live." |
 | 1:40 – 2:00 | Toolbar **T**, click the API. The path downstream lights and the edges run; the pill reads the hop count and what that path costs. | "Trace one request. This is what this path costs a month, on its own." |
 | 2:00 – 2:15 | Drag a Cost Explorer CSV onto the canvas. Real spend lands on the resources. | "Your actual bill, parsed in the tab. It never leaves the browser." |
 | 2:15 – 2:45 | **Export**: PNG preview of the whole drawing, then Markdown, then CDK. Paste the Markdown into a doc; hand the CDK to the coding agent, which writes it into a repo and runs `cdk synth`. | "Out as a picture for the deck. Out as Markdown for the proposal. Out as CDK, and it synthesises." |
@@ -95,9 +95,10 @@ banner). Speak in short sentences over each action, do not read the UI aloud.
 
 **What it does.** Sketch a serverless AWS architecture with your agent on a live canvas, priced from
 the AWS Price List per SKU, reviewed by nine rules that each cite an AWS doc, forkable into what-if
-scenarios with a per-resource delta, and exportable as CDK, Markdown, Mermaid, JSON, PNG, SVG or PDF.
+scenarios with a per-resource delta, exportable as CDK, CloudFormation, Markdown, Mermaid, JSON, PNG,
+SVG or PDF · and importable back from a CloudFormation template, with a diff before anything changes.
 
-**How WebMCP is used.** 33 semantic tools in seven families, registered imperatively on
+**How WebMCP is used.** 35 semantic tools in eight families, registered imperatively on
 `document.modelContext` in the top-level document after hydration; four more registered dynamically
 under an `AbortController` for the life of a scenario, with the live count on screen. Read tools are
 hinted read-only, bill content is hinted untrusted, every mutation commits before the tool returns,
@@ -107,17 +108,22 @@ and errors are structured so an agent can resolve them itself.
 that jumped. Engineers learning AWS, because nothing teaches architecture faster than watching a
 number move.
 
-**What is next.** The infrastructure-as-code round trip, and more services. See §6, which is the
-truth about both.
+**What is next.** More services as their SKUs land, and turning the reconciliation into something that
+watches a repo rather than a file you hand over. See §6, which is the truth about both.
 
 ---
 
 ## 6. Roadmap · what is true today, and what is not
 
 **Today.**
-- Ten services: Lambda, API Gateway, DynamoDB, S3, CloudFront, SQS, SNS, EventBridge, Step
-  Functions, Cognito. Serverless first, on purpose: those are the services whose cost is a function
-  of traffic, which is the thing nobody can estimate in a spreadsheet.
+- Sixteen services: Lambda, API Gateway, DynamoDB, S3, CloudFront, SQS, SNS, EventBridge, Step
+  Functions, Cognito, Kinesis Data Streams, Data Firehose, KMS, Secrets Manager, Parameter Store,
+  CloudWatch Logs. Serverless first, on purpose: those are the services whose cost is a function
+  of traffic, which is the thing nobody can estimate in a spreadsheet. The last four are the
+  plumbing that never makes it onto a diagram and always makes it onto the bill · **encryption is
+  not free** ($1 per customer managed key version per month, plus every request), a secret is $0.40
+  a month where a standard parameter is nothing, and CloudWatch Logs ingestion at $0.50 to $0.70 a
+  GB regularly costs more than the Lambda that wrote the log.
 - Pricing for `us-east-1` and `ap-southeast-1`, generated from the AWS Price List Bulk API, each SKU
   keeping its source URL.
 - **CDK TypeScript export**, one stack, one construct per resource, `cdk synth` passing on all three
@@ -169,7 +175,7 @@ truth about both.
 
 - [ ] `npm run dev`, seeded canvas cleared, HowTo dismissed, right dock open, zoom 100%
 - [ ] ChatGPT desktop app browser on the deployed URL, address-bar arrow icon visible
-- [ ] Bottom bar tool count legible in the frame (it has to be readable when it ticks 33 → 37)
+- [ ] Bottom bar tool count legible in the frame (it has to be readable when it ticks 35 → 39)
 - [ ] `npm run synth` passing, so the CDK claim on camera is true
 - [ ] Audio recorded separately, under 3:00 total, uploaded public
 
