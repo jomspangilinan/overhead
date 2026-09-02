@@ -10,6 +10,10 @@ const KEY = "overhead-howto-dismissed";
 export function HowTo() {
   const [show, setShow] = useState(false);
   const empty = useStore((s) => s.nodes.length === 0);
+  // the scenario banner and its change list own this strip while a fork is
+  // open · two panels stacked on the same pixels read as a glitch
+  const forked = useStore((s) => !!s.scenario);
+  const tracing = useStore((s) => s.tool === "trace" || !!s.traceIds?.length);
 
   useEffect(() => {
     try {
@@ -19,7 +23,7 @@ export function HowTo() {
     }
   }, []);
 
-  if (!show) return null;
+  if (!show || forked || tracing) return null;
 
   return (
     <div className="pointer-events-none absolute inset-x-0 top-[58px] z-[4] flex justify-center px-4">

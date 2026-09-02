@@ -440,6 +440,36 @@ body {
   opacity: 0.16;
 }
 
+/* A resource the open fork touched · the delta on the drawing itself */
+.react-flow__node.forked .overhead-node,
+.react-flow__node.forked .oh-card-body {
+  box-shadow: 0 0 0 2px var(--accent), 0 0 14px color-mix(in srgb, var(--accent) 35%, transparent);
+  border-radius: 12px;
+}
+
+/* A traced edge runs: the dashes travel the way the request travels, so a
+   trace reads as movement rather than as a static highlight. The edge's
+   stroke and dash pattern are inline (kind + style decide them), so only
+   !important can take them over for the duration of the trace. */
+@keyframes oh-flow {
+  to {
+    stroke-dashoffset: -28;
+  }
+}
+.react-flow__edge.traced .react-flow__edge-path {
+  stroke: var(--accent) !important;
+  stroke-dasharray: 8 6 !important;
+  animation: oh-flow 0.7s linear infinite;
+}
+.react-flow__edge.traced .react-flow__edge-interaction {
+  stroke: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .react-flow__edge.traced .react-flow__edge-path {
+    animation: none;
+  }
+}
+
 /* The node card's gear appears on hover or selection */
 .overhead-node .gear {
   opacity: 0;
@@ -505,6 +535,12 @@ body {
 
 /* Section tool: drag out a rectangle */
 .overhead-canvas.drawing .react-flow__pane {
+  cursor: crosshair;
+}
+
+/* Trace tool: the pointer says a resource is what to click */
+.overhead-canvas.tracing .react-flow__node,
+.overhead-canvas.tracing .react-flow__pane {
   cursor: crosshair;
 }
 .oh-draw-rect {

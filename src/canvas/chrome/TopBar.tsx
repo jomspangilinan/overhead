@@ -116,31 +116,31 @@ export function TopBar() {
         <Icon name="samples" size={14} />
         Templates
       </button>
-      <button
-        className="flex items-center gap-[7px] rounded-lg px-3 py-[7px] text-[12px] font-medium hover:bg-[var(--hover)]"
-        style={{
-          border: "1px solid var(--line-2)",
-          background: "var(--panel)",
-          color: "var(--ink-15)",
-        }}
-        title={
-          scenario
-            ? `Scenario "${scenario.name}" is open · commit or discard it on the canvas`
-            : "Fork the design into a what-if scenario"
-        }
-        onClick={() => {
-          if (scenario) return;
-          const name = window.prompt("Scenario name", "what-if");
-          if (name) void openScenarioFromUi(name.trim() || "what-if");
-        }}
-      >
-        <Icon name="scenario" size={14} />
-        {scenario ? scenario.name : "Scenario"}
-      </button>
+      {/* Forks on the spot · no dialog to answer first. The name is
+          editable in the banner over the canvas, the way the drawing name
+          is editable here. */}
+      {scenario ? null : (
+        <button
+          className="flex items-center gap-[7px] rounded-lg px-3 py-[7px] text-[12px] font-medium hover:bg-[var(--hover)]"
+          style={{
+            border: "1px solid var(--line-2)",
+            background: "var(--panel)",
+            color: "var(--ink-15)",
+          }}
+          data-tip="Fork the design · change anything, see the delta, keep it or throw it away"
+          aria-label="Scenario"
+          onClick={() => void openScenarioFromUi("what-if")}
+        >
+          <Icon name="scenario" size={14} />
+          Scenario
+        </button>
+      )}
       <button
         className="flex items-center gap-[7px] rounded-lg px-3 py-[7px] text-[12px] font-medium text-white"
         style={{ background: "var(--accent)", border: "1px solid var(--accent)" }}
-        onClick={() => setExportPanel("markdown")}
+        data-tip="Export · picture, document, or infrastructure code"
+        aria-label="Export"
+        onClick={() => setExportPanel("png")}
       >
         <Icon name="export" size={14} />
         Export

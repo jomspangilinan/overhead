@@ -29,6 +29,25 @@ describe("delta", () => {
     expect(d.forkTotal).toBeCloseTo(d.baseTotal + d.delta, 2);
   });
 
+  it("names the settings that changed, so the fork can say what it did", () => {
+    const fork = structuredClone(base);
+    const handler = fork.nodes.find((n) => n.id === "handler")!;
+    handler.settings.architecture = "x86_64";
+    const d = computeDelta(base, fork, pricing);
+    const changed = d.nodes.find((n) => n.id === "handler")!;
+    expect(changed.kind).toBe("changed");
+    expect(changed.changes).toContainEqual({ key: "architecture", from: "arm64", to: "x86_64" });
+  });
+
+  it("reports a change that costs nothing · a rename is still a change", () => {
+    const fork = structuredClone(base);
+    fork.nodes.find((n) => n.id === "handler")!.name = "orders-handler";
+    const d = computeDelta(base, fork, pricing);
+    expect(d.delta).toBe(0);
+    expect(d.nodes.map((n) => n.id)).toEqual(["handler"]);
+    expect(d.nodes[0].changes[0].key).toBe("name");
+  });
+
   it("marks removed nodes with a null fork cost", () => {
     const fork = structuredClone(base);
     fork.nodes = fork.nodes.filter((n) => n.id !== "table");

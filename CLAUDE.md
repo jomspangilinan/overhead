@@ -59,8 +59,16 @@ Phases 0–9 (§15) are done under the current spec; what remains is **video, RE
   **sections collapse** like containers, **any collapsed frame is one card** (`FrameCard`) that clicks to
   select and expands from its own button, an **empty** frame collapses to a card too, and Layers drops
   show a **Figma-style insertion line** (drop between rows to move out, onto a row to nest).
+  2026-09-03 (the user going through Scenario, Trace, auto-layout and Export): **auto-layout is
+  graph-driven** (columns are dependency depth, not the service's role · §5b), **Scenario never opens
+  a `window.prompt`** (it forks on the click, the banner's name is an input, and the banner now lists
+  every change against the base, priced, with the touched resources ringed on the canvas · §7),
+  **Trace explains itself** (a pill says what to click, the traced edges animate, the pill then reads
+  the hops and what that path costs, and the tool disarms after one trace), and **Export is a dialog**
+  with named formats, a live preview and **PNG · SVG · PDF of the whole drawing** (§12) instead of a
+  tab strip hidden inside the right dock.
 - 33 tools live, 37 while a scenario is open (§9).
-- Tests: 98 across 14 vitest files (`layout` and `sections-drop` are new).
+- Tests: 103 across 14 vitest files.
 
 **Workflow the user asked for:** keep `npm run dev` running; the user reviews every change on
 `localhost:3000` **before** anything is deployed. Deploy only when they say "deploy" (`npx vercel deploy
@@ -241,15 +249,20 @@ the `ContainerKind` union.
 - `parentId` nests sections/groups under a section **in the tree only** (`layers.ts`).
 - Never validated; crosses containers freely; a node may be in many sections or none. `sections` is a
   layer (View gear), default on.
-- `auto_layout` (`src/engine/layout.ts`, L on the toolbar) is **container-aware**: every frame lays out
-  its own resources as a grid (columns only for the roles present, rows ordered by a one-pass barycentre
-  of each node's sources in the previous column) with its child frames in a row beneath; a frame's size is
-  what that needs plus `FRAME_PAD`/`FRAME_HEAD`, and its parent packs it the same way up to the canvas.
-  Every container's `bounds` is re-fitted; sections are **emitted only for resources outside every
-  frame** (`auto-*` ids, replaced on re-run, user sections untouched). Roles
-  (`ingress/handlers/messaging/workers/data`) are internal to `layout.ts` and `ServiceDef.role` — never a
-  model field, never shown. `tests/layout.test.ts` checks containment, no sibling overlap, compact
-  columns and row order.
+- `auto_layout` (`src/engine/layout.ts`, L on the toolbar) is **container-aware** and **graph-driven**:
+  every frame lays out its own resources as a grid whose **columns are dependency depth** (`ranks()`:
+  longest path over the edges inside that frame, with the back edges of a cycle dropped by DFS
+  colouring) and whose rows are ordered by a one-pass barycentre over the columns already placed;
+  child frames sit in a row beneath. A frame's size is what that needs plus `FRAME_PAD`/`FRAME_HEAD`,
+  and its parent packs it the same way up to the canvas. Every container's `bounds` is re-fitted.
+  **Columns used to come from the service's role**, which drew the media-pipeline chain
+  (cdn → assets → queue → worker) as cdn, worker, queue, assets with every arrow running backwards ·
+  roles are now only `ServiceDef.role` and a `placeInRole` hint for a single new node, never the
+  layout. Sections are emitted **per column of resources outside every frame, and only when the
+  column holds two or more** (`auto-*` ids, replaced on re-run, user sections untouched): a dashed box
+  around one icon says nothing, and a four-node chain used to come back wearing four of them.
+  `tests/layout.test.ts` checks containment, no sibling overlap, edge-driven columns, the ignored back
+  edge, row order and the section rule.
 
 ### Migration (`src/engine/migrate.ts`)
 
@@ -357,8 +370,17 @@ the palette at bottom-centre, never `display: none`.
   appears only while the tool is armed, so `ModeInternals` calls `updateNodeInternals` on that flip as
   well as the card flip. Without it the handle rendered, took the pointerdown, and did nothing.
 - **Top bar** (`chrome/TopBar.tsx`): brand · editable **drawing name** · price-list pill with the region
-  select · monthly total (23 px mono — the one loud number) · Scenario (forks via `openScenarioFromUi`, so the
-  tool count ticks) · Export.
+  select · monthly total (23 px mono — the one loud number) · Scenario · Export.
+- **Scenario** forks on the click (`openScenarioFromUi("what-if")`, so the tool count ticks) and **asks
+  nothing**: a `window.prompt` was the one modal dialog left in the app and it blocked the page to
+  collect a name that is editable anyway. The button is **hidden while a fork is open** (the banner owns
+  it then, and a button that only explains itself is not a button). `ScenarioBanner.tsx` carries the
+  dashed frame, the editable name, base → fork totals with the delta, Commit / Discard, **and the change
+  list**: every `computeDelta` entry as `name · what changed · ±$`, or, when nothing has been touched
+  yet, a line saying so and what to do (a fork that showed two identical totals and two buttons read as
+  a no-op). `delta.ts` reports `kind` (added / removed / changed) and the `changes` that differ, so a
+  rename or a setting that costs nothing is still listed; the touched resources take an accent ring on
+  the canvas (`.forked`); commit and discard both `notify` what they did.
 - **Left dock** (`chrome/Dock.tsx`, 248 px, collapsible to a spine): one panel, **Layers**
   (`chrome/LayersPanel.tsx`, rows from `src/engine/layers.ts`) — **one object tree**: containers by
   ownership, sections and groups nested *positionally* under every frame that holds one of their members
@@ -385,8 +407,12 @@ the palette at bottom-centre, never `display: none`.
   (state remembered in `localStorage`): node → Position · Settings (schema, `group !== 'security'`) ·
   **Security** (schema, `group: 'security'`, drives the badge and CDK) · Cost · Findings; container →
   Identity · Frame · Contents; section/group → Appearance · Members · Frame; edge → **Connection** (type
-  chips = `kind`, volume, label) · **Styling** (`EdgeStylePicker`, anchor sides, bends). `ExportPanel`
-  overlays this dock.
+  chips = `kind`, volume, label) · **Styling** (`EdgeStylePicker`, anchor sides, bends).
+- **Trace pill** (`TracePill.tsx`, top-centre): the trace tool had no feedback at all · armed, it says
+  "click any resource"; traced, it names the origin, counts the resources on the path and prices them,
+  with Clear and Trace another. One click traces and the tool disarms back to select. The traced edges
+  animate (`.traced` in `globals.css`, `!important` because the stroke and dash are inline from the
+  edge's kind and style), which is the "it runs" the mode always implied.
 - **Notice chip** (`Notice.tsx`): one transient message over the canvas — a refused drop and its rule, a
   created frame, a re-parented node. No `window.alert`.
 - **Bottom bar** (`chrome/BottomBar.tsx`): title-block facts (Drawing · Region · Containers · Resources ·
@@ -538,11 +564,15 @@ region is a select in the top bar. `refresh_pricing` was not built.
 | JSON | whole model incl. containers + sections + pricing snapshot id; reloads via `import_state` |
 | Markdown | title = drawing name, assumptions, cost table, findings with links, Mermaid inline |
 | Mermaid | `flowchart LR`, labels carry monthly cost |
-| SVG / PNG | `html-to-image` on the React Flow viewport |
+| PNG / SVG / PDF | `canvas/exportImage.ts` · the **whole drawing**, not the current viewport: the union of every node and every stored frame rectangle becomes the picture, and `getViewportForBounds` gives the viewport element a fitting transform for the duration of the `html-to-image` capture. PNG at 1×/2×/3× with an optional transparent ground; SVG vector; **PDF is built here** (`jpegToPdf`: a JPEG wrapped in a one-page PDF · catalog, page tree, DCTDecode XObject, content stream, hand-counted xref) so there is no print dialog and no new dependency |
 | CDK (TypeScript) | one stack named from the drawing, one construct per node from `defineService().cdk`, header listing every stub; **`npm run synth` runs `cdk synth` on all three samples** |
 
 Three routes: download (filename = drawing name), clipboard, and `export` + `get_export_chunk`. Autosave to
-`localStorage` (`overhead-state-v2`).
+`localStorage` (`overhead-state-v2`). The UI surface is `ExportPanel.tsx`, a **centred dialog** (rendered
+from `App`, not inside the right dock, where it did nothing while that dock was collapsed): a named list
+grouped Picture / Document / Build, one line each saying what the file is for, the artefact itself
+previewed beside it, then Download and Copy. `export`/`get_export_chunk` stay text-only (`EXPORT_FORMATS`
+is unchanged) · a picture is not a tool output.
 
 ## 13. Stack, repo layout, commands
 
@@ -565,8 +595,9 @@ src/
                     TypedEdge (waypoints, + mids, styling toolbar, label edit) · EdgeStylePicker ·
                     edgeGeometry.ts · edgeStyle.ts · nodeMetrics.ts · Inspector (node/container/section/edge)
                     · Popovers (view + card gears only) · Palette (floating, connect-from) ·
-                    Templates (dialog) · Notice · ExportPanel · ScenarioBanner · BillDrop · HowTo · Keyboard ·
-                    Icon · Sprite
+                    Templates (dialog) · Notice · TracePill · ExportPanel (dialog) + exportImage.ts
+                    (PNG/SVG/PDF of the whole drawing) · ScenarioBanner (delta + change list) ·
+                    BillDrop · HowTo · Keyboard · Icon · Sprite
     chrome/         Toolbar (bottom-centre, View gear) · Dock · TopBar · BottomBar · Floats (zoom) · LayersPanel
   app/              layout.tsx (fonts, provider) · page.tsx · globals.css (tokens, shell grid)
 scripts/            fetch-pricing.ts · synth-samples.ts
@@ -635,6 +666,13 @@ Demo path to verify before recording: build by sentence → `get_findings` → `
 set the Lambda to arm64/1024 MB → `get_delta` → `commit_scenario` (back to 33) → `export` cdk.
 
 ## 17. Video script (< 3:00, with audio, public on YouTube)
+
+**`SCRIPT.md` at the root is the live version of this** (2026-09-03): the shot list re-cut for the
+current chrome, the positioning against a draw.io / Lucidchart MCP, the four write-up answers, and
+§6 there is the honest IaC roadmap · CDK export exists, **CloudFormation export, IaC import and any
+kind of sync do not**, and `import_cloudformation` is named as the next thing worth building because
+a synthesised template is already the typed resource graph the price model wants. The table below is
+the original outline; where they differ, `SCRIPT.md` wins.
 
 | Time | On screen | Said |
 |---|---|---|

@@ -100,7 +100,7 @@ export interface OverheadState {
   hoveredId: string | null;
   traceIds: string[] | null;
   scenario: { name: string; base: StateSnapshot } | null;
-  exportPanel: "json" | "markdown" | "mermaid" | "cdk" | "svg" | null;
+  exportPanel: "json" | "markdown" | "mermaid" | "cdk" | "png" | "svg" | "pdf" | null;
   bill: BillSummary | null;
 
   // mutations (synchronous — tools depend on it)
@@ -246,6 +246,8 @@ export interface OverheadState {
   selectedIds: string[];
   setSelectedIds: (ids: string[]) => void;
   openScenario: (name: string) => void;
+  /** Rename the open fork · the banner's name is an input, not a prompt. */
+  renameScenario: (name: string) => void;
   commitScenario: () => void;
   discardScenario: () => void;
 }
@@ -761,6 +763,9 @@ export const useStore = create<OverheadState>((set, get) => ({
       },
     });
   },
+
+  renameScenario: (name) =>
+    set((s) => (s.scenario ? { scenario: { ...s.scenario, name } } : {})),
 
   commitScenario: () => set({ scenario: null }),
 

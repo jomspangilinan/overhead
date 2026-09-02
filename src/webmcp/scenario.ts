@@ -130,6 +130,7 @@ export async function openScenarioFromUi(name: string): Promise<void> {
   const s = useStore.getState();
   if (s.scenario) return;
   s.openScenario(name);
+  s.notify("Scenario forked · change anything, then commit or discard it in the banner");
   const { getModelContext } = await import("./register");
   const mc = typeof document !== "undefined" ? getModelContext() : undefined;
   if (!mc) return;
@@ -142,7 +143,21 @@ export async function openScenarioFromUi(name: string): Promise<void> {
 export function closeScenarioFromUi(kind: "commit" | "discard"): void {
   const s = useStore.getState();
   if (!s.scenario) return;
+  // say what happened · both buttons used to leave the canvas looking the
+  // same as before, which read as neither of them doing anything
+  const name = s.scenario.name;
+  let outcome = "";
+  try {
+    const d = computeDelta(s.scenario.base, snapshotOf(s), pricingOf(s));
+    outcome =
+      kind === "commit"
+        ? `${d.nodes.length} ${d.nodes.length === 1 ? "change" : "changes"} kept · $${d.baseTotal.toFixed(2)} → $${d.forkTotal.toFixed(2)} a month`
+        : `back to $${d.baseTotal.toFixed(2)} a month`;
+  } catch {
+    // pricing can throw on a half-built node · the notice is not worth it
+  }
   if (kind === "commit") s.commitScenario();
   else s.discardScenario();
   closeScenario();
+  s.notify(`Scenario "${name}" ${kind === "commit" ? "committed" : "discarded"}${outcome ? ` · ${outcome}` : ""}`);
 }

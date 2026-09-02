@@ -13,7 +13,8 @@ import {
   type NodeTypes,
   type EdgeTypes,
 } from "@xyflow/react";
-import { useStore, cardModeOf, type Layer } from "@/store/useStore";
+import { useStore, cardModeOf, pricingOf, snapshotOf, type Layer } from "@/store/useStore";
+import { computeDelta } from "@/engine/delta";
 import { arrowModeOf, type EdgeKind, type Side } from "@/engine/model";
 import { pickSides, shapeAt, type Side4 } from "./edgeGeometry";
 import { AwsNode, NODE_W, NODE_H } from "./AwsNode";
@@ -52,6 +53,9 @@ export function Canvas() {
   const cardMode = useStore(cardModeOf);
 
   const traceIds = useStore((s) => s.traceIds);
+  const scenario = useStore((s) => s.scenario);
+  const traffic = useStore((s) => s.traffic);
+  const region = useStore((s) => s.region);
   const tool = useStore((s) => s.tool);
   const gridOn = useStore((s) => s.gridOn);
   const selectedEdgeId = useStore((s) => s.selectedEdgeId);
@@ -183,6 +187,19 @@ export function Canvas() {
     [frameDrag, containers, nodes, sections],
   );
 
+  // While a scenario is open, the resources the fork touched wear a ring ·
+  // the delta belongs on the drawing, not only in the banner.
+  const scenarioChanged = useMemo(() => {
+    const s = useStore.getState();
+    if (!s.scenario) return null;
+    try {
+      return new Set(computeDelta(s.scenario.base, snapshotOf(s), pricingOf(s)).nodes.map((n) => n.id));
+    } catch {
+      return null;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scenario, nodes, edges, traffic, region]);
+
   const rfNodes: Node[] = useMemo(() => {
     const visible: Node[] = nodes
       .filter((n) => !collapsedByNode.has(n.id))
@@ -197,7 +214,7 @@ export function Canvas() {
           },
           data: { nodeId: n.id },
           selected: n.id === selectedId || selectedIds.includes(n.id),
-          className: litKeys?.has(n.id) ? "lit" : undefined,
+          className: [litKeys?.has(n.id) ? "lit" : "", scenarioChanged?.has(n.id) ? "forked" : ""].filter(Boolean).join(" ") || undefined,
           // The hit-box is constant by design (nodeMetrics). Passing it as
           // `measured` keeps React Flow's drag maths initialised even though we
           // never apply its dimension changes (controlled nodes, no
@@ -243,7 +260,7 @@ export function Canvas() {
       card(`section:${s.id}`, "section", s.id, s.bounds);
     }
     return visible;
-  }, [nodes, containers, sections, collapsedByNode, litKeys, frameDrag, frameDragMembers, selectedId, selectedIds]);
+  }, [nodes, containers, sections, collapsedByNode, litKeys, scenarioChanged, frameDrag, frameDragMembers, selectedId, selectedIds]);
 
   const rfEdges: Edge[] = useMemo(() => {
     // Shapes as currently drawn (carried frame offsets included) so the
@@ -327,12 +344,16 @@ export function Canvas() {
           sides: sd,
           fan,
         },
+        // a traced edge is lit *and* animated · the dashes run the way the
+        // request runs, which is what a trace is supposed to show
         className:
           litIds &&
           (traceIds?.length
             ? litIds.has(e.from) && litIds.has(e.to)
             : !!hoverSeeds && (hoverSeeds.has(e.from) || hoverSeeds.has(e.to)))
-            ? "lit"
+            ? traceIds?.length
+              ? "lit traced"
+              : "lit"
             : undefined,
         markerEnd: arrow === "end" || arrow === "both" ? marker : undefined,
         markerStart: arrow === "start" || arrow === "both" ? { ...marker, orient: "auto-start-reverse" } : undefined,
@@ -449,7 +470,7 @@ export function Canvas() {
   return (
     <div
       ref={wrapper}
-      className={`overhead-canvas ${hoveredId || traceIds?.length ? "hovering" : ""} ${cardMode ? "cards" : ""} ${tool === "connect" || connecting ? "connecting" : ""} ${marquee ? "marquee" : ""} ${tool === "section" ? "drawing" : ""}`}
+      className={`overhead-canvas ${hoveredId || traceIds?.length ? "hovering" : ""} ${cardMode ? "cards" : ""} ${tool === "connect" || connecting ? "connecting" : ""} ${marquee ? "marquee" : ""} ${tool === "section" ? "drawing" : ""} ${tool === "trace" ? "tracing" : ""}`}
       onPointerDownCapture={onDrawDown}
       onPointerMove={onDrawMove}
       onPointerUp={onDrawUp}
@@ -524,6 +545,9 @@ export function Canvas() {
               }
             }
             st.setTrace([...visited]);
+            // one click, one trace · the tool disarms so the next click
+            // inspects a node again (the pill keeps the trace on screen)
+            st.setTool("select");
             return;
           }
           // a collapsed frame's card selects the frame itself, so the

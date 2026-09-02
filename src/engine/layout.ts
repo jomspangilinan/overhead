@@ -68,15 +68,56 @@ interface Block {
   frames: Record<string, Bounds>;
 }
 
-/** Columns by role, rows ordered by the mean row of each node's sources in
- *  the previous column (a one-pass barycentre), so edges run short. */
+/** Rank every node by dependency depth: the longest path to it over the
+ *  edges inside this scope, with the back edges of any cycle ignored (a
+ *  thumbnail worker writing back to the bucket it reads must not pull the
+ *  bucket forward). Roles are not consulted · a chain reads left to right
+ *  whatever services it happens to use. */
+function ranks(nodes: ArchNode[], edges: ArchEdge[]): Map<string, number> {
+  const out = new Map<string, string[]>(nodes.map((n) => [n.id, []]));
+  for (const e of edges) out.get(e.from)!.push(e.to);
+  // DFS colouring · an edge into a grey node closes a cycle, so drop it
+  const colour = new Map<string, 0 | 1 | 2>();
+  const kept = new Map<string, string[]>(nodes.map((n) => [n.id, []]));
+  const visit = (id: string) => {
+    colour.set(id, 1);
+    for (const to of out.get(id) ?? []) {
+      if (colour.get(to) === 1) continue;
+      kept.get(id)!.push(to);
+      if (!colour.get(to)) visit(to);
+    }
+    colour.set(id, 2);
+  };
+  for (const n of nodes) if (!colour.get(n.id)) visit(n.id);
+  // longest path over the acyclic remainder (Kahn, relaxing as we go)
+  const indeg = new Map<string, number>(nodes.map((n) => [n.id, 0]));
+  for (const [, tos] of kept) for (const to of tos) indeg.set(to, indeg.get(to)! + 1);
+  const rank = new Map<string, number>(nodes.map((n) => [n.id, 0]));
+  const queue = nodes.filter((n) => indeg.get(n.id) === 0).map((n) => n.id);
+  while (queue.length) {
+    const u = queue.shift()!;
+    for (const v of kept.get(u) ?? []) {
+      rank.set(v, Math.max(rank.get(v)!, rank.get(u)! + 1));
+      indeg.set(v, indeg.get(v)! - 1);
+      if (indeg.get(v) === 0) queue.push(v);
+    }
+  }
+  return rank;
+}
+
+/** Columns by rank, rows ordered by the mean row of each node's sources in
+ *  the columns already placed (a one-pass barycentre), so edges run short
+ *  and cross as little as possible. */
 function grid(nodes: ArchNode[], edges: ArchEdge[], opts: LayoutOpts): Block {
-  const columns = ROLE_ORDER.map((r) => nodes.filter((n) => roleOf(n) === r)).filter((c) => c.length);
+  const ids = new Set(nodes.map((n) => n.id));
+  const within = edges.filter((e) => e.from !== e.to && ids.has(e.from) && ids.has(e.to));
+  const rank = ranks(nodes, within);
+  const depth = Math.max(-1, ...nodes.map((n) => rank.get(n.id)!));
+  const columns = Array.from({ length: depth + 1 }, (_, r) => nodes.filter((n) => rank.get(n.id) === r)).filter((c) => c.length);
   const row = new Map<string, number>();
   columns.forEach((col, ci) => {
-    const prev = ci ? columns[ci - 1] : [];
     const key = (n: ArchNode) => {
-      const src = edges.filter((e) => e.to === n.id && prev.some((p) => p.id === e.from)).map((e) => row.get(e.from) ?? 0);
+      const src = within.filter((e) => e.to === n.id && row.has(e.from)).map((e) => row.get(e.from)!);
       return src.length ? src.reduce((a, b) => a + b, 0) / src.length : Number.POSITIVE_INFINITY;
     };
     const ordered = col.map((n, i) => ({ n, i, k: key(n) })).sort((a, b) => a.k - b.k || a.i - b.i);
@@ -139,8 +180,12 @@ export function autoLayout(
 }
 
 /**
- * Arrange everything and describe the top-level arrangement as sections.
- * The roles are a suggestion the user can throw away · never structure.
+ * Arrange everything and describe the top-level arrangement as sections ·
+ * one per column of resources that sit outside every frame, named after the
+ * role most of them play. A column holding a single resource gets no
+ * section: a dashed box around one icon says nothing, and a four-node chain
+ * used to come back wearing four of them. The names are a suggestion the
+ * user can rename or throw away · never structure.
  */
 export function autoLayoutWithSections(
   nodes: ArchNode[],
@@ -149,16 +194,29 @@ export function autoLayoutWithSections(
   opts: LayoutOpts = DEFAULT_OPTS,
 ): AutoLayoutResult {
   const { positions, frames } = autoLayout(nodes, edges, containers, opts);
-  const byRole = new Map<Role, string[]>();
+  const byColumn = new Map<number, ArchNode[]>();
   for (const n of nodes) {
     if (n.container && containers.some((c) => c.id === n.container)) continue;
-    const role = roleOf(n);
-    byRole.set(role, [...(byRole.get(role) ?? []), n.id]);
+    const x = positions[n.id]?.x ?? 0;
+    byColumn.set(x, [...(byColumn.get(x) ?? []), n]);
   }
-  const sections = ROLE_ORDER.filter((r) => byRole.get(r)?.length).map((r, i) => ({
-    name: ROLE_LABELS[r][0] + ROLE_LABELS[r].slice(1).toLowerCase(),
-    color: SECTION_COLORS[i % SECTION_COLORS.length],
-    nodeIds: byRole.get(r)!,
-  }));
+  const used = new Map<string, number>();
+  const sections = [...byColumn.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([, group]) => group)
+    .filter((group) => group.length > 1)
+    .map((group, i) => {
+      const counts = new Map<Role, number>();
+      for (const n of group) counts.set(roleOf(n), (counts.get(roleOf(n)) ?? 0) + 1);
+      const top = ROLE_ORDER.filter((r) => counts.has(r)).sort((a, b) => counts.get(b)! - counts.get(a)!)[0] ?? "handlers";
+      const base = ROLE_LABELS[top][0] + ROLE_LABELS[top].slice(1).toLowerCase();
+      const seen = (used.get(base) ?? 0) + 1;
+      used.set(base, seen);
+      return {
+        name: seen > 1 ? `${base} ${seen}` : base,
+        color: SECTION_COLORS[i % SECTION_COLORS.length],
+        nodeIds: group.map((n) => n.id),
+      };
+    });
   return { positions, frames, sections };
 }

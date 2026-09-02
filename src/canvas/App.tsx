@@ -20,6 +20,7 @@ import { BillDrop } from "./BillDrop";
 import { Keyboard } from "./Keyboard";
 import { HowTo } from "./HowTo";
 import { Notice } from "./Notice";
+import { TracePill } from "./TracePill";
 import { Toolbar } from "./chrome/Toolbar";
 import { Popovers } from "./Popovers";
 import { Dock } from "./chrome/Dock";
@@ -94,7 +95,6 @@ function RightDock() {
       >
         <Inspector />
       </Dock>
-      {open ? <ExportPanel /> : null}
     </div>
   );
 }
@@ -155,6 +155,7 @@ export function App() {
           <HowTo />
           <PaletteFloat />
           <Notice />
+          <TracePill />
           <Popovers />
           <Toolbar />
           <ZoomPill />
@@ -165,6 +166,9 @@ export function App() {
         </div>
       </div>
       <TemplatesDialog samples={SAMPLES} />
+      {/* a dialog, not an overlay inside the right dock · Export used to do
+          nothing at all while that dock was collapsed */}
+      <ExportPanel />
       <Sprite />
       <Autosave />
       <Keyboard />

@@ -1,5 +1,6 @@
 // Auto-layout is container-aware: every frame lays out its own contents,
-// frames never overlap, and columns exist only for the roles present.
+// frames never overlap, and columns come from the graph (dependency depth),
+// not from the services' roles.
 
 import { describe, expect, it } from "vitest";
 import type { Container } from "../src/engine/containers";
@@ -18,9 +19,33 @@ const overlaps = (a: Bounds, b: Bounds) => a.x < b.x + b.w && b.x < a.x + a.w &&
 const holds = (b: Bounds, p: { x: number; y: number }) => p.x - 100 >= b.x && p.x + 100 <= b.x + b.w && p.y - 50 >= b.y && p.y + 50 <= b.y + b.h;
 
 describe("autoLayout", () => {
-  it("uses columns only for the roles present, so a two-role sketch has no gap", () => {
+  it("columns follow the edges, not the roles", () => {
+    // s3 (data) feeds sqs (messaging) feeds lambda (handlers): by role that
+    // reads right to left, by dependency it reads left to right
+    const nodes = [node("bucket", "s3"), node("queue", "sqs"), node("fn", "lambda")];
+    const { positions } = autoLayout(nodes, [edge("bucket", "queue"), edge("queue", "fn")], [], OPTS);
+    expect(positions.queue.x - positions.bucket.x).toBe(OPTS.nodeW + 80);
+    expect(positions.fn.x - positions.queue.x).toBe(OPTS.nodeW + 80);
+    expect(positions.bucket.y).toBe(positions.fn.y);
+  });
+
+  it("ignores the back edge of a cycle so a write-back never pulls its target forward", () => {
+    // the media pipeline: cdn → assets → queue → worker → assets
+    const nodes = [node("cdn", "cloudfront"), node("assets", "s3"), node("queue", "sqs"), node("worker", "lambda")];
+    const { positions } = autoLayout(
+      nodes,
+      [edge("cdn", "assets"), edge("assets", "queue"), edge("queue", "worker"), edge("worker", "assets")],
+      [],
+      OPTS,
+    );
+    const col = (id: string) => Math.round((positions[id].x - positions.cdn.x) / (OPTS.nodeW + 80));
+    expect([col("cdn"), col("assets"), col("queue"), col("worker")]).toEqual([0, 1, 2, 3]);
+  });
+
+  it("stacks unconnected resources in one column", () => {
     const { positions } = autoLayout([node("fn", "lambda"), node("db", "dynamodb")], [], [], OPTS);
-    expect(positions.db.x - positions.fn.x).toBe(OPTS.nodeW + 80);
+    expect(positions.db.x).toBe(positions.fn.x);
+    expect(positions.db.y - positions.fn.y).toBe(OPTS.nodeH + 50);
   });
 
   it("keeps every node inside its own frame and sibling frames apart", () => {
@@ -61,9 +86,16 @@ describe("autoLayout", () => {
     expect(positions.fn1.y).toBe(positions.api2.y);
   });
 
-  it("emits role sections only for resources outside every frame", () => {
+  it("emits column sections only for resources outside every frame", () => {
     const containers: Container[] = [{ id: "region", kind: "region", name: "r", collapsed: false }];
-    const { sections } = autoLayoutWithSections([node("fn", "lambda", "region"), node("db", "dynamodb")], [], containers, OPTS);
-    expect(sections.map((s) => s.nodeIds)).toEqual([["db"]]);
+    const nodes = [node("fn", "lambda", "region"), node("db", "dynamodb"), node("db2", "dynamodb")];
+    const { sections } = autoLayoutWithSections(nodes, [], containers, OPTS);
+    expect(sections.map((s) => s.nodeIds)).toEqual([["db", "db2"]]);
+  });
+
+  it("never boxes a lone resource in a section", () => {
+    const nodes = [node("api", "apigateway"), node("fn", "lambda"), node("db", "dynamodb")];
+    const { sections } = autoLayoutWithSections(nodes, [edge("api", "fn"), edge("fn", "db")], [], OPTS);
+    expect(sections).toEqual([]);
   });
 });
