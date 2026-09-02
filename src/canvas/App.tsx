@@ -10,6 +10,7 @@ import { Canvas } from "./Canvas";
 import { Toolbar } from "./Toolbar";
 import { Inspector } from "./Inspector";
 import { Palette } from "./Palette";
+import { ScenarioBanner } from "./ScenarioBanner";
 import apiBackend from "../../samples/api-backend.json";
 import mediaPipeline from "../../samples/media-pipeline.json";
 import eventDriven from "../../samples/event-driven.json";
@@ -75,8 +76,9 @@ export function App() {
         <SampleBar />
         <div className="flex min-h-0 flex-1">
           <Palette />
-          <div className="min-w-0 flex-1">
+          <div className="relative min-w-0 flex-1">
             <Canvas />
+            <ScenarioBanner />
           </div>
           <Inspector />
         </div>

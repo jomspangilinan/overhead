@@ -94,8 +94,44 @@ export async function registerAllTools(): Promise<RegisterOutcome> {
     trackExternal("overhead_ping", "Health check — proves the WebMCP pipe works.");
   }
 
-  for (const spec of coreTools()) {
+  const specs = coreTools();
+  for (const spec of specs) {
     await registerSpec(mc, spec);
   }
+
+  // open_scenario lives here because it needs the context to dynamically
+  // register the four scenario tools (removed later by AbortSignal).
+  const [{ registerScenarioTools, scenarioOpen }, { errorResult, text }, { useStore }] =
+    await Promise.all([
+      import("./scenario"),
+      import("./toolRegistry"),
+      import("@/store/useStore"),
+    ]);
+  const writeMap = new Map(specs.filter((s) => !s.readOnly).map((s) => [s.name, s]));
+  await registerSpec(mc, {
+    name: "open_scenario",
+    description:
+      "Fork the design into a named what-if scenario. Registers scenario_apply, get_delta, commit_scenario and discard_scenario while it is open; writes apply to the fork.",
+    inputSchema: {
+      type: "object",
+      properties: { name: { type: "string", description: "Scenario name" } },
+      required: ["name"],
+      additionalProperties: false,
+    },
+    execute: async ({ name }) => {
+      if (scenarioOpen())
+        return errorResult(
+          "scenario_already_open",
+          `Scenario "${useStore.getState().scenario?.name}" is open — commit or discard it first.`,
+        );
+      useStore.getState().openScenario(String(name));
+      await registerScenarioTools(mc, writeMap);
+      return text({
+        scenario: String(name),
+        toolsAdded: ["scenario_apply", "get_delta", "commit_scenario", "discard_scenario"],
+      });
+    },
+  });
+
   return "registered";
 }

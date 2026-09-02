@@ -44,6 +44,7 @@ export interface OverheadState {
   selectedId: string | null;
   hoveredId: string | null;
   traceIds: string[] | null;
+  scenario: { name: string; base: StateSnapshot } | null;
 
   // mutations (synchronous — tools depend on it)
   loadSnapshot: (snap: StateSnapshot) => void;
@@ -72,6 +73,9 @@ export interface OverheadState {
   select: (id: string | null) => void;
   hover: (id: string | null) => void;
   setTrace: (ids: string[] | null) => void;
+  openScenario: (name: string) => void;
+  commitScenario: () => void;
+  discardScenario: () => void;
 }
 
 export const useStore = create<OverheadState>((set, get) => ({
@@ -86,6 +90,7 @@ export const useStore = create<OverheadState>((set, get) => ({
   selectedId: null,
   hoveredId: null,
   traceIds: null,
+  scenario: null,
 
   loadSnapshot: (snap) =>
     set({
@@ -167,6 +172,28 @@ export const useStore = create<OverheadState>((set, get) => ({
   select: (id) => set({ selectedId: id }),
   hover: (id) => set({ hoveredId: id }),
   setTrace: (ids) => set({ traceIds: ids }),
+
+  // While a scenario is open, the live state IS the fork; base is frozen.
+  openScenario: (name) => {
+    const s = get();
+    if (s.scenario) throw new Error(`Scenario "${s.scenario.name}" is already open.`);
+    set({
+      scenario: {
+        name,
+        base: structuredClone(snapshotOf(s)),
+      },
+    });
+  },
+
+  commitScenario: () => set({ scenario: null }),
+
+  discardScenario: () => {
+    const base = get().scenario?.base;
+    if (base) {
+      get().loadSnapshot(base);
+    }
+    set({ scenario: null });
+  },
 }));
 
 export function snapshotOf(s: OverheadState): StateSnapshot {
