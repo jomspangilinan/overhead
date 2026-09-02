@@ -73,6 +73,9 @@ export interface OverheadState {
   select: (id: string | null) => void;
   hover: (id: string | null) => void;
   setTrace: (ids: string[] | null) => void;
+  addGroup: (kind: ArchGroup["kind"], name: string, cidr?: string, parent?: string) => string;
+  moveIntoGroup: (nodeIds: string[], groupId: string | null) => void;
+  setGroupCollapsed: (groupId: string, collapsed: boolean) => void;
   openScenario: (name: string) => void;
   commitScenario: () => void;
   discardScenario: () => void;
@@ -172,6 +175,26 @@ export const useStore = create<OverheadState>((set, get) => ({
   select: (id) => set({ selectedId: id }),
   hover: (id) => set({ hoveredId: id }),
   setTrace: (ids) => set({ traceIds: ids }),
+
+  addGroup: (kind, name, cidr, parent) => {
+    const id = newId("group");
+    set((s) => ({
+      groups: [...s.groups, { id, kind, name, cidr, parent, collapsed: false }],
+    }));
+    return id;
+  },
+
+  moveIntoGroup: (nodeIds, groupId) =>
+    set((s) => ({
+      nodes: s.nodes.map((n) =>
+        nodeIds.includes(n.id) ? { ...n, group: groupId ?? undefined } : n,
+      ),
+    })),
+
+  setGroupCollapsed: (groupId, collapsed) =>
+    set((s) => ({
+      groups: s.groups.map((g) => (g.id === groupId ? { ...g, collapsed } : g)),
+    })),
 
   // While a scenario is open, the live state IS the fork; base is frozen.
   openScenario: (name) => {

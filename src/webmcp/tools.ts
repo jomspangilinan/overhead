@@ -260,11 +260,16 @@ export function coreTools(): ToolSpec[] {
           type: { type: "string", enum: Object.keys(SERVICES), description: "Service id" },
           name: { type: "string", description: "Resource name shown on the diagram" },
           settings: { type: "object", description: "Initial settings (console terms)" },
+          group: { type: "string", description: "Optional group id to place the node in" },
         },
         required: ["type", "name"],
         additionalProperties: false,
       },
-      execute: ({ type, name, settings }) => {
+      execute: ({ type, name, settings, group }) => {
+        if (group !== undefined && !useStore.getState().groups.some((g) => g.id === group))
+          return errorResult("no_such_group", `No group "${String(group)}".`, {
+            groups: useStore.getState().groups.map((g) => g.id),
+          });
         const def = getService(String(type));
         if (!def)
           return errorResult("no_such_service", `Unknown service "${String(type)}".`, {
@@ -278,7 +283,9 @@ export function coreTools(): ToolSpec[] {
             clean[k] = v;
           }
         }
-        const id = useStore.getState().addNode(def.id, String(name), clean);
+        const id = useStore
+          .getState()
+          .addNode(def.id, String(name), clean, group ? String(group) : undefined);
         const s = useStore.getState();
         const cost = nodeCost(snapshotOf(s), id, pricingOf(s));
         return text({
@@ -540,6 +547,94 @@ export function coreTools(): ToolSpec[] {
         }
         s.setTrace([...visited]);
         return text({ from: start.name, steps, nodesLit: visited.size });
+      },
+    },
+    {
+      name: "add_group",
+      description:
+        "Create a group (logical, vpc, subnet, az). Groups frame their members with official AWS colours, carry a cost subtotal, and can collapse to one card.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          kind: { type: "string", enum: ["logical", "vpc", "subnet", "az"] },
+          name: { type: "string" },
+          cidr: { type: "string", description: "Optional CIDR shown on the frame" },
+        },
+        required: ["kind", "name"],
+        additionalProperties: false,
+      },
+      execute: ({ kind, name, cidr }) => {
+        const id = useStore
+          .getState()
+          .addGroup(kind as "logical", String(name), cidr ? String(cidr) : undefined);
+        return text({ id });
+      },
+    },
+    {
+      name: "move_into_group",
+      description: "Re-parent nodes into a group (or pass null groupId to ungroup).",
+      inputSchema: {
+        type: "object",
+        properties: {
+          nodeIds: { type: "array", items: { type: "string" } },
+          groupId: { type: ["string", "null"] },
+        },
+        required: ["nodeIds", "groupId"],
+        additionalProperties: false,
+      },
+      execute: ({ nodeIds, groupId }) => {
+        const s = useStore.getState();
+        if (groupId !== null && !s.groups.some((g) => g.id === groupId))
+          return errorResult("no_such_group", `No group "${String(groupId)}".`, {
+            groups: s.groups.map((g) => g.id),
+          });
+        const ids = (Array.isArray(nodeIds) ? nodeIds : []).map(String);
+        const missing = ids.filter((id) => !s.nodes.some((n) => n.id === id));
+        if (missing.length)
+          return errorResult("no_such_node", `Unknown node(s): ${missing.join(", ")}`);
+        s.moveIntoGroup(ids, groupId as string | null);
+        return text({ groupId, members: ids.length });
+      },
+    },
+    {
+      name: "collapse_group",
+      description:
+        "Fold a group into one card (icon cluster, member count, subtotal); edges re-route to it.",
+      inputSchema: {
+        type: "object",
+        properties: { groupId: { type: "string" } },
+        required: ["groupId"],
+        additionalProperties: false,
+      },
+      execute: ({ groupId }) => {
+        const s = useStore.getState();
+        const g = s.groups.find((x) => x.id === groupId);
+        if (!g)
+          return errorResult("no_such_group", `No group "${String(groupId)}".`, {
+            groups: s.groups.map((x) => x.id),
+          });
+        s.setGroupCollapsed(g.id, true);
+        return text({ groupId: g.id, collapsed: true });
+      },
+    },
+    {
+      name: "expand_group",
+      description: "Unfold a collapsed group back to its member nodes.",
+      inputSchema: {
+        type: "object",
+        properties: { groupId: { type: "string" } },
+        required: ["groupId"],
+        additionalProperties: false,
+      },
+      execute: ({ groupId }) => {
+        const s = useStore.getState();
+        const g = s.groups.find((x) => x.id === groupId);
+        if (!g)
+          return errorResult("no_such_group", `No group "${String(groupId)}".`, {
+            groups: s.groups.map((x) => x.id),
+          });
+        s.setGroupCollapsed(g.id, false);
+        return text({ groupId: g.id, collapsed: false });
       },
     },
     {
