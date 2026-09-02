@@ -30,15 +30,29 @@ describe("edge geometry", () => {
     expect(p0[1]).toBe(50);
   });
 
-  it("target left of source draws a back S-curve, monotonic in x when level", () => {
-    const geo = edgeGeometry(icon(400, 0), icon(0, 0));
+  it("a short back edge between neighbours draws an S-curve out the left", () => {
+    const geo = edgeGeometry(icon(200, 0), icon(0, 0));
     expect(geo.caseKind).toBe("back");
     const [p0, p1, p2, p3] = points(geo.d);
-    expect(p0[0]).toBe(500 - 34); // leaves source LEFT
+    expect(p0[0]).toBe(300 - 34); // leaves source LEFT
     expect(p3[0]).toBe(100 + 34); // enters target RIGHT
     expect(p1[0]).toBeLessThanOrEqual(p0[0]);
     expect(p2[0]).toBeGreaterThanOrEqual(p3[0]);
-    expect(p1[0]).toBeGreaterThanOrEqual(p2[0]); // no wiggle
+  });
+
+  it("a long back edge on the same row returns underneath it", () => {
+    // the media pipeline's write-back: the worker sits two columns right of
+    // the bucket it writes to, so an S-curve would run the line and its
+    // label straight through whatever is between them
+    const geo = edgeGeometry(icon(400, 0), icon(0, 0));
+    expect(geo.caseKind).toBe("return");
+    expect(geo.fromSide).toBe("bottom");
+    expect(geo.toSide).toBe("bottom");
+    const [p0, p1, p2, p3] = points(geo.d);
+    expect(p0).toEqual([500, 39 + 34]); // bottom of the source icon
+    expect(p3).toEqual([100, 39 + 34]); // bottom of the target icon
+    expect(p1[1]).toBeGreaterThan(p0[1]); // both control points hang below
+    expect(p2[1]).toBeGreaterThan(p3[1]);
   });
 
   it("a target below leaves the bottom and enters the top", () => {

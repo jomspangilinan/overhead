@@ -268,9 +268,14 @@ the `ContainerKind` union.
   **Widths and gaps are measured, not constant** (2026-09-03): a column is as wide as the widest thing
   drawn in it, which is often the resource *name* and not the node, and the gap between two columns is
   opened by the widest edge label that has to sit in it (`textWidth`, base `COL_GAP` 44 / `ROW_GAP` 40).
-  The column pitch still reserves the **card** width, because cards appear on their own at 130% zoom and
-  a layout tuned to the icon would overlap the moment you zoomed in.
-  Auto-layout also **says what it did** ("Arranged 13 resources in 5 columns by dependency · 1 section"),
+  It is **mode-aware**: `LayoutOpts` separates the room a node needs (`nodeW`/`nodeH`, always the
+  200×100 hit-box) from what it draws (`drawW`/`drawH`, `ICON_DRAW_W`/`ICON_DRAW_H` in icon mode, the
+  hit-box in card mode, chosen from `cardModeOf`). Columns and rows are spaced by what is drawn, so a
+  row of 56px icons is not pitched as if each were a 200px card, while every block's extent is still
+  measured over the centres ± the hit-box, so a frame always contains what it holds and siblings never
+  overlap. An icon layout does crowd once cards appear at 130% zoom, so the notice names the spacing it
+  used and says to re-run in card view.
+  Auto-layout also **says what it did** ("Arranged 13 resources in 5 columns by dependency · icon spacing · 1 section"),
   including when it removes `auto-` sections a previous run left behind: a four-node chain has no column
   worth a section, so re-running looked like it was deleting them for no reason.
   `tests/layout.test.ts` checks containment, no sibling overlap, edge-driven columns, the ignored back
@@ -289,7 +294,7 @@ carrying its members, `az` dissolves upward, `subnet` → `subnetpub`, `node.gro
 2. **One look, then deep dive.** Default view = icons, names, typed edges, containers, sections.
 3. **The card houses the icon.** Zoom ≥ **130%** (or the Cards tool, K, or the Cost layer) and each icon moves
    inside a 200×76 card: service term, resource name, the 2–3 settings that decide price, security badge,
-   monthly cost. Constant 200×100 hit-box in both modes (`src/canvas/nodeMetrics.ts`).
+   monthly cost. Constant 200×100 hit-box in both modes (`src/canvas/nodeMetrics.ts`), so edges and drops stay stable · `ICON_DRAW_W`/`ICON_DRAW_H` beside it are what an icon *draws*, which is what auto-layout spaces by (§5b).
 4. **Three edge kinds, three encodings, nothing else.** `sync` solid + arrowhead · `async` dashed `7 5` +
    arrowhead · `data` dotted `2 5`, no head. Permissions, logging, encryption are **node properties** (security
    badges), never edges.
@@ -297,7 +302,10 @@ carrying its members, `az` dissolves upward, `subnet` → `subnetpub`, `node.gro
    visual shape (`shapeOf`: icon rim ±34 around centre y 39 · card ±100 × ±38), never from handle
    coordinates; the node's handles and "+" pads are placed from the same `shapeOf`/`anchorPoint`.
    `pickSides` chooses exit/entry sides by geometry (the axis with the larger clear gap wins, so a target
-   below is left from the bottom and entered from the top); `bracket` only when shapes overlap;
+   below is left from the bottom and entered from the top); a **`return`** case leaves and enters from
+   underneath when a back edge sits on the same row as its target and spans more than `RETURN_SPAN`,
+   because a write-back two columns to the left used to run its line and its label straight through
+   whatever was in between; `bracket` only when shapes overlap;
    `edge.anchors` pins a side per end. **Sides are picked in `Canvas.tsx`** so fans (`fan`) are keyed per
    node *and* side. A path runs through `[p0, ...waypoints, p3]` as a curve (cubic segments, end tangents
    along the side normals), straight polyline, or axis-aligned steps (`style.shape`); self-loops draw

@@ -29,8 +29,16 @@ const X0 = 80;
 const Y0 = 80;
 
 export interface LayoutOpts {
+  /** The room a node needs · its hit-box, which never changes. Frames are
+   *  sized from this, so a frame always contains what it holds and siblings
+   *  never overlap, whatever the spacing below turns out to be. */
   nodeW: number;
   nodeH: number;
+  /** What a node *draws*, when that is smaller than its hit-box (icon mode).
+   *  Columns and rows are spaced by this. Absent = the hit-box, which is
+   *  card mode. */
+  drawW?: number;
+  drawH?: number;
 }
 const DEFAULT_OPTS: LayoutOpts = { nodeW: 200, nodeH: 100 };
 
@@ -140,10 +148,13 @@ function grid(nodes: ArchNode[], edges: ArchEdge[], opts: LayoutOpts): Block {
     ordered.forEach(({ n }, ri) => row.set(n.id, ri));
     columns[ci] = ordered.map((o) => o.n);
   });
-  // What each column has to hold: the node box, or a longer name.
+  // What each column has to hold: the widest thing drawn in it · the node
+  // as drawn, or its name, which in icon mode is usually the wider of the two.
+  const drawW = opts.drawW ?? opts.nodeW;
+  const drawH = opts.drawH ?? opts.nodeH;
   const colOf = new Map<string, number>();
   columns.forEach((col, ci) => col.forEach((n) => colOf.set(n.id, ci)));
-  const widths = columns.map((col) => Math.max(opts.nodeW, ...col.map((n) => textWidth(n.name) + 16)));
+  const widths = columns.map((col) => Math.max(drawW, ...col.map((n) => textWidth(n.name) + 16)));
   // What each gap has to hold: the widest label on an edge crossing it.
   const gaps = columns.slice(1).map((_, i) => {
     const crossing = within.filter((e) => {
@@ -159,14 +170,24 @@ function grid(nodes: ArchNode[], edges: ArchEdge[], opts: LayoutOpts): Block {
   let x = 0;
   columns.forEach((col, ci) => {
     col.forEach((n, ri) => {
-      out.nodes[n.id] = { x: x + widths[ci] / 2, y: ri * (opts.nodeH + ROW_GAP) + opts.nodeH / 2 };
+      out.nodes[n.id] = { x: x + widths[ci] / 2, y: ri * (drawH + ROW_GAP) + drawH / 2 };
     });
     x += widths[ci] + (gaps[ci] ?? 0);
   });
-  if (columns.length) {
-    const rows = Math.max(...columns.map((c) => c.length));
-    out.w = widths.reduce((a, b) => a + b, 0) + gaps.reduce((a, b) => a + b, 0);
-    out.h = rows * opts.nodeH + (rows - 1) * ROW_GAP;
+  // Spacing follows what is drawn; the block still has to hold every node's
+  // hit-box, or a frame sized from this block would not contain what is in it
+  // and two sibling frames could overlap. So the extent is measured over the
+  // centres ± the hit-box, and the whole block is shifted back to the origin.
+  const centres = Object.values(out.nodes);
+  if (centres.length) {
+    const minX = Math.min(...centres.map((p) => p.x)) - opts.nodeW / 2;
+    const minY = Math.min(...centres.map((p) => p.y)) - opts.nodeH / 2;
+    out.w = Math.max(...centres.map((p) => p.x)) + opts.nodeW / 2 - minX;
+    out.h = Math.max(...centres.map((p) => p.y)) + opts.nodeH / 2 - minY;
+    for (const p of centres) {
+      p.x -= minX;
+      p.y -= minY;
+    }
   }
   return out;
 }

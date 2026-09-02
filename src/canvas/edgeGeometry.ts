@@ -80,7 +80,15 @@ export function anchorPoint(s: Shape, side: Side4, offset = 0): P {
   }
 }
 
-export type CaseKind = "forward" | "back" | "down" | "up" | "bracket" | "pinned";
+export type CaseKind = "forward" | "back" | "down" | "up" | "bracket" | "return" | "pinned";
+
+/** A back edge on the same row is a *return path* once it is long enough to
+ *  have something in the middle: a worker writing back to the bucket it read
+ *  from sits two columns to the right of it, and an S-curve out the left and
+ *  in the right runs the line, and its label, straight through the queue in
+ *  between. Past this span the pair is left and entered from underneath, so
+ *  the path swings below the row it belongs to. */
+const RETURN_SPAN = 150;
 
 /** Pick exit and entry sides. The axis with the larger clear gap wins (a
  *  slight bias keeps left-to-right flows horizontal); with no clearance on
@@ -101,8 +109,10 @@ export function pickSides(
   const tol = 24;
 
   let from: Side4, to: Side4, caseKind: CaseKind;
+  const sameRow = Math.abs(dy) < s.hh + t.hh;
   if (hGap >= tol && hGap * 1.15 >= vGap) {
     if (dx >= 0) [from, to, caseKind] = ["right", "left", "forward"];
+    else if (sameRow && backGap >= RETURN_SPAN) [from, to, caseKind] = ["bottom", "bottom", "return"];
     else [from, to, caseKind] = ["left", "right", "back"];
   } else if (vGap >= tol) {
     if (dy >= 0) [from, to, caseKind] = ["bottom", "top", "down"];
@@ -127,6 +137,9 @@ function reachFor(a: P, b: P, side: Side4, caseKind: CaseKind): number {
   const along = isHorizontal(side) ? Math.abs(b.x - a.x) : Math.abs(b.y - a.y);
   const across = isHorizontal(side) ? Math.abs(b.y - a.y) : Math.abs(b.x - a.x);
   if (caseKind === "back") return clamp(0.45 * Math.hypot(b.x - a.x, b.y - a.y), 40, 150);
+  // Both ends leave downwards · the reach is how deep the U hangs, and it
+  // has to clear the row before it can travel back across it.
+  if (caseKind === "return") return clamp(0.3 * Math.abs(b.x - a.x), 56, 140);
   if (caseKind === "bracket") return clamp(across * 0.45, 60, 90);
   return Math.max(24, 0.5 * along);
 }
