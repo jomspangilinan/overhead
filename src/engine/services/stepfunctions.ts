@@ -64,7 +64,7 @@ export const stepfunctions = defineService({
     `new sfn.StateMachine(this, "${varName}", {
   stateMachineName: "${resourceName}",
   stateMachineType: sfn.StateMachineType.${s.workflowType === "express" ? "EXPRESS" : "STANDARD"},
-  // stub definition — replace with your states
+  // stub definition · replace with your states
   definitionBody: sfn.DefinitionBody.fromChainable(new sfn.Pass(this, "${varName}Start")),
 });`,
   price: (s, traffic, pricing) => {

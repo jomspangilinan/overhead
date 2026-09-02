@@ -1,6 +1,6 @@
 "use client";
 
-// 16px stroke icons for the toolbar — one drawing style, currentColor.
+// 16px stroke icons for the toolbar · one drawing style, currentColor.
 
 import type { JSX } from "react";
 
@@ -28,7 +28,7 @@ const PATHS: Record<string, JSX.Element> = {
       <path d="M4.4 6.4h4.4M4.4 8.9h6.4" />
     </>
   ),
-  // rail glyphs — drawn on a 16 unit grid like the rest
+  // rail glyphs · drawn on a 16 unit grid like the rest
   select: <path d="M3.5 2l4.7 11.3 1.5-4.5 4.5-1.5z" />,
   pan: (
     <path d="M6 7.3V3.7a1 1 0 0 1 2 0v3.6m0-.3V3a1 1 0 0 1 2 0v4.3m0-.3v-.7a1 1 0 0 1 2 0V10a4 4 0 0 1-4 4h-.7a4 4 0 0 1-3.4-2l-1.2-1.8a1.06 1.06 0 0 1 1.7-1.3L6 10.6" />

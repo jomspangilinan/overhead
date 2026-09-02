@@ -234,7 +234,7 @@ export interface OverheadState {
   setCostDisplay: (patch: Partial<CostDisplay>) => void;
   /** One anchored popover at a time: a card / section / cost / cards gear.
    *  x,y are canvas-relative. */
-  popover: { kind: "card" | "section" | "cost" | "cards"; id?: string; x: number; y: number } | null;
+  popover: { kind: "card" | "section" | "container" | "canvas"; id?: string; x: number; y: number } | null;
   setPopover: (p: OverheadState["popover"]) => void;
   /** Multi-selection on the canvas (marquee, shift-click, a selected
    *  section's members). `selectedId` stays the primary selection. */

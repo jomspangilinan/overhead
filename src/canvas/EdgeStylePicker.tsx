@@ -1,7 +1,7 @@
 "use client";
 
 // The edge styling tools: line style, arrowheads, shape, weight. Visual
-// only — nothing here reads or writes the edge's `kind`. Used twice: as the
+// only · nothing here reads or writes the edge's `kind`. Used twice: as the
 // floating toolbar beside a selected edge (compact) and in the Inspector's
 // Styling section (full, with labels).
 

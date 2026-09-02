@@ -2,7 +2,7 @@
 
 // Sections: yours, free-form, orthogonal. Dotted frame with a label chip
 // above it, drawn above containers and below nodes. Dragging the chip moves
-// its declared members — never whatever happens to be inside the box, which
+// its declared members · never whatever happens to be inside the box, which
 // would silently steal nodes. The drag is a preview (store.frameDrag) and
 // commits once on release, so undo sees a single step; the corner grip
 // stores explicit bounds; click selects the section.
@@ -40,7 +40,7 @@ export function SectionFrames() {
   } | null>(null);
 
   // A section without stored bounds wraps its members; stored bounds are a
-  // floor and a position — a member outside them still grows the frame.
+  // floor and a position · a member outside them still grows the frame.
   const boxes = useMemo(() => {
     const out = new Map<string, Box>();
     for (const s of sections) {
@@ -186,7 +186,7 @@ export function SectionFrames() {
                     className="oh-section-gear grid h-[14px] w-[14px] place-items-center rounded"
                     style={{ color: s.color }}
                     aria-label="Section appearance"
-                    title="Appearance — colour, border, fill"
+                    title="Appearance · colour, border, fill"
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -206,7 +206,7 @@ export function SectionFrames() {
             <div
               className="oh-section-grip nopan nodrag absolute"
               style={{ left: box.r - 14, top: box.b - 14, width: 14, height: 14 }}
-              title="Drag to resize — never smaller than its members"
+              title="Drag to resize · never smaller than its members"
               onPointerDown={(e) => begin(e, s.id, "resize", box)}
               onPointerMove={move}
               onPointerUp={end}

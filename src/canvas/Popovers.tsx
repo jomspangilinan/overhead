@@ -110,7 +110,7 @@ function CardPopover({ nodeId }: { nodeId: string }) {
             <SettingField key={key} nodeId={node.id} settingKey={key} def={sdef} value={node.settings[key]} />
           ))}
           <div className="text-[10.5px]" style={{ color: "var(--ink-4)" }}>
-            Badge: <span className="mono" style={{ color: "var(--ink-2)" }}>{def.badge?.(merged) ?? "—"}</span> · exported to CDK
+            Badge: <span className="mono" style={{ color: "var(--ink-2)" }}>{def.badge?.(merged) ?? "none"}</span> · exported to CDK
           </div>
         </div>
       ) : (
@@ -214,6 +214,92 @@ export function SectionAppearance({ sectionId }: { sectionId: string }) {
   );
 }
 
+function ViewPopover() {
+  const layers = useStore((s) => s.layers);
+  const setLayer = useStore((s) => s.setLayer);
+  const gridOn = useStore((s) => s.gridOn);
+  const setGridOn = useStore((s) => s.setGridOn);
+  const [tab, setTab] = useState("Layers");
+  return (
+    <>
+      <div className="mb-1.5 text-[12px] font-semibold">View</div>
+      <Tabs tabs={["Layers", "Cards", "Cost"]} active={tab} onPick={setTab} />
+      {tab === "Layers" ? (
+        <div className="flex flex-col gap-1.5">
+          <Check checked={layers.sections} onChange={(v) => setLayer("sections", v)}>
+            Sections
+          </Check>
+          <Check checked={layers.security} onChange={(v) => setLayer("security", v)}>
+            Security badges
+          </Check>
+          <Check checked={layers.cost} onChange={(v) => setLayer("cost", v)}>
+            Cost figures
+          </Check>
+          <div className="mt-1 text-[10px] uppercase tracking-[0.12em]" style={{ color: "var(--ink-4)" }}>
+            Connections
+          </div>
+          <Check checked={layers.request} onChange={(v) => setLayer("request", v)}>
+            Requests (sync)
+          </Check>
+          <Check checked={layers.events} onChange={(v) => setLayer("events", v)}>
+            Events (async)
+          </Check>
+          <Check checked={layers.data} onChange={(v) => setLayer("data", v)}>
+            Data flow
+          </Check>
+          <div className="mt-1 text-[10px] uppercase tracking-[0.12em]" style={{ color: "var(--ink-4)" }}>
+            Canvas
+          </div>
+          <Check checked={gridOn} onChange={setGridOn}>
+            Grid · ⇧G
+          </Check>
+        </div>
+      ) : tab === "Cards" ? (
+        <CardsPopover />
+      ) : (
+        <CostPopover />
+      )}
+    </>
+  );
+}
+
+function ContainerPopover({ containerId }: { containerId: string }) {
+  const container = useStore((s) => s.containers.find((c) => c.id === containerId));
+  const renameContainer = useStore((s) => s.renameContainer);
+  const setContainerCollapsed = useStore((s) => s.setContainerCollapsed);
+  const select = useStore((s) => s.select);
+  const setRightDock = useStore((s) => s.setRightDock);
+  const setPopover = useStore((s) => s.setPopover);
+  if (!container) return null;
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="text-[10px] uppercase tracking-[0.12em]" style={{ color: "var(--ink-4)" }}>
+        {container.kind}
+      </div>
+      <input className="oh-field text-[12px] font-semibold" value={container.name} onChange={(e) => renameContainer(container.id, e.target.value)} aria-label="Name" />
+      {container.kind === "vpc" || container.kind === "subnetpub" || container.kind === "subnetpri" ? (
+        <Row label="CIDR">
+          <input className="oh-field mono" value={container.cidr ?? ""} placeholder="10.0.0.0/16" onChange={(e) => renameContainer(container.id, container.name, e.target.value)} />
+        </Row>
+      ) : null}
+      <Check checked={container.collapsed} onChange={(v) => setContainerCollapsed(container.id, v)}>
+        Collapse to a card on the canvas
+      </Check>
+      <button
+        className="self-start rounded border px-2 py-0.5 text-[10.5px] hover:bg-panel-2"
+        style={{ borderColor: "var(--line)", color: "var(--ink-2)" }}
+        onClick={() => {
+          select(container.id);
+          setRightDock(true);
+          setPopover(null);
+        }}
+      >
+        Open in the Inspector
+      </button>
+    </div>
+  );
+}
+
 function CostPopover() {
   const d = useStore((s) => s.costDisplay);
   const set = useStore((s) => s.setCostDisplay);
@@ -221,9 +307,8 @@ function CostPopover() {
   const setLayer = useStore((s) => s.setLayer);
   return (
     <div className="flex flex-col gap-2">
-      <div className="text-[12px] font-semibold">Cost display</div>
       <Check checked={layers.cost} onChange={(v) => setLayer("cost", v)}>
-        Cost layer on (cards show the figure)
+        Show cost figures
       </Check>
       <Row label="Period">
         <div className="flex gap-1">
@@ -266,9 +351,8 @@ function CardsPopover() {
   const setCardsForced = useStore((s) => s.setCardsForced);
   return (
     <div className="flex flex-col gap-2">
-      <div className="text-[12px] font-semibold">Cards</div>
       <Check checked={cardsForced} onChange={setCardsForced}>
-        Always show cards (else from 130% zoom or the Cost layer)
+        Card view · K (else cards appear from 130% zoom or with cost on)
       </Check>
       <div className="text-[10px] uppercase tracking-[0.12em]" style={{ color: "var(--ink-4)" }}>
         Every card shows
@@ -318,8 +402,8 @@ export function Popovers() {
   const host = ref.current?.parentElement;
   const W = 280;
   const H = 360;
-  const left = Math.max(8, Math.min((host?.clientWidth ?? 1200) - W - 8, popover.kind === "card" ? popover.x - W : popover.x));
-  const up = popover.kind === "cards";
+  const left = Math.max(8, Math.min((host?.clientWidth ?? 1200) - W - 8, popover.kind === "card" ? popover.x - W : popover.kind === "canvas" ? popover.x - W / 2 : popover.x));
+  const up = popover.kind === "canvas";
   const top = up ? undefined : Math.max(8, Math.min((host?.clientHeight ?? 800) - H - 8, popover.y));
   const bottom = up ? Math.max(8, (host?.clientHeight ?? 800) - popover.y) : undefined;
   return (
@@ -333,8 +417,8 @@ export function Popovers() {
     >
       {popover.kind === "card" && popover.id ? <CardPopover nodeId={popover.id} /> : null}
       {popover.kind === "section" && popover.id ? <SectionAppearance sectionId={popover.id} /> : null}
-      {popover.kind === "cost" ? <CostPopover /> : null}
-      {popover.kind === "cards" ? <CardsPopover /> : null}
+      {popover.kind === "container" && popover.id ? <ContainerPopover containerId={popover.id} /> : null}
+      {popover.kind === "canvas" ? <ViewPopover /> : null}
     </div>
   );
 }

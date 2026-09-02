@@ -1,7 +1,7 @@
 "use client";
 
 // Container frames, painted parents-first so children sit above. Bounds are
-// the union of what's inside and what the user stored (engine/frames.ts) —
+// the union of what's inside and what the user stored (engine/frames.ts) ·
 // so an agent-built architecture looks right with no extra tool arguments,
 // and a hand-placed frame keeps its position and never clips a member.
 //
@@ -167,7 +167,7 @@ export function ContainerFrames() {
             <div
               className="oh-frame-head nopan nodrag absolute rounded-t-lg"
               style={{ left: box.l, top: box.t, width: box.r - box.l, height: HEAD_H }}
-              title={`${meta.label} — drag to move with its contents · click to select`}
+              title={`${meta.label} · drag to move with its contents · click to select`}
               onPointerDown={(e) => begin(e, c, "move", box)}
               onPointerMove={move}
               onPointerUp={end}
@@ -273,7 +273,7 @@ export function ContainerFrames() {
             <div
               className="oh-frame-grip nopan nodrag absolute"
               style={{ left: box.r - 14, top: box.b - 14, width: 14, height: 14 }}
-              title="Drag to resize — never smaller than what's inside"
+              title="Drag to resize · never smaller than what's inside"
               onPointerDown={(e) => begin(e, c, "resize", box)}
               onPointerMove={move}
               onPointerUp={end}

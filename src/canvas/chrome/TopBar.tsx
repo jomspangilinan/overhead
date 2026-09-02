@@ -1,8 +1,8 @@
 "use client";
 
 // Floats from left:80 so it clears the rail. Brand, drawing breadcrumb, the
-// price-list provenance pill (region lives here), the monthly total — the
-// one loud number on screen — then Scenario and Export.
+// price-list provenance pill (region lives here), the monthly total · the
+// one loud number on screen · then Scenario and Export.
 
 import { useMemo } from "react";
 import {
@@ -53,7 +53,7 @@ export function TopBar() {
           value={drawingName}
           onChange={(e) => setDrawingName(e.target.value)}
           onBlur={(e) => setDrawingName(e.target.value)}
-          title="Drawing name — click to rename"
+          title="Drawing name · click to rename"
           aria-label="Drawing name"
           className="min-w-[60px] bg-transparent font-medium outline-none focus:underline"
           style={{ color: "var(--ink-15)", width: `${Math.max(6, drawingName.length + 1)}ch` }}
@@ -109,7 +109,7 @@ export function TopBar() {
           background: templatesOpen ? "var(--accent-bg)" : "var(--panel)",
           color: "var(--ink-15)",
         }}
-        data-tip="Templates — load a seeded architecture"
+        data-tip="Templates · load a seeded architecture"
         aria-label="Templates"
         onClick={() => setTemplatesOpen(!templatesOpen)}
       >
@@ -125,7 +125,7 @@ export function TopBar() {
         }}
         title={
           scenario
-            ? `Scenario "${scenario.name}" is open — commit or discard it on the canvas`
+            ? `Scenario "${scenario.name}" is open · commit or discard it on the canvas`
             : "Fork the design into a what-if scenario"
         }
         onClick={() => {

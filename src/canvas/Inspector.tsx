@@ -1,7 +1,7 @@
 "use client";
 
 // The properties panel: named, independently collapsible sections bound to
-// the selection — the way Figma groups a layer's properties. Settings stay
+// the selection · the way Figma groups a layer's properties. Settings stay
 // generated from the service schema (one vocabulary for the human and the
 // agent); Position, Placement, Appearance and Frame are the direct
 // manipulation fields for what the canvas also lets you drag.
@@ -194,13 +194,13 @@ function Field({
 }
 
 // ---- edge ----------------------------------------------------------------
-// Two sections kept apart on purpose: Connection is semantic (what it is —
+// Two sections kept apart on purpose: Connection is semantic (what it is ·
 // `kind`, volume, label), Styling is visual (`style`, anchors, waypoints).
 // Neither reads or writes the other's fields.
 
 const KIND_CHIPS: { kind: EdgeKind; label: string; hint: string }[] = [
   { kind: "sync", label: "Request", hint: "Synchronous request / response" },
-  { kind: "async", label: "Event", hint: "Queue, topic or event — asynchronous" },
+  { kind: "async", label: "Event", hint: "Queue, topic or event · asynchronous" },
   { kind: "data", label: "Data flow", hint: "Reads and writes to storage" },
 ];
 
@@ -285,7 +285,7 @@ function EdgeInspector({ edgeId }: { edgeId: string }) {
                 </button>
               </>
             ) : (
-              <span>none — press + on the edge</span>
+              <span>none · press + on the edge</span>
             )}
           </div>
         </Row>
@@ -404,7 +404,7 @@ function ContainerInspector({ containerId }: { containerId: string }) {
       <Section id="ctr-contents" title="Contents" aside={stat ? `${stat.resources} · $${stat.monthly.toFixed(0)}` : undefined}>
         {children.length + members.length === 0 ? (
           <p className="text-[11px]" style={{ color: "var(--ink-3)" }}>
-            Nothing inside yet — drag a resource in, or add one from the palette with this frame selected.
+            Nothing inside yet · drag a resource in, or add one from the palette with this frame selected.
           </p>
         ) : null}
         {children.map((c) => (
@@ -526,7 +526,7 @@ function NodeInspector({ nodeId }: { nodeId: string }) {
             {containers.map((c) => (
               <option key={c.id} value={c.id}>
                 {"· ".repeat(ancestorsOf(containers, c.id).length)}
-                {c.name} — {KIND_META[c.kind].label}
+                {c.name} · {KIND_META[c.kind].label}
               </option>
             ))}
           </select>
@@ -717,7 +717,7 @@ function SectionInspector({ sectionId }: { sectionId: string }) {
       <Section id="section-members" title="Members" aside={String(members.length)}>
         {members.length === 0 ? (
           <p className="text-[11px]" style={{ color: "var(--ink-4)" }}>
-            Empty — select resources on the canvas and add them here.
+            Empty · select resources on the canvas and add them here.
           </p>
         ) : null}
         {members.map((n) => (
@@ -748,7 +748,7 @@ function SectionInspector({ sectionId }: { sectionId: string }) {
         ) : null}
         <Row label="Inside">
           <select className="oh-field" value={section.parentId ?? ""} onChange={(e) => setSectionParent(section.id, e.target.value || undefined)}>
-            <option value="">— top level —</option>
+            <option value="">top level</option>
             {parents.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
@@ -776,7 +776,7 @@ function SectionInspector({ sectionId }: { sectionId: string }) {
             </>
           ) : (
             <p className="text-[11px]" style={{ color: "var(--ink-4)" }}>
-              Wraps its members — drag the corner grip on the canvas to pin a size.
+              Wraps its members · drag the corner grip on the canvas to pin a size.
             </p>
           )}
         </Section>

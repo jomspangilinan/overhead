@@ -3,7 +3,7 @@
 // One edge component. `kind` (semantic) decides the default look; a
 // per-edge `style` pins what the user changed (dash, arrowheads, weight,
 // shape) and is never read for meaning. Routing is "floating": anchors come
-// from the nodes' live positions and visual shape via edgeGeometry — React
+// from the nodes' live positions and visual shape via edgeGeometry · React
 // Flow's handle coordinates are ignored. The canvas picks the sides so fans
 // group per side.
 //
@@ -79,7 +79,7 @@ export const TypedEdge = memo(function TypedEdge({
   const setLabelEditing = useStore((st) => st.setLabelEditing);
   const edge = useStore((st) => st.edges.find((e) => e.id === id));
   const { screenToFlowPosition } = useReactFlow();
-  // Bracket edges reach outward — away from the graph's centre of mass.
+  // Bracket edges reach outward · away from the graph's centre of mass.
   const graphCx = useStore((st) =>
     st.nodes.length ? st.nodes.reduce((a, n) => a + n.position.x, 0) / st.nodes.length : 0,
   );
@@ -308,7 +308,7 @@ export const TypedEdge = memo(function TypedEdge({
               </button>
               {data?.waypoints?.length ? (
                 <button
-                  data-tip="Straighten — remove all bend points"
+                  data-tip="Straighten · remove all bend points"
                   data-tip-pos="bottom"
                   aria-label="Remove all bend points"
                   className="grid h-[26px] w-[26px] place-items-center rounded-md hover:bg-[var(--hover-2)]"

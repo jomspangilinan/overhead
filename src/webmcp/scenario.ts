@@ -1,6 +1,6 @@
 // Dynamic registration: the four scenario tools exist only while a fork is
 // open. open_scenario registers them under one AbortController; commit and
-// discard abort it — never unregisterTool. The panel count ticks both ways.
+// discard abort it · never unregisterTool. The panel count ticks both ways.
 
 import { useStore, snapshotOf, pricingOf } from "@/store/useStore";
 import { computeDelta } from "@/engine/delta";

@@ -58,7 +58,7 @@ export function BillDrop() {
       {dragging ? (
         <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center border-4 border-dashed border-accent bg-panel/70">
           <div className="rounded-lg bg-panel px-6 py-4 text-[15px] font-medium shadow-lg">
-            Drop a Cost Explorer CSV — parsed here, never uploaded
+            Drop a Cost Explorer CSV · parsed here, never uploaded
           </div>
         </div>
       ) : null}

@@ -2,7 +2,7 @@
 
 // One docked strip along the bottom: the drawing's facts (borrowed from an
 // engineering title block) on the left, the WebMCP agent readout on the
-// right — live tool count and the last three calls.
+// right · live tool count and the last three calls.
 
 import { useEffect, useMemo, useState } from "react";
 import { useStore, pricingOf, snapshotOf } from "@/store/useStore";
@@ -122,10 +122,10 @@ export function BottomBar() {
               {outcome === "checking"
                 ? "Checking for WebMCP…"
                 : outcome === "in-iframe"
-                  ? "In an iframe — tools invisible"
+                  ? "In an iframe · tools invisible"
                   : outcome === "error"
-                    ? "Tool registration threw — see console"
-                    : "No WebMCP here — open in the ChatGPT desktop app, or Chrome with #enable-webmcp-testing"}
+                    ? "Tool registration threw · see console"
+                    : "No WebMCP here · open in the ChatGPT desktop app, or Chrome with #enable-webmcp-testing"}
             </span>
           )}
         </button>

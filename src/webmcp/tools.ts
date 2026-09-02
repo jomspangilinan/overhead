@@ -367,7 +367,7 @@ export function coreTools(): ToolSpec[] {
     {
       name: "set_property",
       description:
-        "Change one setting on a node (console vocabulary — see list_services). Returns the node's new monthly cost. Invalid values return a structured error.",
+        "Change one setting on a node (console vocabulary · see list_services). Returns the node's new monthly cost. Invalid values return a structured error.",
       inputSchema: {
         type: "object",
         properties: {
@@ -556,7 +556,7 @@ export function coreTools(): ToolSpec[] {
           sections: s.sections
             .filter((x) => x.id.startsWith("auto-"))
             .map((x) => ({ id: x.id, name: x.name })),
-          note: "These are ordinary sections — rename or delete them.",
+          note: "These are ordinary sections · rename or delete them.",
         });
       },
     },
@@ -605,7 +605,7 @@ export function coreTools(): ToolSpec[] {
             visited.add(e.to);
             const a = nodeOr(cur)!;
             const b = nodeOr(e.to)!;
-            steps.push(`${a.name} —${e.kind}→ ${b.name}`);
+            steps.push(`${a.name} ·${e.kind}→ ${b.name}`);
             queue.push(e.to);
           }
         }
@@ -762,7 +762,7 @@ export function coreTools(): ToolSpec[] {
     {
       name: "add_section",
       description:
-        "Create a section — your own free-form grouping. No AWS meaning, no validation: it may cross containers freely. Sections are their own layer.",
+        "Create a section · your own free-form grouping. No AWS meaning, no validation: it may cross containers freely. Sections are their own layer.",
       inputSchema: {
         type: "object",
         properties: {
@@ -825,7 +825,7 @@ export function coreTools(): ToolSpec[] {
     },
     {
       name: "remove_section",
-      description: "Delete a section. Its members are untouched — only the grouping goes.",
+      description: "Delete a section. Its members are untouched · only the grouping goes.",
       inputSchema: {
         type: "object",
         properties: { id: { type: "string" } },
@@ -870,7 +870,7 @@ export function coreTools(): ToolSpec[] {
         if (!bill)
           return errorResult(
             "no_bill",
-            "No bill loaded — the user drags a Cost Explorer CSV onto the canvas first.",
+            "No bill loaded · the user drags a Cost Explorer CSV onto the canvas first.",
           );
         return text({
           total: bill.total,
@@ -895,7 +895,7 @@ export function coreTools(): ToolSpec[] {
         if (!bill)
           return errorResult(
             "no_bill",
-            "No bill loaded — the user drags a Cost Explorer CSV onto the canvas first.",
+            "No bill loaded · the user drags a Cost Explorer CSV onto the canvas first.",
           );
         const created: string[] = [];
         for (const line of bill.lines) {
@@ -938,7 +938,7 @@ export function coreTools(): ToolSpec[] {
           s.setExportPanel("svg");
           return text({
             format: "svg",
-            note: "Export panel opened — SVG/PNG render from the live canvas in the browser; use the panel's download button.",
+            note: "Export panel opened · SVG/PNG render from the live canvas in the browser; use the panel's download button.",
           });
         }
         if (!EXPORT_FORMATS.includes(format as ExportFormat))
@@ -979,7 +979,7 @@ export function coreTools(): ToolSpec[] {
         const i = Number(index);
         if (!Number.isInteger(i) || i < 0 || i >= total)
           return errorResult("bad_index", `index must be 0..${total - 1}.`, { chunks: total });
-        // raw chunk, not JSON-wrapped — the agent concatenates chunks verbatim
+        // raw chunk, not JSON-wrapped · the agent concatenates chunks verbatim
         return { content: [{ type: "text", text: chunkOf(content, i) }] };
       },
     },

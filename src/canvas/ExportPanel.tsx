@@ -102,7 +102,7 @@ export function ExportPanel() {
       {panel === "svg" ? (
         <div className="flex flex-col gap-3 p-4 text-[13px]">
           <p className="text-ink-2">
-            Renders the canvas exactly as drawn — vector SVG or 2× PNG.
+            Renders the canvas exactly as drawn · vector SVG or 2× PNG.
           </p>
           <div className="flex gap-2">
             <button

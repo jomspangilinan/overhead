@@ -29,13 +29,13 @@ export function HowTo() {
             <>
               <strong className="text-ink">Empty canvas.</strong> Press A to add a
               service, open Templates from the rail, drop a Cost Explorer CSV to
-              price what you already run — or open this page in the ChatGPT
+              price what you already run · or open this page in the ChatGPT
               desktop app and describe what to build.
             </>
           ) : (
             <>
               <strong className="text-ink">Bring your agent:</strong> open this
-              page in the ChatGPT desktop app and describe an architecture — it
+              page in the ChatGPT desktop app and describe an architecture · it
               builds, prices and audits it live. Drop a Cost Explorer CSV anywhere
               to price what you already run. Its tools: bottom bar.
             </>

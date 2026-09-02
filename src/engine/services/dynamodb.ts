@@ -83,7 +83,7 @@ export const dynamodb = defineService({
     return `new dynamodb.Table(this, "${varName}", {
   tableName: "${resourceName}",
   encryption: dynamodb.TableEncryption.${enc},${pitr}
-  // stub key schema — set your real partition/sort keys
+  // stub key schema · set your real partition/sort keys
   partitionKey: { name: "pk", type: dynamodb.AttributeType.STRING },
   billingMode: dynamodb.BillingMode.${provisioned ? "PROVISIONED" : "PAY_PER_REQUEST"},${capacity}
 });`;

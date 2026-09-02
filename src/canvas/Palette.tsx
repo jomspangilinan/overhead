@@ -87,7 +87,7 @@ export function PaletteFloat() {
     query ? def.term.toLowerCase().includes(query.toLowerCase()) || def.id.includes(query.toLowerCase()) : true,
   );
 
-  // A new container goes under the deepest legal ancestor of the selection —
+  // A new container goes under the deepest legal ancestor of the selection ·
   // a selected frame itself, or the selected node's container, walking up
   // until the kind fits; otherwise the deepest existing legal container.
   const parentFor = useMemo(() => {
@@ -132,7 +132,7 @@ export function PaletteFloat() {
       {services.map((def) => (
         <button
           key={def.id}
-          title={`${def.term} — click to add, or drag onto the canvas`}
+          title={`${def.term} · click to add, or drag onto the canvas`}
           draggable
           onDragStart={(e) => {
             e.dataTransfer.setData("application/overhead-service", def.id);
@@ -190,7 +190,7 @@ export function PaletteFloat() {
             )}
             {meta.label}
             <span className="ml-auto text-[9px]" style={{ color: "var(--ink-4)" }}>
-              {blocked ? "—" : parent ? `in ${parent.name}` : "top"}
+              {blocked ? "·" : parent ? `in ${parent.name}` : "top"}
             </span>
           </button>
         );

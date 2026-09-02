@@ -1,6 +1,6 @@
 "use client";
 
-// The Layers tree: every object is a row in one list — containers (by
+// The Layers tree: every object is a row in one list · containers (by
 // ownership), sections and groups (positionally, under each container
 // that holds a member), resources, and the connections. Disclosure
 // triangles fold the tree, not the canvas; click selects the object
@@ -135,11 +135,11 @@ export function LayersPanel() {
   };
 
   const tip = (r: LayerRow) => {
-    if (r.kind === "container") return `${KIND_META[r.container.kind].label} — click to select · double-click to ${r.container.collapsed ? "expand" : "collapse"} on the canvas`;
-    if (r.kind === "section") return "Section — click to select it and its members";
-    if (r.kind === "group") return "Group (⌘G) — click to select its members · ⇧⌘G ungroups";
+    if (r.kind === "container") return `${KIND_META[r.container.kind].label} · click to select · double-click to ${r.container.collapsed ? "expand" : "collapse"} on the canvas`;
+    if (r.kind === "section") return "Section · click to select it and its members";
+    if (r.kind === "group") return "Group (⌘G) · click to select its members · ⇧⌘G ungroups";
     if (r.kind === "connections") return "Every edge on the canvas";
-    if (r.kind === "edge") return `${r.edge.kind} connection — click to select`;
+    if (r.kind === "edge") return `${r.edge.kind} connection · click to select`;
     return "Click to select";
   };
 
@@ -179,7 +179,7 @@ export function LayersPanel() {
       </div>
       {rows.length === 0 ? (
         <p className="px-[11px] pb-2 text-[10.5px]" style={{ color: "var(--ink-4)" }}>
-          Nothing yet — press A to add a service, or open Templates from the top bar.
+          Nothing yet · press A to add a service, or open Templates from the top bar.
         </p>
       ) : null}
       {rows.map((r) => {
@@ -248,9 +248,9 @@ export function LayersPanel() {
                 className="ml-1 hidden text-[11px] text-ink-4 hover:text-bad group-hover:block"
                 title={
                   r.kind === "container"
-                    ? "Remove container — contents move up a level"
+                    ? "Remove container · contents move up a level"
                     : r.kind === "section" || r.kind === "group"
-                      ? "Remove — members stay on the canvas"
+                      ? "Remove · members stay on the canvas"
                       : r.kind === "edge"
                         ? "Remove connection"
                         : "Remove resource"

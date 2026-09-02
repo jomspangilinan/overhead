@@ -62,11 +62,59 @@ export function Canvas() {
   const setPendingConnection = useStore((s) => s.setPendingConnection);
   const setPalette = useStore((s) => s.setPalette);
   const setLabelEditing = useStore((s) => s.setLabelEditing);
+  const { screenToFlowPosition, fitView, getInternalNode } = useReactFlow();
   const selectedId = useStore((s) => s.selectedId);
   const selectedIds = useStore((s) => s.selectedIds);
   const setSelectedIds = useStore((s) => s.setSelectedIds);
   const wrapper = useRef<HTMLDivElement>(null);
   const [marquee, setMarquee] = useState(false);
+  // Section tool: drag a rectangle on the pane; on release it becomes a
+  // section over that area with the resources inside as members.
+  const [draw, setDraw] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
+  const drawRef = useRef<{ x0: number; y0: number } | null>(null);
+  const addSection = useStore((s) => s.addSection);
+  const setTool = useStore((s) => s.setTool);
+  const canvasPoint = (e: React.PointerEvent) => {
+    const r = wrapper.current?.getBoundingClientRect();
+    return { x: e.clientX - (r?.left ?? 0), y: e.clientY - (r?.top ?? 0) };
+  };
+  const onDrawDown = (e: React.PointerEvent) => {
+    if (tool !== "section" || !(e.target as HTMLElement).classList?.contains("react-flow__pane")) return;
+    e.stopPropagation();
+    e.preventDefault();
+    const p = canvasPoint(e);
+    drawRef.current = { x0: p.x, y0: p.y };
+    setDraw({ x0: p.x, y0: p.y, x1: p.x, y1: p.y });
+    wrapper.current?.setPointerCapture(e.pointerId);
+  };
+  const onDrawMove = (e: React.PointerEvent) => {
+    if (!drawRef.current) return;
+    const p = canvasPoint(e);
+    setDraw({ ...drawRef.current, x1: p.x, y1: p.y });
+  };
+  const onDrawUp = (e: React.PointerEvent) => {
+    const d = drawRef.current;
+    if (!d) return;
+    drawRef.current = null;
+    setDraw(null);
+    const p = canvasPoint(e);
+    const r = wrapper.current?.getBoundingClientRect();
+    const a = screenToFlowPosition({ x: Math.min(d.x0, p.x) + (r?.left ?? 0), y: Math.min(d.y0, p.y) + (r?.top ?? 0) });
+    const b = screenToFlowPosition({ x: Math.max(d.x0, p.x) + (r?.left ?? 0), y: Math.max(d.y0, p.y) + (r?.top ?? 0) });
+    const w = b.x - a.x;
+    const h = b.y - a.y;
+    if (w < 40 || h < 30) {
+      notify("Drag out a rectangle to make a section", "info");
+      return;
+    }
+    const st = useStore.getState();
+    const members = st.nodes.filter((n) => n.position.x >= a.x && n.position.x <= b.x && n.position.y >= a.y && n.position.y <= b.y).map((n) => n.id);
+    const count = st.sections.filter((x) => x.kind !== "group").length + 1;
+    const id = addSection(`Section ${count}`, members, undefined, { x: Math.round(a.x), y: Math.round(a.y), w: Math.round(w), h: Math.round(h) });
+    select(id);
+    setTool("select");
+    notify(members.length ? `Section ${count} · ${members.length} resource${members.length === 1 ? "" : "s"}` : `Section ${count} added · drag resources in`);
+  };
 
   const litIds = useMemo(() => {
     if (traceIds?.length) return new Set(traceIds);
@@ -126,7 +174,7 @@ export function Canvas() {
           // The hit-box is constant by design (nodeMetrics). Passing it as
           // `measured` keeps React Flow's drag maths initialised even though we
           // never apply its dimension changes (controlled nodes, no
-          // onNodesChange) — otherwise every drag frame logs error #015.
+          // onNodesChange) · otherwise every drag frame logs error #015.
           width: NODE_W,
           height: NODE_H,
           measured: { width: NODE_W, height: NODE_H },
@@ -257,10 +305,9 @@ export function Canvas() {
     [setZoom],
   );
 
-  const { screenToFlowPosition, fitView, getInternalNode } = useReactFlow();
   const addNode = useStore((s) => s.addNode);
 
-  // The seed lands after mount, so the built-in fitView fires too early —
+  // The seed lands after mount, so the built-in fitView fires too early ·
   // and useNodesInitialized never flips in a controlled flow without
   // onNodesChange. Retry until React Flow's internals have measured every
   // store node, then fit once.
@@ -305,7 +352,7 @@ export function Canvas() {
     [screenToFlowPosition, addNode, select],
   );
 
-  // Drag a node across a frame boundary and it re-parents on drop — the
+  // Drag a node across a frame boundary and it re-parents on drop · the
   // same validation move_into_container gives the agent; an illegal drop
   // snaps back and says why.
   const dragStart = useRef<{ x: number; y: number } | null>(null);
@@ -363,8 +410,21 @@ export function Canvas() {
   return (
     <div
       ref={wrapper}
-      className={`overhead-canvas ${hoveredId || traceIds?.length ? "hovering" : ""} ${cardMode ? "cards" : ""} ${tool === "connect" || connecting ? "connecting" : ""} ${marquee ? "marquee" : ""}`}
+      className={`overhead-canvas ${hoveredId || traceIds?.length ? "hovering" : ""} ${cardMode ? "cards" : ""} ${tool === "connect" || connecting ? "connecting" : ""} ${marquee ? "marquee" : ""} ${tool === "section" ? "drawing" : ""}`}
+      onPointerDownCapture={onDrawDown}
+      onPointerMove={onDrawMove}
+      onPointerUp={onDrawUp}
+      onPointerCancel={() => {
+        drawRef.current = null;
+        setDraw(null);
+      }}
     >
+      {draw ? (
+        <div
+          className="oh-draw-rect"
+          style={{ left: Math.min(draw.x0, draw.x1), top: Math.min(draw.y0, draw.y1), width: Math.abs(draw.x1 - draw.x0), height: Math.abs(draw.y1 - draw.y0) }}
+        />
+      ) : null}
       <ReactFlow
         nodes={rfNodes}
         edges={rfEdges}
@@ -485,6 +545,7 @@ export function Canvas() {
         zoomOnScroll={false}
         panOnDrag={tool === "pan"}
         selectionOnDrag={tool === "select"}
+        elementsSelectable={tool !== "section"}
         onSelectionStart={() => setMarquee(true)}
         onSelectionEnd={() => setMarquee(false)}
         nodeDragThreshold={4}

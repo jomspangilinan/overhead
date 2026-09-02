@@ -1,6 +1,6 @@
 // WebMCP registration. The raw document.modelContext.registerTool call
 // below is intentionally kept in the literal { name, description,
-// inputSchema, execute } shape the challenge brief prints — everything
+// inputSchema, execute } shape the challenge brief prints · everything
 // else goes through the registry wrapper, but this one stays visible.
 
 export type ToolContent = { type: "text"; text: string };
@@ -91,7 +91,7 @@ export async function registerAllTools(): Promise<RegisterOutcome> {
   if (document.modelContext) {
     // reflect the raw-registered ping in the local registry for the panel
     const { trackExternal } = await import("./toolRegistry");
-    trackExternal("overhead_ping", "Health check — proves the WebMCP pipe works.");
+    trackExternal("overhead_ping", "Health check · proves the WebMCP pipe works.");
   }
 
   const specs = coreTools();
@@ -122,7 +122,7 @@ export async function registerAllTools(): Promise<RegisterOutcome> {
       if (scenarioOpen())
         return errorResult(
           "scenario_already_open",
-          `Scenario "${useStore.getState().scenario?.name}" is open — commit or discard it first.`,
+          `Scenario "${useStore.getState().scenario?.name}" is open · commit or discard it first.`,
         );
       useStore.getState().openScenario(String(name));
       await registerScenarioTools(mc, writeMap);

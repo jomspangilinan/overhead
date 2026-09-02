@@ -18,12 +18,12 @@ import { nodeCost } from "@/engine/cost";
 import { findingsForNode } from "@/engine/findings";
 import { formatCost, type Severity } from "@/engine/model";
 import { defaultSettings } from "@/engine/defineService";
-import type { Side4 } from "./edgeGeometry";
+import { shapeOf, anchorPoint, type Side4 } from "./edgeGeometry";
 
 import { NODE_W, NODE_H, ICON } from "./nodeMetrics";
 export { NODE_W, NODE_H, ICON };
 
-// Security is a node property, not an edge — its badge is derived from the
+// Security is a node property, not an edge · its badge is derived from the
 // service's security settings (defineService().badge) and shown when the
 // security layer is on.
 
@@ -42,7 +42,7 @@ function settingText(value: unknown, unit?: string): string {
  *  each: click a pad to add a connected node on that side; drag a handle
  *  to connect to another node, or drop it on empty canvas to add one there.
  *  Icon-mode handles sit at the 56px icon's rim (centre y≈39), not the
- *  200px hit-box — otherwise arrowheads float in empty space. */
+ *  200px hit-box · otherwise arrowheads float in empty space. */
 const SIDES: { side: Side4; pos: Position }[] = [
   { side: "left", pos: Position.Left },
   { side: "right", pos: Position.Right },
@@ -54,25 +54,24 @@ export function besidePosition(centre: { x: number; y: number }, side: Side4) {
   const dy = side === "bottom" ? 160 : side === "top" ? -160 : 0;
   return { x: centre.x + dx, y: centre.y + dy };
 }
+const PAD_PUSH = 20;
+const ZONE_MARGIN = 30;
 function SideHandles({ nodeId, cardMode, centre }: { nodeId: string; cardMode: boolean; centre: { x: number; y: number } }) {
   const setPendingConnection = useStore((s) => s.setPendingConnection);
   const setPalette = useStore((s) => s.setPalette);
-  const cy = cardMode ? NODE_H / 2 : 39;
-  const hx = cardMode ? 0 : NODE_W / 2 - ICON / 2 - 6; // inset from the hit-box edge
-  const hy = cardMode ? (NODE_H - 76) / 2 : 39 - (ICON / 2 + 6); // top edge
+  // The same shape the edges anchor to (edgeGeometry.shapeOf), in node-local
+  // coordinates: handles sit exactly where an edge would meet the node and
+  // the pads 20px outside them.
+  const shape = shapeOf({ x: 0, y: 0 }, NODE_W, NODE_H, cardMode);
   const at = (side: Side4): React.CSSProperties => {
-    const c = { transform: "translate(-50%, -50%)" } as React.CSSProperties;
-    if (side === "left") return { ...c, top: cy, left: hx };
-    if (side === "right") return { ...c, top: cy, left: NODE_W - hx };
-    if (side === "top") return { ...c, top: hy, left: NODE_W / 2 };
-    return { ...c, top: NODE_H - hy, left: NODE_W / 2 };
+    const p = anchorPoint(shape, side);
+    return { top: p.y, left: p.x, transform: "translate(-50%, -50%)" };
   };
   const padAt = (side: Side4): React.CSSProperties => {
-    const h = at(side) as { top: number; left: number };
-    const push = 20;
+    const p = anchorPoint(shape, side);
     return {
-      top: h.top + (side === "top" ? -push : side === "bottom" ? push : 0),
-      left: h.left + (side === "left" ? -push : side === "right" ? push : 0),
+      top: p.y + (side === "top" ? -PAD_PUSH : side === "bottom" ? PAD_PUSH : 0),
+      left: p.x + (side === "left" ? -PAD_PUSH : side === "right" ? PAD_PUSH : 0),
     };
   };
   return (
@@ -80,18 +79,30 @@ function SideHandles({ nodeId, cardMode, centre }: { nodeId: string; cardMode: b
       {SIDES.map(({ side, pos }) => (
         <Handle key={side} id={side} type={side === "left" || side === "top" ? "target" : "source"} position={pos} style={at(side)} />
       ))}
+      {/* hover zone: the visible shape plus a margin, so pads appear when the
+          pointer approaches the icon/card, not anywhere in the 200×100 hit-box */}
+      <div
+        className="oh-hover-zone absolute"
+        style={{
+          left: shape.cx - shape.hw - ZONE_MARGIN,
+          top: shape.cy - shape.hh - ZONE_MARGIN,
+          width: (shape.hw + ZONE_MARGIN) * 2,
+          height: (shape.hh + ZONE_MARGIN) * 2,
+          pointerEvents: "none",
+        }}
+      >
       {SIDES.map(({ side }) => (
         <button
           key={`pad-${side}`}
           className="oh-side-pad nodrag nopan absolute grid h-4 w-4 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full text-[11px] leading-none"
-          style={padAt(side)}
+          style={{ ...padAt(side), left: (padAt(side).left as number) - (shape.cx - shape.hw - ZONE_MARGIN), top: (padAt(side).top as number) - (shape.cy - shape.hh - ZONE_MARGIN), pointerEvents: "auto" }}
           data-tip={`Add a connected service ${side === "left" ? "to the left" : side === "right" ? "to the right" : side === "top" ? "above" : "below"}`}
           data-tip-pos={side === "bottom" ? "bottom" : "top"}
           aria-label={`Add a connected service on the ${side}`}
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation();
-            const rect = (e.currentTarget.closest(".overhead-canvas") as HTMLElement | null)?.getBoundingClientRect();
+            const rect = (e.currentTarget.closest(".oh-main") as HTMLElement | null)?.getBoundingClientRect();
             const r = e.currentTarget.getBoundingClientRect();
             setPendingConnection({
               fromNodeId: nodeId,
@@ -105,6 +116,7 @@ function SideHandles({ nodeId, cardMode, centre }: { nodeId: string; cardMode: b
           +
         </button>
       ))}
+      </div>
     </>
   );
 }

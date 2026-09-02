@@ -54,25 +54,23 @@ export function ToolButton({
 
 const Sep = () => <div className="mx-[3px] h-5 w-px self-center" style={{ background: "var(--line-2)" }} />;
 
-/** Pick a tool; picking the active one drops back to select. Add and
- *  Container open the floating palette (containers first for B); Sections
- *  reveals the layer tree. */
+/** Pick a tool; picking the active one drops back to select. Add opens the
+ *  palette (services and containers together; B lists containers first).
+ *  Section is a drawing tool: drag a rectangle on the canvas. */
 export function pickTool(t: Tool) {
   const s = useStore.getState();
   const next = s.tool === t ? "select" : t;
   s.setTool(next);
   s.setPalette(next === "add" || next === "container");
-  if (next === "section") s.setLeftDock(true);
 }
 
 export function Toolbar() {
   const tool = useStore((s) => s.tool);
   const gridOn = useStore((s) => s.gridOn);
   const setGridOn = useStore((s) => s.setGridOn);
-  const cardsForced = useStore((s) => s.cardsForced);
-  const setCardsForced = useStore((s) => s.setCardsForced);
   const applyAutoLayout = useStore((s) => s.applyAutoLayout);
   const setPopover = useStore((s) => s.setPopover);
+  const popoverOpen = useStore((s) => s.popover?.kind === "canvas");
 
   return (
     <nav
@@ -81,34 +79,34 @@ export function Toolbar() {
       aria-label="Tools"
     >
       <ToolButton icon="select" hint="V" tip="Select · V" active={tool === "select"} onClick={() => pickTool("select")} />
-      <ToolButton icon="pan" hint="H" tip="Hand — pan the canvas · H" active={tool === "pan"} onClick={() => pickTool("pan")} />
+      <ToolButton icon="pan" hint="H" tip="Hand · pan the canvas · H" active={tool === "pan"} onClick={() => pickTool("pan")} />
       <Sep />
-      <ToolButton icon="plus" hint="A" tip="Add a service · A" active={tool === "add"} onClick={() => pickTool("add")} />
-      <ToolButton icon="connect" hint="C" tip="Connect — drag from a node's side · C" active={tool === "connect"} onClick={() => pickTool("connect")} />
-      <ToolButton icon="container" hint="B" tip="Add a container · B" active={tool === "container"} onClick={() => pickTool("container")} />
-      <ToolButton icon="section" hint="S" tip="Sections · S" active={tool === "section"} onClick={() => pickTool("section")} />
+      <ToolButton icon="plus" hint="A" tip="Add a service or container · A" active={tool === "add" || tool === "container"} onClick={() => pickTool("add")} />
+      <ToolButton icon="connect" hint="C" tip="Connect · drag from a node's side · C" active={tool === "connect"} onClick={() => pickTool("connect")} />
+      <ToolButton icon="section" hint="S" tip="Section · drag a rectangle over resources · S" active={tool === "section"} onClick={() => pickTool("section")} />
       <Sep />
-      <ToolButton icon="trace" hint="T" tip="Trace a request — then click a node · T" active={tool === "trace"} onClick={() => pickTool("trace")} />
+      <ToolButton icon="trace" hint="T" tip="Trace a request · then click a node · T" active={tool === "trace"} onClick={() => pickTool("trace")} />
       <ToolButton icon="layout" hint="L" tip="Auto-layout · L" onClick={applyAutoLayout} />
-      <ToolButton icon="cards" hint="K" tip="Card view · K" active={cardsForced} onClick={() => setCardsForced(!cardsForced)} />
-      <button
-        data-tip="What cards show"
-        data-tip-pos="top"
-        aria-label="Card settings"
-        className="grid h-[34px] w-[16px] place-items-center rounded-[6px] hover:bg-[var(--hover-2)]"
-        style={{ color: "var(--ink-4)", marginLeft: -4 }}
-        onClick={(e) => {
-          const host = (e.currentTarget as HTMLElement).closest(".oh-main")?.getBoundingClientRect();
-          const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-          setPopover({ kind: "cards", x: r.left + r.width / 2 - (host?.left ?? 0), y: r.top - (host?.top ?? 0) - 8 });
-        }}
-      >
-        <GearGlyph size={10} />
-      </button>
       <Sep />
       <ToolButton icon="grid" hint="⇧G" tip="Grid · ⇧G" active={gridOn} onClick={() => setGridOn(!gridOn)} />
       <ToolButton icon="undo" hint="⌘Z" tip="Undo · ⌘Z" onClick={() => undo()} />
       <ToolButton icon="redo" hint="⇧⌘Z" tip="Redo · ⇧⌘Z" onClick={() => redo()} />
+      <Sep />
+      <button
+        data-tip="View · layers, cards, cost display"
+        data-tip-pos="top"
+        aria-label="View settings"
+        aria-pressed={popoverOpen}
+        className="grid h-[34px] w-[34px] place-items-center rounded-[9px] hover:bg-[var(--hover-2)]"
+        style={{ color: popoverOpen ? "var(--accent-ink)" : "var(--ink-3)", background: popoverOpen ? "var(--accent-bg)" : undefined }}
+        onClick={(e) => {
+          const host = (e.currentTarget as HTMLElement).closest(".oh-main")?.getBoundingClientRect();
+          const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+          setPopover({ kind: "canvas", x: r.left + r.width / 2 - (host?.left ?? 0), y: r.top - (host?.top ?? 0) - 8 });
+        }}
+      >
+        <GearGlyph size={15} />
+      </button>
     </nav>
   );
 }

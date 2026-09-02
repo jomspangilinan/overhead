@@ -91,7 +91,7 @@ export const lambda = defineService({
         ? `\n  reservedConcurrentExecutions: ${s.reservedConcurrency},`
         : "";
     const secNotes = [
-      s.iamRole === "broad" ? "  // execution role: a shared broad role was chosen — prefer a scoped role per function" : "  // execution role: least-privilege (CDK creates one scoped to this function)",
+      s.iamRole === "broad" ? "  // execution role: a shared broad role was chosen · prefer a scoped role per function" : "  // execution role: least-privilege (CDK creates one scoped to this function)",
       s.vpcAttached === true ? "  // vpc: attach with `vpc` + `vpcSubnets` once the VPC construct exists" : null,
       s.envEncryption === "customer-managed" ? "  // environmentEncryption: pass a kms.Key here" : null,
     ]
@@ -105,7 +105,7 @@ ${secNotes}
   memorySize: ${Number(s.memoryMb) || 512},
   timeout: cdk.Duration.seconds(${Number(s.timeoutSec) || 3}),${reserved}
   handler: "index.handler",
-  // stub handler — replace with your code asset
+  // stub handler · replace with your code asset
   code: lambda.Code.fromInline("exports.handler = async () => ({ statusCode: 200 });"),
 });`;
   },

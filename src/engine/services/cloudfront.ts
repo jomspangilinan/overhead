@@ -57,7 +57,7 @@ export const cloudfront = defineService({
           : "PRICE_CLASS_ALL";
     const tls = s.minTls === "TLSv1" ? "TLS_V1" : s.minTls === "TLSv1.2_2019" ? "TLS_V1_2_2019" : "TLS_V1_2_2021";
     const oac = s.originAccess === "public-origin" ? "" : "\n  // origin access: use origins.S3BucketOrigin.withOriginAccessControl(bucket) for an S3 origin";
-    return `// distribution "${resourceName}" — stub origin, point at your real one
+    return `// distribution "${resourceName}" · stub origin, point at your real one
 new cloudfront.Distribution(this, "${varName}", {${oac}
   defaultBehavior: { origin: new origins.HttpOrigin("origin.example.com") },
   priceClass: cloudfront.PriceClass.${pc},

@@ -87,7 +87,7 @@ export const s3 = defineService({
     const enc = s.encryption === "sse-kms" ? "KMS_MANAGED" : "S3_MANAGED";
     const bpa = s.blockPublicAccess === false ? "" : "\n  blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,";
     const versioned = s.versioning === true ? "\n  versioned: true," : "";
-    return `// bucket for "${resourceName}" — names are global, so CDK generates one
+    return `// bucket for "${resourceName}" · names are global, so CDK generates one
 new s3.Bucket(this, "${varName}", {${lifecycle}
   encryption: s3.BucketEncryption.${enc},${bpa}${versioned}
 });`;

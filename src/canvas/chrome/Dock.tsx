@@ -1,7 +1,7 @@
 "use client";
 
-// A docked column. It reserves space in the shell's grid — nothing floats
-// over the canvas — and collapses to a thin labelled spine. Optional tabs;
+// A docked column. It reserves space in the shell's grid · nothing floats
+// over the canvas · and collapses to a thin labelled spine. Optional tabs;
 // an optional sticky row above the scrolling body (the Add tab's search).
 
 import type { ReactNode } from "react";

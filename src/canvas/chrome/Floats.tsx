@@ -1,10 +1,10 @@
 "use client";
 
-// The floating pills: layers top-left, zoom bottom-right. The toolbar owns
-// the bottom-centre (chrome/Toolbar.tsx).
+// The zoom pill (bottom-right). The toolbar owns the bottom-centre and its
+// View gear holds the layer switches (chrome/Toolbar.tsx, Popovers.tsx).
 
 import { useReactFlow } from "@xyflow/react";
-import { useStore, type Layer } from "@/store/useStore";
+import { useStore } from "@/store/useStore";
 import { Icon } from "../Icon";
 
 function Shell({
@@ -67,59 +67,6 @@ export function GearGlyph({ size = 12 }: { size?: number }) {
       <circle cx="8" cy="8" r="2.4" />
       <path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4" />
     </svg>
-  );
-}
-
-const SWITCHES: { layer: Layer; label: string }[] = [
-  { layer: "sections", label: "Sections" },
-  { layer: "security", label: "Security" },
-  { layer: "cost", label: "Cost" },
-];
-
-export function LayerSwitch() {
-  const layers = useStore((s) => s.layers);
-  const setLayer = useStore((s) => s.setLayer);
-  const setPopover = useStore((s) => s.setPopover);
-  return (
-    <Shell style={{ left: 14, top: 14 }}>
-      {SWITCHES.map(({ layer, label }) => (
-        <FloatButton
-          key={layer}
-          label={label}
-          title={`${label} layer`}
-          on={layers[layer]}
-          onClick={() => setLayer(layer, !layers[layer])}
-        />
-      ))}
-      <button
-        className="grid h-[26px] w-6 place-items-center rounded-lg hover:bg-[var(--hover-2)]"
-        style={{ color: "var(--ink-3)" }}
-        data-tip="Cost display — period, decimals, where it shows"
-        aria-label="Cost display settings"
-        onClick={(e) => {
-          const host = (e.currentTarget as HTMLElement).closest(".oh-main")?.getBoundingClientRect();
-          const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-          setPopover({ kind: "cost", x: r.left - (host?.left ?? 0), y: r.bottom - (host?.top ?? 0) + 6 });
-        }}
-      >
-        <GearGlyph />
-      </button>
-      <span
-        className="mx-[3px] w-px self-stretch"
-        style={{ background: "var(--line)" }}
-      />
-      {(["request", "events", "data"] as Layer[]).map((layer) => (
-        <FloatButton
-          key={layer}
-          square
-          title={`${layer} edges`}
-          on={layers[layer]}
-          onClick={() => setLayer(layer, !layers[layer])}
-        >
-          <Icon name={layer} size={14} />
-        </FloatButton>
-      ))}
-    </Shell>
   );
 }
 

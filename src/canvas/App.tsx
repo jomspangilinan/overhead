@@ -1,6 +1,6 @@
 "use client";
 
-// The shell: a docked grid — rail · left dock · canvas · right dock — with a
+// The shell: a docked grid · rail · left dock · canvas · right dock · with a
 // top bar and a bottom bar. Panels reserve space; only two small pills float
 // over the canvas.
 
@@ -25,7 +25,7 @@ import { Popovers } from "./Popovers";
 import { Dock } from "./chrome/Dock";
 import { TopBar } from "./chrome/TopBar";
 import { BottomBar } from "./chrome/BottomBar";
-import { LayerSwitch, ZoomPill } from "./chrome/Floats";
+import { ZoomPill } from "./chrome/Floats";
 import { LayersPanel } from "./chrome/LayersPanel";
 import apiBackend from "../../samples/api-backend.json";
 import mediaPipeline from "../../samples/media-pipeline.json";
@@ -58,7 +58,7 @@ function Autosave() {
           }),
         );
       } catch {
-        // storage full or unavailable — autosave is best-effort
+        // storage full or unavailable · autosave is best-effort
       }
     });
     return unsub;
@@ -126,7 +126,7 @@ export function App() {
         }
       }
     } catch {
-      // corrupt autosave — fall through to the seed
+      // corrupt autosave · fall through to the seed
     }
     if (!restored) {
       const snap = SAMPLES["event-driven"];
@@ -156,7 +156,6 @@ export function App() {
           <Notice />
           <Popovers />
           <Toolbar />
-          <LayerSwitch />
           <ZoomPill />
         </div>
         <RightDock />
