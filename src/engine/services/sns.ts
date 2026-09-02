@@ -1,0 +1,32 @@
+import { defineService } from "../defineService";
+import { price } from "../pricing";
+import { line, num } from "./util";
+
+export const sns = defineService({
+  id: "sns",
+  term: "Amazon SNS",
+  icon: "aws-sns",
+  lane: "messaging",
+  settings: {
+    publishesPerMonth: {
+      type: "number",
+      min: 0,
+      optional: true,
+      label: "Publishes / month",
+      driver: true,
+      description: "Defaults to the canvas traffic figure",
+    },
+    subscriberCount: {
+      type: "number",
+      min: 0,
+      default: 1,
+      label: "Subscribers",
+      description: "Deliveries to SQS and Lambda are free",
+    },
+  },
+  cardLines: ["publishesPerMonth", "subscriberCount"],
+  price: (s, traffic, pricing) => {
+    const publishes = num(s.publishesPerMonth, traffic.requestsPerMonth);
+    return [line(price(pricing, "sns.requests"), publishes)];
+  },
+});
