@@ -101,13 +101,19 @@ body {
   color: var(--ink-3);
 }
 
-/* ---- the shell: a docked grid, nothing reserves-nothing ---- */
+/* ---- the shell: a docked grid, nothing reserves-nothing ----
+   The canvas column and row carry a hard floor. Without it a small window
+   resolves the 1fr track to 0 and React Flow measures a zero box (its
+   error #004) — the canvas goes blank and never recovers. With the floor the
+   shell overflows the viewport instead (body clips it), which is the
+   right failure: the docks shrink first (media queries below). */
 .oh-shell {
   display: grid;
   height: 100vh;
   width: 100vw;
-  grid-template-columns: 52px auto minmax(0, 1fr) auto;
-  grid-template-rows: 46px minmax(0, 1fr) 36px;
+  min-height: 100vh;
+  grid-template-columns: 52px auto minmax(420px, 1fr) auto;
+  grid-template-rows: 46px minmax(280px, 1fr) 36px;
   background: var(--bg);
 }
 .oh-shell > .oh-top { grid-column: 2 / -1; grid-row: 1; }
@@ -117,11 +123,26 @@ body {
 .oh-shell > .oh-right { grid-column: 4; grid-row: 2; }
 .oh-shell > .oh-bottom { grid-column: 2 / -1; grid-row: 3; }
 
+/* Docks read their width from a variable so they can narrow before the
+   canvas has to. */
+.oh-dock { width: var(--dock-w); }
+@media (max-width: 1180px) {
+  .oh-dock { width: min(var(--dock-w), 220px); }
+}
+@media (max-width: 980px) {
+  .oh-dock { width: min(var(--dock-w), 190px); }
+}
+
 /* The canvas cell carries the radial lift; the grid lives inside React Flow. */
 .oh-stage {
   position: absolute;
   inset: 0;
   background: radial-gradient(1300px 760px at 58% 42%, #141922 0%, var(--bg) 70%);
+}
+/* React Flow's wrapper is pinned to the cell, never sized by percentages. */
+.overhead-canvas {
+  position: absolute;
+  inset: 0;
 }
 .overhead-canvas,
 .react-flow,
@@ -167,8 +188,68 @@ body {
 .react-flow__edge.selected .react-flow__edge-path {
   stroke: var(--accent);
 }
+/* Attribution stays visible (we are not on React Flow Pro) — restyled to
+   the palette and moved to bottom-centre so it clears the zoom pill. */
 .react-flow__attribution {
-  display: none;
+  left: 50%;
+  right: auto;
+  bottom: 4px;
+  transform: translateX(-50%);
+  background: transparent;
+  font-size: 9px;
+  letter-spacing: 0.02em;
+}
+.react-flow__attribution a {
+  color: var(--ink-4);
+}
+.react-flow__attribution a:hover {
+  color: var(--ink-3);
+}
+
+/* Container frames: header band is the drag handle, corner grip resizes. */
+.oh-frame-head {
+  cursor: grab;
+}
+.oh-frame-head:active {
+  cursor: grabbing;
+}
+.oh-frame-grip {
+  opacity: 0;
+  transition: opacity 0.12s;
+  cursor: nwse-resize;
+}
+.react-flow__viewport:hover .oh-frame-grip,
+.oh-frame-grip:hover {
+  opacity: 0.85;
+}
+
+/* Edge route handle: visible when the edge is selected */
+.oh-route-handle {
+  cursor: grab;
+}
+.oh-route-handle:active {
+  cursor: grabbing;
+}
+
+/* Inspector sections */
+.oh-section + .oh-section {
+  border-top: 1px solid var(--line);
+}
+.oh-field {
+  width: 100%;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  padding: 4px 8px;
+  font-size: 12.5px;
+  color: var(--ink);
+}
+.oh-field:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+.oh-field.mono {
+  font-family: var(--font-mono-jb), ui-monospace, monospace;
 }
 
 /* Container collapse handle: only on hover of the frame's corner region */

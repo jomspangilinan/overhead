@@ -71,9 +71,9 @@ export function Dock({
 
   return (
     <aside
-      className="flex min-h-0 flex-col"
+      className="oh-dock flex min-h-0 flex-col"
       style={{
-        width,
+        ["--dock-w" as string]: `${width}px`,
         background: "var(--panel)",
         borderLeft: side === "right" ? "1px solid var(--line)" : undefined,
         borderRight: side === "left" ? "1px solid var(--line)" : undefined,
