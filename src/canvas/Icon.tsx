@@ -28,13 +28,43 @@ const PATHS: Record<string, JSX.Element> = {
       <path d="M4.4 6.4h4.4M4.4 8.9h6.4" />
     </>
   ),
-  lanes: (
+  // rail glyphs — drawn on a 16 unit grid like the rest
+  select: <path d="M3.5 2l4.7 11.3 1.5-4.5 4.5-1.5z" />,
+  pan: (
+    <path d="M6 7.3V3.7a1 1 0 0 1 2 0v3.6m0-.3V3a1 1 0 0 1 2 0v4.3m0-.3v-.7a1 1 0 0 1 2 0V10a4 4 0 0 1-4 4h-.7a4 4 0 0 1-3.4-2l-1.2-1.8a1.06 1.06 0 0 1 1.7-1.3L6 10.6" />
+  ),
+  plus: <path d="M8 3.2v9.6M3.2 8h9.6" />,
+  minus: <path d="M3.4 8h9.2" />,
+  connect: (
+    <path d="M6.7 8.7a3.3 3.3 0 0 0 4.6 0l1.3-1.3a3.3 3.3 0 0 0-4.6-4.6l-.7.7M9.3 7.3a3.3 3.3 0 0 0-4.6 0L3.4 8.6a3.3 3.3 0 0 0 4.6 4.6l.7-.7" />
+  ),
+  container: (
     <>
-      <rect x="1.6" y="2" width="3.5" height="12" rx="1" />
-      <rect x="6.25" y="2" width="3.5" height="12" rx="1" />
-      <rect x="10.9" y="2" width="3.5" height="12" rx="1" />
+      <rect x="2" y="2" width="12" height="12" rx="1.5" />
+      <rect x="4.7" y="4.7" width="6.6" height="6.6" rx="1" />
     </>
   ),
+  section: (
+    <path
+      d="M2.6 3.3h4v4h-4zM9.4 3.3h4v4h-4zM2.6 9.7h4v4h-4zM9.4 9.7h4v4h-4z"
+      strokeDasharray="1.6 1.6"
+    />
+  ),
+  trace: <path d="M4.6 2.6l8.8 5.4-8.8 5.4z" />,
+  grid: <path d="M2.6 6h10.8M2.6 10h10.8M6 2.6v10.8M10 2.6v10.8" />,
+  undo: (
+    <>
+      <path d="M5.8 4.4 3.2 7l2.6 2.6" />
+      <path d="M3.2 7h6.2a3.4 3.4 0 0 1 0 6.8H8" />
+    </>
+  ),
+  search: (
+    <>
+      <circle cx="7.3" cy="7.3" r="4.6" />
+      <path d="M13.3 13.3l-2.6-2.6" />
+    </>
+  ),
+  scenario: <path d="M8.6 1.6 3.4 9.4h3.8l-.5 5 5.4-8.2H8.3z" />,
   // zoom
   fit: <path d="M5.6 2H2v3.6M10.4 2H14v3.6M5.6 14H2v-3.6M10.4 14H14v-3.6" />,
   // actions

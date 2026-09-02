@@ -3,8 +3,6 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   ReactFlow,
-  Background,
-  BackgroundVariant,
   MarkerType,
   useReactFlow,
   type Node,
@@ -40,6 +38,7 @@ export function Canvas() {
   const cardMode = useStore(cardModeOf);
 
   const traceIds = useStore((s) => s.traceIds);
+  const tool = useStore((s) => s.tool);
   const selectedEdgeId = useStore((s) => s.selectedEdgeId);
   const selectEdge = useStore((s) => s.selectEdge);
   const storeAddEdge = useStore((s) => s.addEdge);
@@ -248,10 +247,12 @@ export function Canvas() {
         minZoom={0.5}
         maxZoom={1.8}
         zoomOnScroll={false}
+        panOnDrag={tool === "pan"}
+        selectionOnDrag={tool === "select"}
+        nodesDraggable={tool !== "pan"}
         zoomOnPinch
         panOnScroll
       >
-        <Background variant={BackgroundVariant.Lines} gap={24} color="var(--line)" style={{ opacity: 0.35 }} />
         <GroupFrames />
       </ReactFlow>
     </div>

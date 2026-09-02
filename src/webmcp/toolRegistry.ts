@@ -14,6 +14,49 @@ export interface RegisteredTool {
 const registry = new Map<string, RegisteredTool>();
 const listeners = new Set<() => void>();
 
+/** Last few tool calls, for the agent strip. Every call passes through
+ *  registerSpec's execute wrapper, so this is the one place to record it. */
+export interface ToolCall {
+  name: string;
+  summary: string;
+  at: number;
+}
+const recent: ToolCall[] = [];
+const callListeners = new Set<() => void>();
+
+export function recentCalls(): ToolCall[] {
+  return [...recent];
+}
+
+export function onCall(fn: () => void): () => void {
+  callListeners.add(fn);
+  return () => callListeners.delete(fn);
+}
+
+function recordCall(name: string, args: Record<string, unknown>, result: ToolResult) {
+  const arg = Object.entries(args).find(
+    ([, v]) => typeof v === "string" || typeof v === "number",
+  );
+  let out = "";
+  try {
+    const parsed = JSON.parse(result.content[0]?.text ?? "{}") as Record<
+      string,
+      unknown
+    >;
+    const key = ["id", "count", "monthlyTotal", "removed", "scenario", "format"].find(
+      (k) => parsed[k] !== undefined,
+    );
+    if (parsed.error) out = `error: ${(parsed.error as { code?: string }).code ?? ""}`;
+    else if (key) out = `${parsed[key]}`;
+  } catch {
+    out = "ok";
+  }
+  const summary = `${arg ? `${arg[0]}=${arg[1]} ` : ""}${out ? `→ ${out}` : ""}`.trim();
+  recent.unshift({ name, summary, at: Date.now() });
+  if (recent.length > 3) recent.pop();
+  for (const fn of callListeners) fn();
+}
+
 export function liveTools(): RegisteredTool[] {
   return [...registry.values()];
 }
@@ -71,11 +114,18 @@ export async function registerSpec(
       ...(spec.untrustedContent ? { untrustedContentHint: true } : {}),
     },
     execute: async (raw: unknown) => {
+      const args = (raw ?? {}) as Record<string, unknown>;
       try {
-        const args = (raw ?? {}) as Record<string, unknown>;
-        return await spec.execute(args);
+        const result = await spec.execute(args);
+        recordCall(spec.name, args, result);
+        return result;
       } catch (err) {
-        return errorResult("internal", err instanceof Error ? err.message : String(err));
+        const result = errorResult(
+          "internal",
+          err instanceof Error ? err.message : String(err),
+        );
+        recordCall(spec.name, args, result);
+        return result;
       }
     },
   };

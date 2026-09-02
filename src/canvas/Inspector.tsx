@@ -121,12 +121,18 @@ export function Inspector() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [node, edges, traffic, region]);
 
-  if (!node) return null;
+  if (!node) {
+    return (
+      <p className="p-4 text-[11.5px] text-ink-3">
+        Select a resource on the canvas.
+      </p>
+    );
+  }
   const def = getService(node.service);
   if (!def) return null;
 
   return (
-    <aside className="flex w-[290px] shrink-0 flex-col gap-4 overflow-y-auto border-l border-line bg-panel p-4">
+    <div className="flex flex-col gap-4 p-3.5">
       <header>
         <div
           className="text-[10px] font-semibold uppercase tracking-wider text-ink-3"
@@ -243,6 +249,6 @@ export function Inspector() {
       >
         Remove node
       </button>
-    </aside>
+    </div>
   );
 }

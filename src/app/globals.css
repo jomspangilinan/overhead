@@ -101,15 +101,38 @@ body {
   color: var(--ink-3);
 }
 
-/* ---- stage: the canvas bleeds edge to edge, chrome floats over it ---- */
-.overhead-canvas {
+/* ---- stage: bleeds edge to edge behind every piece of chrome ---- */
+.oh-stage {
+  position: fixed;
+  inset: 0;
   background: radial-gradient(1300px 760px at 58% 42%, #141922 0%, var(--bg) 70%);
 }
-.overhead-canvas .react-flow__background {
+.oh-grid {
+  position: absolute;
+  inset: 0;
+  opacity: 0.5;
   transition: opacity 0.18s;
+  background-image: radial-gradient(circle at 1px 1px, #1e2530 1px, transparent 0);
+  background-size: 26px 26px;
 }
-body.nogrid .overhead-canvas .react-flow__background {
+body.nogrid .oh-grid {
   opacity: 0;
+}
+
+/* The React Flow surface is inset so fitView never centres the diagram
+   under a floating panel; the stage behind it still runs to the edges. */
+.oh-viewport {
+  position: fixed;
+  left: 76px;
+  right: 12px;
+  top: 60px;
+  bottom: 56px;
+  z-index: 2;
+}
+.overhead-canvas,
+.react-flow,
+.react-flow__pane {
+  background: transparent;
 }
 
 /* ---- floating chrome: panels, rails, pills ---- */

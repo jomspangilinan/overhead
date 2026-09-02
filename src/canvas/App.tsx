@@ -1,5 +1,8 @@
 "use client";
 
+// The shell: a stage that bleeds edge to edge, an inset React Flow surface,
+// and floating chrome over both. Nothing reserves space from the canvas.
+
 import { useEffect } from "react";
 import { ReactFlowProvider } from "@xyflow/react";
 import type { StateSnapshot } from "@/engine/model";
@@ -7,7 +10,6 @@ import { autoLayout } from "@/engine/layout";
 import { useStore } from "@/store/useStore";
 import { Sprite } from "./Sprite";
 import { Canvas } from "./Canvas";
-import { Toolbar } from "./Toolbar";
 import { Inspector } from "./Inspector";
 import { Palette } from "./Palette";
 import { ScenarioBanner } from "./ScenarioBanner";
@@ -15,6 +17,11 @@ import { ExportPanel } from "./ExportPanel";
 import { BillDrop } from "./BillDrop";
 import { Keyboard } from "./Keyboard";
 import { HowTo } from "./HowTo";
+import { Rail } from "./chrome/Rail";
+import { Panel } from "./chrome/Panel";
+import { TopBar } from "./chrome/TopBar";
+import { LayerSwitch, ZoomPill } from "./chrome/Floats";
+import { TitleBlock } from "./chrome/TitleBlock";
 import apiBackend from "../../samples/api-backend.json";
 import mediaPipeline from "../../samples/media-pipeline.json";
 import eventDriven from "../../samples/event-driven.json";
@@ -25,7 +32,8 @@ export const SAMPLES: Record<string, StateSnapshot> = {
   "event-driven": eventDriven as StateSnapshot,
 };
 
-const AUTOSAVE_KEY = "overhead-state-v1";
+const AUTOSAVE_KEY = "overhead-state-v2";
+const LEGACY_KEY = "overhead-state-v1";
 
 function Autosave() {
   useEffect(() => {
@@ -49,16 +57,30 @@ function Autosave() {
   return null;
 }
 
+/** The grid is screen-fixed like the mock's, so ⇧G is a class flip. */
+function Stage() {
+  const gridOn = useStore((s) => s.gridOn);
+  useEffect(() => {
+    document.body.classList.toggle("nogrid", !gridOn);
+  }, [gridOn]);
+  return (
+    <div className="oh-stage">
+      <div className="oh-grid" />
+    </div>
+  );
+}
+
 export function App() {
   const loadSnapshot = useStore((s) => s.loadSnapshot);
 
-  // Restore autosave; otherwise seed a sample so a first visit shows
-  // value in ten seconds.
+  // Restore autosave (v2, falling back to v1); otherwise seed a sample so a
+  // first visit shows value in ten seconds.
   useEffect(() => {
     if (useStore.getState().nodes.length !== 0) return;
     let restored = false;
     try {
-      const saved = localStorage.getItem(AUTOSAVE_KEY);
+      const saved =
+        localStorage.getItem(AUTOSAVE_KEY) ?? localStorage.getItem(LEGACY_KEY);
       if (saved) {
         const snap = JSON.parse(saved) as StateSnapshot;
         if (Array.isArray(snap.nodes) && snap.nodes.length > 0) {
@@ -70,13 +92,8 @@ export function App() {
       // corrupt autosave — fall through to the seed
     }
     if (!restored) {
-      // Seed the richest sample: async + data edges and live findings, so
-      // every layer toggle visibly does something on first load.
       const snap = SAMPLES["event-driven"];
-      loadSnapshot({
-        ...snap,
-        nodes: snap.nodes.map((n) => ({ ...n })),
-      });
+      loadSnapshot({ ...snap, nodes: snap.nodes.map((n) => ({ ...n })) });
       const positions = autoLayout(useStore.getState().nodes);
       for (const [id, p] of Object.entries(positions)) {
         useStore.getState().moveNode(id, p.x, p.y);
@@ -86,20 +103,39 @@ export function App() {
 
   return (
     <ReactFlowProvider>
-      <div className="flex h-screen flex-col">
-        <Toolbar />
-        <div className="flex min-h-0 flex-1">
-          <Palette />
-          <div className="relative min-w-0 flex-1">
-            <Canvas />
-            <ScenarioBanner />
-            <ExportPanel />
-            <BillDrop />
-            <HowTo />
-          </div>
-          <Inspector />
-        </div>
+      <Stage />
+
+      <div className="oh-viewport">
+        <Canvas />
+        <ScenarioBanner />
+        <BillDrop />
       </div>
+
+      <Rail />
+      <TopBar />
+
+      <Panel
+        id="add"
+        title="Add"
+        defaults={{ left: 80, top: 552, width: 238, height: 300 }}
+      >
+        <Palette />
+      </Panel>
+
+      <Panel
+        id="inspector"
+        title="Inspector"
+        defaults={{ right: 16, top: 66, width: 320, height: 640 }}
+      >
+        <Inspector />
+      </Panel>
+
+      <LayerSwitch />
+      <ZoomPill />
+      <TitleBlock />
+
+      <ExportPanel />
+      <HowTo />
       <Sprite />
       <Autosave />
       <Keyboard />

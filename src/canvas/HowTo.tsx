@@ -22,8 +22,9 @@ export function HowTo() {
   if (!show && !empty) return null;
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-2 z-30 flex justify-center px-4">
-      <div className="pointer-events-auto flex max-w-2xl items-start gap-3 rounded-lg border border-line bg-panel px-4 py-3 shadow-md">
+    <div className="pointer-events-none fixed inset-x-0 z-[4] flex justify-center px-4"
+      style={{ top: 66, left: 344, right: 352 }}>
+      <div className="glass pointer-events-auto flex max-w-2xl items-start gap-3 rounded-[12px] px-4 py-3">
         <div className="text-[13px] leading-relaxed text-ink-2">
           {empty ? (
             <>

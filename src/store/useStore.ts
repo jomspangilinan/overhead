@@ -26,7 +26,23 @@ export const PRICING_TABLES: Record<string, PricingTable> = {
   "ap-southeast-1": aps1 as unknown as PricingTable,
 };
 
-export type Layer = "request" | "events" | "data" | "security" | "cost";
+export type Layer =
+  | "request"
+  | "events"
+  | "data"
+  | "security"
+  | "cost"
+  | "sections";
+
+/** The rail's active tool. */
+export type Tool =
+  | "select"
+  | "pan"
+  | "add"
+  | "connect"
+  | "container"
+  | "section"
+  | "trace";
 
 let nextId = 1;
 export function newId(prefix: string): string {
@@ -59,8 +75,10 @@ export interface OverheadState {
     group?: string,
     position?: { x: number; y: number },
   ) => string;
-  showLanes: boolean;
-  setShowLanes: (on: boolean) => void;
+  tool: Tool;
+  setTool: (tool: Tool) => void;
+  gridOn: boolean;
+  setGridOn: (on: boolean) => void;
   removeNode: (id: string) => void;
   moveNode: (id: string, x: number, y: number) => void;
   setNodeSetting: (id: string, key: string, value: unknown) => void;
@@ -97,7 +115,14 @@ export const useStore = create<OverheadState>((set, get) => ({
   groups: [],
   traffic: { ...DEFAULT_TRAFFIC },
   region: "ap-southeast-1",
-  layers: { request: true, events: true, data: true, security: false, cost: false },
+  layers: {
+    request: true,
+    events: true,
+    data: true,
+    security: false,
+    cost: false,
+    sections: true,
+  },
   cardsForced: false,
   zoom: 1,
   selectedId: null,
@@ -137,8 +162,10 @@ export const useStore = create<OverheadState>((set, get) => ({
     return id;
   },
 
-  showLanes: true,
-  setShowLanes: (on) => set({ showLanes: on }),
+  tool: "select",
+  setTool: (tool) => set({ tool }),
+  gridOn: true,
+  setGridOn: (on) => set({ gridOn: on }),
 
   removeNode: (id) =>
     set((s) => ({
