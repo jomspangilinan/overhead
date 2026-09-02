@@ -12,6 +12,7 @@ import { Inspector } from "./Inspector";
 import { Palette } from "./Palette";
 import { ScenarioBanner } from "./ScenarioBanner";
 import { ExportPanel } from "./ExportPanel";
+import { BillDrop } from "./BillDrop";
 import apiBackend from "../../samples/api-backend.json";
 import mediaPipeline from "../../samples/media-pipeline.json";
 import eventDriven from "../../samples/event-driven.json";
@@ -120,6 +121,7 @@ export function App() {
             <Canvas />
             <ScenarioBanner />
             <ExportPanel />
+            <BillDrop />
           </div>
           <Inspector />
         </div>

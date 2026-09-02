@@ -14,6 +14,7 @@ import type {
 } from "@/engine/model";
 import { DEFAULT_TRAFFIC } from "@/engine/model";
 import type { PricingTable } from "@/engine/pricing";
+import type { BillSummary } from "@/engine/bill";
 import { autoLayout } from "@/engine/layout";
 import { defaultSettings } from "@/engine/defineService";
 import { getService } from "@/engine/services";
@@ -46,6 +47,7 @@ export interface OverheadState {
   traceIds: string[] | null;
   scenario: { name: string; base: StateSnapshot } | null;
   exportPanel: "json" | "markdown" | "mermaid" | "cdk" | "svg" | null;
+  bill: BillSummary | null;
 
   // mutations (synchronous — tools depend on it)
   loadSnapshot: (snap: StateSnapshot) => void;
@@ -75,6 +77,7 @@ export interface OverheadState {
   hover: (id: string | null) => void;
   setTrace: (ids: string[] | null) => void;
   setExportPanel: (format: OverheadState["exportPanel"]) => void;
+  setBill: (bill: BillSummary | null) => void;
   addGroup: (kind: ArchGroup["kind"], name: string, cidr?: string, parent?: string) => string;
   moveIntoGroup: (nodeIds: string[], groupId: string | null) => void;
   setGroupCollapsed: (groupId: string, collapsed: boolean) => void;
@@ -97,6 +100,7 @@ export const useStore = create<OverheadState>((set, get) => ({
   traceIds: null,
   scenario: null,
   exportPanel: null,
+  bill: null,
 
   loadSnapshot: (snap) =>
     set({
@@ -179,6 +183,7 @@ export const useStore = create<OverheadState>((set, get) => ({
   hover: (id) => set({ hoveredId: id }),
   setTrace: (ids) => set({ traceIds: ids }),
   setExportPanel: (format) => set({ exportPanel: format }),
+  setBill: (bill) => set({ bill }),
 
   addGroup: (kind, name, cidr, parent) => {
     const id = newId("group");
