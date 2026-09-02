@@ -5,6 +5,10 @@
 import type { CostLine, Role, ServiceId, Traffic } from "./model";
 import type { PricingTable } from "./pricing";
 
+/** `group: "security"` puts a setting in the node's Security section (and
+ *  the card gear); it is still a plain setting for set_property and CDK. */
+export type SettingGroup = "settings" | "security";
+
 export type SettingDef =
   | {
       type: "enum";
@@ -13,6 +17,7 @@ export type SettingDef =
       default: string;
       driver?: boolean;
       description?: string;
+      group?: SettingGroup;
     }
   | {
       type: "number";
@@ -24,6 +29,7 @@ export type SettingDef =
       driver?: boolean;
       unit?: string;
       description?: string;
+      group?: SettingGroup;
     }
   | {
       type: "boolean";
@@ -31,6 +37,7 @@ export type SettingDef =
       default: boolean;
       driver?: boolean;
       description?: string;
+      group?: SettingGroup;
     };
 
 export type SettingsSchema = Record<string, SettingDef>;
@@ -56,6 +63,9 @@ export interface ServiceDef {
     settings: Record<string, unknown>,
     ctx: { varName: string; resourceName: string },
   ) => string;
+  /** The security badge under the icon, derived from the security settings
+   *  (shown when the security layer is on). Null = nothing to say. */
+  badge?: (settings: Record<string, unknown>) => string | null;
 }
 
 export function defineService(def: ServiceDef): ServiceDef {
@@ -65,6 +75,11 @@ export function defineService(def: ServiceDef): ServiceDef {
     }
   }
   return def;
+}
+
+/** Settings in a group, in schema order. */
+export function settingsInGroup(def: ServiceDef, group: SettingGroup): [string, SettingDef][] {
+  return Object.entries(def.settings).filter(([, s]) => (s.group ?? "settings") === group);
 }
 
 /** Defaults derived from the schema — the engine's only source of defaults. */

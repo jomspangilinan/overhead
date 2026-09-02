@@ -8,6 +8,7 @@
 import { useStore, type Tool } from "@/store/useStore";
 import { undo, redo } from "@/store/history";
 import { Icon } from "../Icon";
+import { GearGlyph } from "./Floats";
 
 export function ToolButton({
   icon,
@@ -71,6 +72,7 @@ export function Toolbar() {
   const cardsForced = useStore((s) => s.cardsForced);
   const setCardsForced = useStore((s) => s.setCardsForced);
   const applyAutoLayout = useStore((s) => s.applyAutoLayout);
+  const setPopover = useStore((s) => s.setPopover);
 
   return (
     <nav
@@ -89,6 +91,20 @@ export function Toolbar() {
       <ToolButton icon="trace" hint="T" tip="Trace a request — then click a node · T" active={tool === "trace"} onClick={() => pickTool("trace")} />
       <ToolButton icon="layout" hint="L" tip="Auto-layout · L" onClick={applyAutoLayout} />
       <ToolButton icon="cards" hint="K" tip="Card view · K" active={cardsForced} onClick={() => setCardsForced(!cardsForced)} />
+      <button
+        data-tip="What cards show"
+        data-tip-pos="top"
+        aria-label="Card settings"
+        className="grid h-[34px] w-[16px] place-items-center rounded-[6px] hover:bg-[var(--hover-2)]"
+        style={{ color: "var(--ink-4)", marginLeft: -4 }}
+        onClick={(e) => {
+          const host = (e.currentTarget as HTMLElement).closest(".oh-main")?.getBoundingClientRect();
+          const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+          setPopover({ kind: "cards", x: r.left + r.width / 2 - (host?.left ?? 0), y: r.top - (host?.top ?? 0) - 8 });
+        }}
+      >
+        <GearGlyph size={10} />
+      </button>
       <Sep />
       <ToolButton icon="grid" hint="⇧G" tip="Grid · ⇧G" active={gridOn} onClick={() => setGridOn(!gridOn)} />
       <ToolButton icon="undo" hint="⌘Z" tip="Undo · ⌘Z" onClick={() => undo()} />

@@ -21,6 +21,54 @@ describe("the spine", () => {
     }
   });
 
+  it("every service has security settings that drive a badge and validate", () => {
+    for (const def of Object.values(SERVICES)) {
+      const sec = Object.entries(def.settings).filter(([, s]) => s.group === "security");
+      expect(sec.length, def.id).toBeGreaterThan(0);
+      const badge = def.badge?.(defaultSettings(def));
+      expect(typeof badge, def.id).toBe("string");
+      expect((badge ?? "").length, def.id).toBeGreaterThan(0);
+      for (const [key, sdef] of sec) {
+        if (sdef.type === "enum") for (const v of sdef.values) expect(validateSetting(def, key, v)).toBeNull();
+        if (sdef.type === "boolean") expect(validateSetting(def, key, true)).toBeNull();
+      }
+    }
+  });
+
+  it("security settings change the badge and reach the CDK output", () => {
+    const ddb = SERVICES.dynamodb;
+    expect(ddb.badge?.({ ...defaultSettings(ddb), encryption: "customer-managed", pitr: true })).toContain("CMK");
+    const code = ddb.cdk!({ ...defaultSettings(ddb), encryption: "customer-managed", pitr: true }, { varName: "t", resourceName: "t" });
+    expect(code).toContain("TableEncryption.CUSTOMER_MANAGED");
+    expect(code).toContain("pointInTimeRecoveryEnabled: true");
+    const s3 = SERVICES.s3;
+    expect(s3.cdk!({ ...defaultSettings(s3), blockPublicAccess: false }, { varName: "b", resourceName: "b" })).not.toContain("BLOCK_ALL");
+  });
+
+  it("a single service's schema, as list_services prints it, fits the 1.5K tool budget", () => {
+    for (const def of Object.values(SERVICES)) {
+      const body = JSON.stringify({
+        id: def.id,
+        term: def.term,
+        role: def.role,
+        settings: Object.fromEntries(
+          Object.entries(def.settings).map(([k, v]) => [
+            k,
+            {
+              type: v.type,
+              ...(v.type === "enum" ? { values: v.values } : {}),
+              ...(v.type === "number" ? { min: v.min, max: v.max } : {}),
+              ...("default" in v ? { default: v.default } : {}),
+              ...(v.driver ? { priceDriver: true } : {}),
+              ...(v.group === "security" ? { security: true } : {}),
+            },
+          ]),
+        ),
+      });
+      expect(body.length, `${def.id}: ${body.length}`).toBeLessThanOrEqual(1500);
+    }
+  });
+
   it("returns structured errors the agent can recover from", () => {
     const lambda = SERVICES.lambda;
     expect(validateSetting(lambda, "nope", 1)?.code).toBe("unknown_setting");

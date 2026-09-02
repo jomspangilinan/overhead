@@ -16,7 +16,15 @@ export const eventbridge = defineService({
       driver: true,
       description: "Defaults to the canvas traffic figure",
     },
+    resourcePolicy: {
+      type: "boolean",
+      default: false,
+      label: "Resource policy",
+      description: "Cross-account or scoped PutEvents policy on the bus",
+      group: "security",
+    },
   },
+  badge: (s) => (s.resourcePolicy === true ? "resource policy" : "default policy"),
   cardLines: ["eventsPerMonth"],
   cdk: (_s, { varName, resourceName }) =>
     `new events.EventBus(this, "${varName}", { eventBusName: "${resourceName}" });`,

@@ -30,7 +30,23 @@ export const cloudfront = defineService({
       default: "PriceClass_All",
       label: "Price class",
     },
+    originAccess: {
+      type: "enum",
+      values: ["oac", "public-origin"],
+      default: "oac",
+      label: "Origin access",
+      description: "Origin access control keeps the origin private",
+      group: "security",
+    },
+    minTls: {
+      type: "enum",
+      values: ["TLSv1.2_2021", "TLSv1.2_2019", "TLSv1"],
+      default: "TLSv1.2_2021",
+      label: "Minimum TLS",
+      group: "security",
+    },
   },
+  badge: (s) => `${s.originAccess === "public-origin" ? "public origin" : "OAC"} · ${s.minTls === "TLSv1" ? "TLS1.0!" : "TLS1.2"}`,
   cardLines: ["dataOutGbPerMonth", "requestsPerMonth"],
   cdk: (s, { varName, resourceName }) => {
     const pc =
@@ -39,10 +55,13 @@ export const cloudfront = defineService({
         : s.priceClass === "PriceClass_200"
           ? "PRICE_CLASS_200"
           : "PRICE_CLASS_ALL";
+    const tls = s.minTls === "TLSv1" ? "TLS_V1" : s.minTls === "TLSv1.2_2019" ? "TLS_V1_2_2019" : "TLS_V1_2_2021";
+    const oac = s.originAccess === "public-origin" ? "" : "\n  // origin access: use origins.S3BucketOrigin.withOriginAccessControl(bucket) for an S3 origin";
     return `// distribution "${resourceName}" — stub origin, point at your real one
-new cloudfront.Distribution(this, "${varName}", {
+new cloudfront.Distribution(this, "${varName}", {${oac}
   defaultBehavior: { origin: new origins.HttpOrigin("origin.example.com") },
   priceClass: cloudfront.PriceClass.${pc},
+  minimumProtocolVersion: cloudfront.SecurityPolicyProtocol.${tls},
 });`;
   },
   price: (s, traffic, pricing) => {

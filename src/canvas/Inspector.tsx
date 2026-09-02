@@ -9,7 +9,7 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { useStore, pricingOf, snapshotOf } from "@/store/useStore";
 import { getService } from "@/engine/services";
-import { validateSetting, type SettingDef } from "@/engine/defineService";
+import { validateSetting, settingsInGroup, defaultSettings, type SettingDef } from "@/engine/defineService";
 import { nodeCost } from "@/engine/cost";
 import { findingsForNode } from "@/engine/findings";
 import { toMoney, type EdgeKind, type Side } from "@/engine/model";
@@ -539,10 +539,19 @@ function NodeInspector({ nodeId }: { nodeId: string }) {
         ) : null}
       </Section>
 
-      <Section id="node-settings" title="Settings" aside={`${Object.keys(def.settings).length}`}>
-        {Object.entries(def.settings).map(([key, sdef]) => (
+      <Section id="node-settings" title="Settings" aside={`${settingsInGroup(def, "settings").length}`}>
+        {settingsInGroup(def, "settings").map(([key, sdef]) => (
           <Field key={key} nodeId={node.id} settingKey={key} def={sdef} value={node.settings[key]} />
         ))}
+      </Section>
+
+      <Section id="node-security" title="Security" aside={def.badge?.({ ...defaultSettings(def), ...node.settings }) ?? undefined}>
+        {settingsInGroup(def, "security").map(([key, sdef]) => (
+          <Field key={key} nodeId={node.id} settingKey={key} def={sdef} value={node.settings[key]} />
+        ))}
+        <p className="text-[10.5px]" style={{ color: "var(--ink-4)" }}>
+          Drives the badge under the icon (Security layer) and the CDK export.
+        </p>
       </Section>
 
       {cost ? (

@@ -13,6 +13,7 @@ import { useMemo, useRef, useState } from "react";
 import { ViewportPortal } from "@xyflow/react";
 import { useStore, pricingOf, snapshotOf } from "@/store/useStore";
 import { KIND_META, containerStats, descendantIds, type Container } from "@/engine/containers";
+import { formatCost } from "@/engine/model";
 import { frameBoxes, depthOf, toBounds, type Box } from "@/engine/frames";
 import { NODE_W, NODE_H } from "./nodeMetrics";
 
@@ -22,6 +23,7 @@ export function ContainerFrames() {
   const nodes = useStore((s) => s.nodes);
   const containers = useStore((s) => s.containers);
   const costOn = useStore((s) => s.layers.cost);
+  const costDisplay = useStore((s) => s.costDisplay);
   const traffic = useStore((s) => s.traffic);
   const region = useStore((s) => s.region);
   const zoom = useStore((s) => s.zoom);
@@ -244,7 +246,7 @@ export function ContainerFrames() {
                 <path d="M8 1.5v13M1.5 8h13M8 1.5 6 3.5M8 1.5l2 2M8 14.5l-2-2M8 14.5l2-2M1.5 8l2-2M1.5 8l2 2M14.5 8l-2-2M14.5 8l-2 2" />
               </svg>
             </div>
-            {costOn && stat ? (
+            {costOn && costDisplay.containers && stat ? (
               <div
                 className="pointer-events-none absolute select-none whitespace-nowrap text-[10px] font-semibold"
                 style={{
@@ -256,7 +258,7 @@ export function ContainerFrames() {
                   fontFamily: "var(--font-mono-jb)",
                 }}
               >
-                {stat.resources} · ${stat.monthly.toFixed(2)}/mo
+                {stat.resources} · {formatCost(stat.monthly, costDisplay)}{costDisplay.period === "month" ? "/mo" : ""}
               </div>
             ) : null}
             <button

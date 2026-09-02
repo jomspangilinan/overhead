@@ -9,6 +9,8 @@ import type {
   EdgeStyle,
   Side,
   SectionStyle,
+  CardShow,
+  CostDisplay,
   Container,
   Section,
   ArchNode,
@@ -16,7 +18,7 @@ import type {
   StateSnapshot,
   Traffic,
 } from "@/engine/model";
-import { DEFAULT_TRAFFIC } from "@/engine/model";
+import { DEFAULT_TRAFFIC, DEFAULT_CARD_SHOW, DEFAULT_COST_DISPLAY } from "@/engine/model";
 import type { PricingTable } from "@/engine/pricing";
 import type { BillSummary } from "@/engine/bill";
 import { autoLayoutWithSections, roleOf, placeInRole } from "@/engine/layout";
@@ -224,6 +226,16 @@ export interface OverheadState {
   /** ⌘G: the selected nodes become a group (a frameless section). */
   addGroup: (nodeIds: string[], name?: string) => string | null;
   ungroup: (id: string) => void;
+  /** Per-node card presentation (the card gear). */
+  setNodeCard: (id: string, patch: Partial<NonNullable<ArchNode["card"]>> | undefined) => void;
+  cardShow: CardShow;
+  setCardShow: (patch: Partial<CardShow>) => void;
+  costDisplay: CostDisplay;
+  setCostDisplay: (patch: Partial<CostDisplay>) => void;
+  /** One anchored popover at a time: a card / section / cost / cards gear.
+   *  x,y are canvas-relative. */
+  popover: { kind: "card" | "section" | "cost" | "cards"; id?: string; x: number; y: number } | null;
+  setPopover: (p: OverheadState["popover"]) => void;
   /** Multi-selection on the canvas (marquee, shift-click, a selected
    *  section's members). `selectedId` stays the primary selection. */
   selectedIds: string[];
@@ -455,6 +467,24 @@ export const useStore = create<OverheadState>((set, get) => ({
     }),
   selectedIds: [],
   setSelectedIds: (ids) => set({ selectedIds: ids }),
+  setNodeCard: (id, patch) =>
+    set((s) => ({
+      nodes: s.nodes.map((n) => {
+        if (n.id !== id) return n;
+        const { card: _drop, ...rest } = n;
+        void _drop;
+        if (!patch) return rest;
+        const next = { ...(n.card ?? {}), ...patch };
+        for (const k of Object.keys(next) as (keyof typeof next)[]) if (next[k] === undefined) delete next[k];
+        return Object.keys(next).length ? { ...rest, card: next } : rest;
+      }),
+    })),
+  cardShow: { ...DEFAULT_CARD_SHOW },
+  setCardShow: (patch) => set((s) => ({ cardShow: { ...s.cardShow, ...patch } })),
+  costDisplay: { ...DEFAULT_COST_DISPLAY },
+  setCostDisplay: (patch) => set((s) => ({ costDisplay: { ...s.costDisplay, ...patch } })),
+  popover: null,
+  setPopover: (p) => set({ popover: p }),
   selectEdge: (id) => set({ selectedEdgeId: id, selectedWaypoint: null, ...(id ? { selectedId: null } : {}) }),
   selectedWaypoint: null,
   setSelectedWaypoint: (i) => set({ selectedWaypoint: i }),

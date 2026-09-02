@@ -27,6 +27,7 @@ export function SectionFrames() {
   const moveSection = useStore((s) => s.moveSection);
   const setSectionBounds = useStore((s) => s.setSectionBounds);
   const renameSection = useStore((s) => s.renameSection);
+  const setPopover = useStore((s) => s.setPopover);
   const [editing, setEditing] = useState<string | null>(null);
   const [resize, setResize] = useState<{ id: string; box: Box } | null>(null);
   const gesture = useRef<{
@@ -181,6 +182,24 @@ export function SectionFrames() {
                 <>
                   {s.name}
                   <span style={{ opacity: 0.7 }}>{s.nodeIds.length}</span>
+                  <button
+                    className="oh-section-gear grid h-[14px] w-[14px] place-items-center rounded"
+                    style={{ color: s.color }}
+                    aria-label="Section appearance"
+                    title="Appearance — colour, border, fill"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const host = (e.currentTarget as HTMLElement).closest(".oh-main")?.getBoundingClientRect();
+                      const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                      setPopover({ kind: "section", id: s.id, x: r.left - (host?.left ?? 0), y: r.bottom - (host?.top ?? 0) + 6 });
+                    }}
+                  >
+                    <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+                      <circle cx="8" cy="8" r="2.4" />
+                      <path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4" />
+                    </svg>
+                  </button>
                 </>
               )}
             </div>

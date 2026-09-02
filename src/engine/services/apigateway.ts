@@ -41,9 +41,22 @@ export const apigateway = defineService({
       default: false,
       label: "WAF attached",
       description: "REST-only feature",
+      group: "security",
+    },
+    auth: {
+      type: "enum",
+      values: ["none", "iam", "cognito", "lambda-authorizer"],
+      default: "none",
+      label: "Authorization",
+      description: "Who may call the API",
+      group: "security",
     },
   },
   cardLines: ["apiType", "requestsPerMonth"],
+  badge: (s) =>
+    [s.auth === "none" ? "no auth" : s.auth === "iam" ? "IAM auth" : s.auth === "cognito" ? "Cognito JWT" : "authorizer", s.wafAttached === true ? "WAF" : null]
+      .filter(Boolean)
+      .join(" · "),
   cdk: (s, { varName, resourceName }) =>
     s.apiType === "REST"
       ? `const ${varName} = new apigateway.RestApi(this, "${varName}", { restApiName: "${resourceName}" });

@@ -376,14 +376,21 @@ body {
   opacity: 0.16;
 }
 
-/* Gear appears on node hover */
-.overhead-node .gear {
+/* Gears appear on hover: node card, section chip */
+.overhead-node .gear,
+.oh-section-gear {
   opacity: 0;
   transition: opacity 0.12s;
 }
 .overhead-node:hover .gear,
-.react-flow__node.lit .overhead-node .gear {
-  opacity: 0.85;
+.react-flow__node.selected .overhead-node .gear,
+.oh-section-chip:hover .oh-section-gear {
+  opacity: 0.9;
+}
+.overhead-node .gear:hover {
+  opacity: 1;
+  color: var(--accent-ink) !important;
+  border-color: var(--accent) !important;
 }
 
 /* Tooltips: any element with data-tip grows a label below on hover/focus */

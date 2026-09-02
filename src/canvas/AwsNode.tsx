@@ -16,33 +16,19 @@ import { useStore, cardModeOf, pricingOf, snapshotOf } from "@/store/useStore";
 import { getService } from "@/engine/services";
 import { nodeCost } from "@/engine/cost";
 import { findingsForNode } from "@/engine/findings";
-import { toMoney, type Severity } from "@/engine/model";
+import { formatCost, type Severity } from "@/engine/model";
+import { defaultSettings } from "@/engine/defineService";
 import type { Side4 } from "./edgeGeometry";
 
 import { NODE_W, NODE_H, ICON } from "./nodeMetrics";
 export { NODE_W, NODE_H, ICON };
 
-// Security is a node property, not an edge — shown as a badge when the
+// Security is a node property, not an edge — its badge is derived from the
+// service's security settings (defineService().badge) and shown when the
 // security layer is on.
-const SEC_BADGE: Record<string, string> = {
-  lambda: "IAM role",
-  apigateway: "authorizer",
-  dynamodb: "SSE-KMS",
-  s3: "SSE-S3",
-  cloudfront: "OAC · TLS",
-  sqs: "SSE-SQS",
-  sns: "SSE",
-  eventbridge: "resource policy",
-  stepfunctions: "IAM role",
-  cognito: "JWT issuer",
-};
 
 export type AwsNodeData = { nodeId: string };
 export type AwsNodeType = Node<AwsNodeData, "aws">;
-
-function money(n: number): string {
-  return `$${toMoney(n).toFixed(2)}`;
-}
 
 function settingText(value: unknown, unit?: string): string {
   if (typeof value === "number") {
@@ -139,6 +125,9 @@ export const AwsNode = memo(function AwsNode({ data, selected }: NodeProps<AwsNo
   const cardMode = useStore(cardModeOf);
   const costOn = useStore((s) => s.layers.cost);
   const securityOn = useStore((s) => s.layers.security);
+  const cardShow = useStore((s) => s.cardShow);
+  const costDisplay = useStore((s) => s.costDisplay);
+  const setPopover = useStore((s) => s.setPopover);
   const monthly = useStore((s) => {
     if (!s.nodes.some((n) => n.id === data.nodeId)) return 0;
     try {
@@ -169,7 +158,34 @@ export const AwsNode = memo(function AwsNode({ data, selected }: NodeProps<AwsNo
     worst === "critical" ? "var(--bad)" : worst === "warn" ? "var(--warn)" : null;
   const selectRing = selected ? "0 0 0 2px var(--accent), 0 0 0 5px color-mix(in srgb, var(--accent) 25%, transparent)" : null;
 
-  const cardSettings = def.cardLines
+  const merged = { ...defaultSettings(def), ...node.settings };
+  const badge = securityOn && (node.card?.badge ?? cardShow.badge) ? def.badge?.(merged) ?? null : null;
+  const showCost = node.card?.cost ?? cardShow.cost;
+  const showSettings = node.card?.lines ? node.card.lines.length > 0 : cardShow.settings;
+  const lines = node.card?.lines ?? [...def.cardLines];
+  const openGear = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const host = (e.currentTarget as HTMLElement).closest(".oh-main")?.getBoundingClientRect();
+    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    setPopover({ kind: "card", id: node.id, x: r.right - (host?.left ?? 0), y: r.bottom - (host?.top ?? 0) + 4 });
+  };
+  const gear = (
+    <button
+      className="gear nodrag nopan absolute grid h-[18px] w-[18px] place-items-center rounded-md"
+      style={{ right: cardMode ? 4 : NODE_W / 2 - ICON / 2 - 22, top: cardMode ? (NODE_H - 76) / 2 + 3 : 4, background: "var(--panel)", border: "1px solid var(--line-2)", color: "var(--ink-2)", zIndex: 4 }}
+      data-tip="Card & security settings"
+      aria-label="Card and security settings"
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={openGear}
+    >
+      <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="8" cy="8" r="2.4" />
+        <path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4" />
+      </svg>
+    </button>
+  );
+
+  const cardSettings = lines
     .map((key) => {
       const s = def.settings[key];
       const v = node.settings[key];
@@ -186,6 +202,7 @@ export const AwsNode = memo(function AwsNode({ data, selected }: NodeProps<AwsNo
     >
       <ModeInternals nodeId={data.nodeId} cardMode={cardMode} />
       <SideHandles nodeId={node.id} cardMode={cardMode} centre={node.position} />
+      {gear}
       {cardMode ? (
         <div
           className="absolute overflow-hidden rounded-lg border bg-panel shadow-sm"
@@ -238,10 +255,10 @@ export const AwsNode = memo(function AwsNode({ data, selected }: NodeProps<AwsNo
               className="truncate text-[9.5px] opacity-70"
               style={{ fontFamily: "var(--font-mono-jb)" }}
             >
-              {cardSettings}
+              {showSettings ? cardSettings : ""}
             </div>
           </div>
-          {securityOn && SEC_BADGE[node.service] ? (
+          {badge ? (
             <div
               className="absolute bottom-1.5 left-[70px] rounded border px-1 py-px text-[8.5px] font-semibold"
               style={{
@@ -250,15 +267,17 @@ export const AwsNode = memo(function AwsNode({ data, selected }: NodeProps<AwsNo
                 color: "var(--ink-2)",
               }}
             >
-              {SEC_BADGE[node.service]}
+              {badge}
             </div>
           ) : null}
-          <div
-            className="absolute bottom-1.5 right-2.5 text-[11px] font-semibold"
-            style={{ fontFamily: "var(--font-mono-jb)" }}
-          >
-            {money(monthly)}
-          </div>
+          {showCost && costDisplay.nodes ? (
+            <div
+              className="absolute bottom-1.5 right-2.5 text-[11px] font-semibold"
+              style={{ fontFamily: "var(--font-mono-jb)" }}
+            >
+              {formatCost(monthly, costDisplay)}
+            </div>
+          ) : null}
         </div>
       ) : (
         <div className="absolute inset-0 flex flex-col items-center">
@@ -298,7 +317,7 @@ export const AwsNode = memo(function AwsNode({ data, selected }: NodeProps<AwsNo
               {node.name}
             </div>
           )}
-          {securityOn && SEC_BADGE[node.service] ? (
+          {badge ? (
             <div
               className="rounded border px-1 py-px text-[8.5px] font-semibold"
               style={{
@@ -308,15 +327,15 @@ export const AwsNode = memo(function AwsNode({ data, selected }: NodeProps<AwsNo
                 background: "var(--panel)",
               }}
             >
-              {SEC_BADGE[node.service]}
+              {badge}
             </div>
           ) : null}
-          {costOn ? (
+          {costOn && showCost && costDisplay.nodes ? (
             <div
               className="text-[10.5px] font-semibold"
               style={{ fontFamily: "var(--font-mono-jb)" }}
             >
-              {money(monthly)}
+              {formatCost(monthly, costDisplay)}
             </div>
           ) : null}
         </div>

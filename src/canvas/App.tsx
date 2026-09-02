@@ -6,7 +6,7 @@
 
 import { useEffect } from "react";
 import { ReactFlowProvider } from "@xyflow/react";
-import type { StateSnapshot } from "@/engine/model";
+import type { StateSnapshot, CardShow, CostDisplay } from "@/engine/model";
 import { autoLayout } from "@/engine/layout";
 import { useStore } from "@/store/useStore";
 import { Sprite } from "./Sprite";
@@ -21,6 +21,7 @@ import { Keyboard } from "./Keyboard";
 import { HowTo } from "./HowTo";
 import { Notice } from "./Notice";
 import { Toolbar } from "./chrome/Toolbar";
+import { Popovers } from "./Popovers";
 import { Dock } from "./chrome/Dock";
 import { TopBar } from "./chrome/TopBar";
 import { BottomBar } from "./chrome/BottomBar";
@@ -53,6 +54,7 @@ function Autosave() {
             traffic: s.traffic,
             drawingName: s.drawingName,
             gridOn: s.gridOn,
+            ui: { cardShow: s.cardShow, costDisplay: s.costDisplay },
           }),
         );
       } catch {
@@ -112,11 +114,14 @@ export function App() {
         const snap = JSON.parse(saved) as StateSnapshot & {
           drawingName?: string;
           gridOn?: boolean;
+          ui?: { cardShow?: Partial<CardShow>; costDisplay?: Partial<CostDisplay> };
         };
         if (Array.isArray(snap.nodes) && snap.nodes.length > 0) {
           loadSnapshot(snap);
           if (snap.drawingName) useStore.getState().setDrawingName(snap.drawingName);
           if (snap.gridOn === false) useStore.getState().setGridOn(false);
+          if (snap.ui?.cardShow) useStore.getState().setCardShow(snap.ui.cardShow);
+          if (snap.ui?.costDisplay) useStore.getState().setCostDisplay(snap.ui.costDisplay);
           restored = true;
         }
       }
@@ -149,6 +154,7 @@ export function App() {
           <HowTo />
           <PaletteFloat />
           <Notice />
+          <Popovers />
           <Toolbar />
           <LayerSwitch />
           <ZoomPill />

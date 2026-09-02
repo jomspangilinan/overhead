@@ -56,15 +56,49 @@ export const lambda = defineService({
       default: false,
       label: "DLQ / on-failure destination",
     },
+    iamRole: {
+      type: "enum",
+      values: ["least-privilege", "broad"],
+      default: "least-privilege",
+      label: "Execution role",
+      description: "Scoped per function, or a shared broad role",
+      group: "security",
+    },
+    vpcAttached: {
+      type: "boolean",
+      default: false,
+      label: "VPC-attached",
+      description: "Runs inside a subnet (needs NAT for egress)",
+      group: "security",
+    },
+    envEncryption: {
+      type: "enum",
+      values: ["aws-managed", "customer-managed"],
+      default: "aws-managed",
+      label: "Env-var encryption",
+      group: "security",
+    },
   },
   cardLines: ["architecture", "memoryMb", "avgDurationMs"],
+  badge: (s) =>
+    [s.iamRole === "broad" ? "broad IAM" : "IAM role", s.vpcAttached === true ? "VPC" : null, s.envEncryption === "customer-managed" ? "CMK" : null]
+      .filter(Boolean)
+      .join(" · "),
   cdk: (s, { varName, resourceName }) => {
     const arch = s.architecture === "x86_64" ? "X86_64" : "ARM_64";
     const reserved =
       typeof s.reservedConcurrency === "number"
         ? `\n  reservedConcurrentExecutions: ${s.reservedConcurrency},`
         : "";
+    const secNotes = [
+      s.iamRole === "broad" ? "  // execution role: a shared broad role was chosen — prefer a scoped role per function" : "  // execution role: least-privilege (CDK creates one scoped to this function)",
+      s.vpcAttached === true ? "  // vpc: attach with `vpc` + `vpcSubnets` once the VPC construct exists" : null,
+      s.envEncryption === "customer-managed" ? "  // environmentEncryption: pass a kms.Key here" : null,
+    ]
+      .filter(Boolean)
+      .join("\n");
     return `new lambda.Function(this, "${varName}", {
+${secNotes}
   functionName: "${resourceName}",
   runtime: lambda.Runtime.NODEJS_20_X,
   architecture: lambda.Architecture.${arch},

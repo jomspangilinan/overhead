@@ -50,7 +50,15 @@ export const stepfunctions = defineService({
       label: "Express memory (MB)",
       driver: true,
     },
+    iamRole: {
+      type: "enum",
+      values: ["least-privilege", "broad"],
+      default: "least-privilege",
+      label: "Execution role",
+      group: "security",
+    },
   },
+  badge: (s) => (s.iamRole === "broad" ? "broad IAM" : "IAM role"),
   cardLines: ["workflowType", "executionsPerMonth", "avgTransitionsPerExecution"],
   cdk: (s, { varName, resourceName }) =>
     `new sfn.StateMachine(this, "${varName}", {

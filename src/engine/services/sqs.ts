@@ -23,6 +23,13 @@ export const sqs = defineService({
       driver: true,
       description: "Defaults to the canvas traffic figure",
     },
+    encryption: {
+      type: "enum",
+      values: ["sse-sqs", "sse-kms"],
+      default: "sse-sqs",
+      label: "Encryption at rest",
+      group: "security",
+    },
     dlqConfigured: {
       type: "boolean",
       default: false,
@@ -30,10 +37,12 @@ export const sqs = defineService({
     },
   },
   cardLines: ["queueType", "requestsPerMonth"],
+  badge: (s) => (s.encryption === "sse-kms" ? "SSE-KMS" : "SSE-SQS"),
   cdk: (s, { varName, resourceName }) => {
     const fifo = s.queueType === "fifo";
     const suffix = fifo ? ".fifo" : "";
-    const fifoProp = fifo ? "\n  fifo: true," : "";
+    const enc = `\n  encryption: sqs.QueueEncryption.${s.encryption === "sse-kms" ? "KMS_MANAGED" : "SQS_MANAGED"},`;
+    const fifoProp = (fifo ? "\n  fifo: true," : "") + enc;
     if (s.dlqConfigured === true) {
       return `const ${varName}Dlq = new sqs.Queue(this, "${varName}Dlq", {
   queueName: "${resourceName}-dlq${suffix}",${fifoProp}

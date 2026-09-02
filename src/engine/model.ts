@@ -35,6 +35,30 @@ export interface ArchNode {
   /** Exactly one container — structural, validated. */
   container?: string;
   position: { x: number; y: number };
+  /** What this node's card shows (the gear). Absent = the service's
+   *  cardLines and the global card options. Presentation only. */
+  card?: { lines?: string[]; cost?: boolean; badge?: boolean };
+}
+
+/** Global card and cost presentation (the Cards and Cost gears). */
+export interface CardShow {
+  settings: boolean;
+  cost: boolean;
+  badge: boolean;
+}
+export interface CostDisplay {
+  nodes: boolean;
+  containers: boolean;
+  period: "month" | "year";
+  decimals: 0 | 2;
+}
+export const DEFAULT_CARD_SHOW: CardShow = { settings: true, cost: true, badge: true };
+export const DEFAULT_COST_DISPLAY: CostDisplay = { nodes: true, containers: true, period: "month", decimals: 2 };
+
+/** Money as the Cost gear wants it: per month or per year, 0 or 2 decimals. */
+export function formatCost(monthly: number, d: CostDisplay = DEFAULT_COST_DISPLAY): string {
+  const v = toMoney(d.period === "year" ? monthly * 12 : monthly);
+  return `$${v.toFixed(d.decimals)}${d.period === "year" ? "/yr" : ""}`;
 }
 
 export type EdgeDash = "solid" | "dashed" | "dotted";

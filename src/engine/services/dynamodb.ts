@@ -52,15 +52,37 @@ export const dynamodb = defineService({
       label: "Provisioned WCU",
       driver: true,
     },
+    encryption: {
+      type: "enum",
+      values: ["aws-owned", "aws-managed", "customer-managed"],
+      default: "aws-owned",
+      label: "Encryption at rest",
+      description: "AWS-owned key, AWS-managed KMS key, or your own CMK",
+      group: "security",
+    },
+    pitr: {
+      type: "boolean",
+      default: false,
+      label: "Point-in-time recovery",
+      group: "security",
+    },
   },
+  badge: (s) =>
+    [s.encryption === "customer-managed" ? "SSE-KMS (CMK)" : s.encryption === "aws-managed" ? "SSE-KMS" : "SSE", s.pitr === true ? "PITR" : null]
+      .filter(Boolean)
+      .join(" · "),
   cardLines: ["capacityMode", "storageGb", "readsPerMonth"],
   cdk: (s, { varName, resourceName }) => {
     const provisioned = s.capacityMode === "provisioned";
     const capacity = provisioned
       ? `\n  readCapacity: ${Number(s.provisionedRcu) || 5},\n  writeCapacity: ${Number(s.provisionedWcu) || 5},`
       : "";
+    const enc =
+      s.encryption === "customer-managed" ? "CUSTOMER_MANAGED" : s.encryption === "aws-managed" ? "AWS_MANAGED" : "DEFAULT";
+    const pitr = s.pitr === true ? "\n  pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true }," : "";
     return `new dynamodb.Table(this, "${varName}", {
   tableName: "${resourceName}",
+  encryption: dynamodb.TableEncryption.${enc},${pitr}
   // stub key schema — set your real partition/sort keys
   partitionKey: { name: "pk", type: dynamodb.AttributeType.STRING },
   billingMode: dynamodb.BillingMode.${provisioned ? "PROVISIONED" : "PAY_PER_REQUEST"},${capacity}

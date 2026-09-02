@@ -214,6 +214,7 @@ export function coreTools(): ToolSpec[] {
                   ...(v.type === "number" ? { min: v.min, max: v.max } : {}),
                   ...("default" in v ? { default: v.default } : {}),
                   ...(v.driver ? { priceDriver: true } : {}),
+                  ...(v.group === "security" ? { security: true } : {}),
                 },
               ]),
             ),
