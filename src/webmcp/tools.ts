@@ -25,7 +25,7 @@ import {
   CONTAINER_KINDS,
   breadcrumb,
   containerStats,
-  legalChildren,
+  TYPICAL_PARENTS,
   type ContainerKind,
 } from "@/engine/containers";
 import { errorResult, text, type ToolSpec } from "./toolRegistry";
@@ -616,7 +616,7 @@ export function coreTools(): ToolSpec[] {
     {
       name: "add_container",
       description:
-        "Create a container: cloud, region, vpc, subnetpub or subnetpri. Containers nest in a legal order, roll costs up the tree, and collapse to one card. Returns a structured error naming the rule if the parent is illegal.",
+        "Create a container frame: cloud, region, vpc, subnetpub or subnetpri. Any kind may sit at the top level or inside any other; containers roll costs up the tree and collapse to one card. Pass parent to nest it.",
       inputSchema: {
         type: "object",
         properties: {
@@ -637,21 +637,14 @@ export function coreTools(): ToolSpec[] {
             cidr ? String(cidr) : undefined,
             parent ? String(parent) : undefined,
           );
-        if ("error" in res)
-          return errorResult(res.error.code, res.error.message, {
-            ...(res.error.legalParents ? { legalParents: res.error.legalParents } : {}),
-          });
-        return text({
-          id: res.id,
-          parent: parent ?? null,
-          legalChildren: legalChildren(kind as ContainerKind),
-        });
+        if ("error" in res) return errorResult(res.error.code, res.error.message);
+        return text({ id: res.id, parent: parent ?? null });
       },
     },
     {
       name: "move_into_container",
       description:
-        "Move nodes into a container (or pass null to put them back on the canvas). Refuses illegal placements with a message naming the rule.",
+        "Move nodes into a container (or pass null to put them back on the canvas). Any service may sit in any container; only an unknown id is refused.",
       inputSchema: {
         type: "object",
         properties: {
@@ -668,12 +661,7 @@ export function coreTools(): ToolSpec[] {
         if (missing.length)
           return errorResult("no_such_node", `Unknown node(s): ${missing.join(", ")}`);
         const res = s.moveIntoContainer(ids, (containerId as string | null) ?? null);
-        if ("error" in res)
-          return errorResult(res.error.code, res.error.message, {
-            ...(res.error.legalContainers
-              ? { legalContainers: res.error.legalContainers }
-              : {}),
-          });
+        if ("error" in res) return errorResult(res.error.code, res.error.message);
         const after = useStore.getState();
         return text({
           moved: res.moved,
@@ -733,7 +721,7 @@ export function coreTools(): ToolSpec[] {
     {
       name: "get_containers",
       description:
-        "The containment tree: each container with its kind, parent, resource count and cost subtotal, plus which kinds may nest inside which.",
+        "The containment tree: each container with its kind, parent, resource count and cost subtotal, plus where each kind typically sits (a hint, not a rule).",
       inputSchema: { type: "object", properties: {}, additionalProperties: false },
       readOnly: true,
       execute: () => {
@@ -750,12 +738,7 @@ export function coreTools(): ToolSpec[] {
             resources: stats.get(c.id)?.resources ?? 0,
             monthly: stats.get(c.id)?.monthly ?? 0,
           })),
-          legalChildren: Object.fromEntries(
-            [null, ...CONTAINER_KINDS].map((k) => [
-              k ?? "top",
-              legalChildren(k as ContainerKind | null),
-            ]),
-          ),
+          typicalParents: TYPICAL_PARENTS,
         });
       },
     },

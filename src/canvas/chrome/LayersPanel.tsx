@@ -3,15 +3,23 @@
 // The Layers tree: every object is a row in one list · containers (by
 // ownership), sections and groups (positionally, under each container
 // that holds a member), resources, and the connections. Disclosure
-// triangles fold the tree, not the canvas; click selects the object
-// itself; hover reveals the row's actions.
+// triangles fold the tree, not the canvas; the top level is an accordion
+// between Connections and everything else (Connections starts folded).
+// Click selects the object itself; hover reveals the row's actions; drag
+// a row onto another to move it there (a resource into a frame or a
+// section, a frame into a frame, a resource after another to reorder),
+// or onto the header line to send it to the top level.
 
 import { useMemo, useState } from "react";
 import { useStore, pricingOf, snapshotOf } from "@/store/useStore";
 import { KIND_META, containerStats } from "@/engine/containers";
 import { getService } from "@/engine/services";
+import { sectionMembersDeep } from "@/engine/layers";
 import { layerRows, type LayerRow } from "@/engine/layers";
 import { Icon } from "../Icon";
+
+const MIME = "application/overhead-layer";
+type Dragged = { kind: "node" | "container" | "section" | "group"; id: string };
 
 function Chip({ color, dashed }: { color: string; dashed?: boolean }) {
   return (
@@ -35,14 +43,18 @@ export function LayersPanel() {
   const select = useStore((s) => s.select);
   const selectEdge = useStore((s) => s.selectEdge);
   const setContainerCollapsed = useStore((s) => s.setContainerCollapsed);
-  const addSection = useStore((s) => s.addSection);
   const removeSection = useStore((s) => s.removeSection);
   const removeContainer = useStore((s) => s.removeContainer);
   const removeNode = useStore((s) => s.removeNode);
   const removeEdge = useStore((s) => s.removeEdge);
-  const setPalette = useStore((s) => s.setPalette);
-  const setTool = useStore((s) => s.setTool);
-  const [folded, setFolded] = useState<Set<string>>(() => new Set());
+  const moveIntoContainer = useStore((s) => s.moveIntoContainer);
+  const setContainerParent = useStore((s) => s.setContainerParent);
+  const setSectionNodes = useStore((s) => s.setSectionNodes);
+  const setSectionParent = useStore((s) => s.setSectionParent);
+  const placeNodeAfter = useStore((s) => s.placeNodeAfter);
+  const notify = useStore((s) => s.notify);
+  const [folded, setFolded] = useState<Set<string>>(() => new Set(["/connections"]));
+  const [over, setOver] = useState<string | null>(null);
 
   const stats = useMemo(() => {
     try {
@@ -59,12 +71,21 @@ export function LayersPanel() {
     [nodes, edges, containers, sections, traffic, folded],
   );
   const nameOf = (id: string) => nodes.find((n) => n.id === id)?.name ?? id;
+  const isTop = (key: string) => key.split("/").length === 2;
 
+  // Accordion at the top level: opening Connections folds every other
+  // top-level row; opening any top-level object folds Connections.
   const toggleFold = (key: string) =>
     setFolded((prev) => {
       const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
+      if (!next.has(key)) {
+        next.add(key);
+        return next;
+      }
+      next.delete(key);
+      if (key === "/connections") {
+        for (const r of rows) if (r.depth === 0 && r.key !== key && r.kind !== "node") next.add(r.key);
+      } else if (isTop(key)) next.add("/connections");
       return next;
     });
 
@@ -75,6 +96,48 @@ export function LayersPanel() {
     else if (r.kind === "connections") toggleFold(r.key);
     else select(r.id);
   };
+
+  // ---- drag a row onto another ----
+  const draggable = (r: LayerRow): r is Extract<LayerRow, { kind: Dragged["kind"] }> =>
+    r.kind === "node" || r.kind === "container" || r.kind === "section" || r.kind === "group";
+  const readDrag = (e: React.DragEvent): Dragged | null => {
+    try {
+      const raw = e.dataTransfer.getData(MIME);
+      return raw ? (JSON.parse(raw) as Dragged) : null;
+    } catch {
+      return null;
+    }
+  };
+  const report = (res: { error: { message: string } } | object) => {
+    if ("error" in res) notify(res.error.message, "warn");
+  };
+  /** Drop `d` onto `target` (null = the top level). */
+  const dropOn = (d: Dragged, target: LayerRow | null) => {
+    if (target && target.id === d.id) return;
+    if (!target) {
+      if (d.kind === "node") report(moveIntoContainer([d.id], null));
+      else if (d.kind === "container") report(setContainerParent(d.id, undefined));
+      else setSectionParent(d.id, undefined);
+      return;
+    }
+    if (target.kind === "container") {
+      if (d.kind === "node") report(moveIntoContainer([d.id], target.id));
+      else if (d.kind === "container") report(setContainerParent(d.id, target.id));
+      else report(moveIntoContainer(sectionMembersDeep(sections, d.id), target.id));
+      notify(`Moved into ${target.container.name}`);
+      return;
+    }
+    if (target.kind === "section" || target.kind === "group") {
+      if (d.kind === "node") {
+        if (!target.section.nodeIds.includes(d.id)) setSectionNodes(target.id, [...target.section.nodeIds, d.id]);
+      } else if (d.kind === "section" || d.kind === "group") setSectionParent(d.id, target.id);
+      else return;
+      notify(`Moved into ${target.section.name}`);
+      return;
+    }
+    if (target.kind === "node" && d.kind === "node") placeNodeAfter(d.id, target.id);
+  };
+  const dropTarget = (r: LayerRow) => r.kind === "container" || r.kind === "section" || r.kind === "group" || r.kind === "node";
 
   const glyph = (r: LayerRow) => {
     if (r.kind === "container") {
@@ -135,46 +198,35 @@ export function LayersPanel() {
   };
 
   const tip = (r: LayerRow) => {
-    if (r.kind === "container") return `${KIND_META[r.container.kind].label} · click to select · double-click to ${r.container.collapsed ? "expand" : "collapse"} on the canvas`;
-    if (r.kind === "section") return "Section · click to select it and its members";
+    if (r.kind === "container") return `${KIND_META[r.container.kind].label} · click to select · double-click to ${r.container.collapsed ? "expand" : "collapse"} on the canvas · drop a row here to move it in`;
+    if (r.kind === "section") return "Section · click to select it and its members · drop a resource here to add it";
     if (r.kind === "group") return "Group (⌘G) · click to select its members · ⇧⌘G ungroups";
     if (r.kind === "connections") return "Every edge on the canvas";
     if (r.kind === "edge") return `${r.edge.kind} connection · click to select`;
-    return "Click to select";
-  };
-
-  const addSectionFromSelection = () => {
-    const st = useStore.getState();
-    const members = st.selectedIds.filter((id) => st.nodes.some((n) => n.id === id));
-    addSection(`Section ${sections.filter((x) => x.kind !== "group").length + 1}`, members);
+    return "Click to select · drag onto a frame or section to move it there";
   };
 
   return (
     <div>
-      <div className="flex items-center justify-between px-[11px] pb-[5px] pt-[9px] text-[9px] uppercase tracking-[0.13em]" style={{ color: "var(--ink-4)" }}>
+      <div
+        className="flex items-center justify-between px-[11px] pb-[5px] pt-[9px] text-[9px] uppercase tracking-[0.13em]"
+        style={{ color: over === "/" ? "var(--accent-ink)" : "var(--ink-4)", background: over === "/" ? "var(--accent-bg)" : undefined }}
+        title="Drop a row here to send it to the top level"
+        onDragOver={(e) => {
+          if (!e.dataTransfer.types.includes(MIME)) return;
+          e.preventDefault();
+          setOver("/");
+        }}
+        onDragLeave={() => setOver(null)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setOver(null);
+          const d = readDrag(e);
+          if (d) dropOn(d, null);
+        }}
+      >
         <span>
-          {nodes.length} resources · {containers.length} frames · {sections.length} sections
-        </span>
-        <span className="flex items-center gap-1">
-          <button
-            className="rounded px-1 text-[12px] leading-none text-ink-3 hover:bg-[var(--hover-2)] hover:text-ink-2"
-            data-tip="New section (from the selection)"
-            aria-label="New section"
-            onClick={addSectionFromSelection}
-          >
-            <Icon name="section" size={12} />
-          </button>
-          <button
-            className="rounded px-1 text-[12px] leading-none text-ink-3 hover:bg-[var(--hover-2)] hover:text-ink-2"
-            data-tip="New container · B"
-            aria-label="New container"
-            onClick={() => {
-              setTool("container");
-              setPalette(true);
-            }}
-          >
-            <Icon name="container" size={12} />
-          </button>
+          {over === "/" ? "Drop here · top level" : `${nodes.length} resources · ${containers.length} frames · ${sections.length} sections`}
         </span>
       </div>
       {rows.length === 0 ? (
@@ -185,13 +237,15 @@ export function LayersPanel() {
       {rows.map((r) => {
         const foldable = r.kind !== "node" && r.kind !== "edge" && r.hasChildren;
         const open = !folded.has(r.key);
+        const isOver = over === r.key;
         return (
           <div
             key={r.key}
             className="group flex cursor-pointer items-center gap-[5px] py-[3px] pr-2.5 text-[11.5px] hover:bg-[var(--hover)]"
             style={{
               paddingLeft: 6 + r.depth * 13,
-              background: isSelected(r) ? "var(--accent-bg)" : undefined,
+              background: isOver ? "var(--accent-bg)" : isSelected(r) ? "var(--accent-bg)" : undefined,
+              boxShadow: isOver ? "inset 0 0 0 1px var(--accent)" : undefined,
               marginTop: r.kind === "connections" ? 6 : undefined,
               borderTop: r.kind === "connections" ? "1px solid var(--line)" : undefined,
             }}
@@ -199,6 +253,29 @@ export function LayersPanel() {
             title={tip(r)}
             onDoubleClick={() => {
               if (r.kind === "container") setContainerCollapsed(r.id, !r.container.collapsed);
+            }}
+            draggable={draggable(r)}
+            onDragStart={(e) => {
+              if (!draggable(r)) return;
+              e.dataTransfer.setData(MIME, JSON.stringify({ kind: r.kind, id: r.id } satisfies Dragged));
+              e.dataTransfer.effectAllowed = "move";
+            }}
+            onDragOver={(e) => {
+              if (!dropTarget(r) || !e.dataTransfer.types.includes(MIME)) return;
+              e.preventDefault();
+              e.stopPropagation();
+              if (over !== r.key) setOver(r.key);
+            }}
+            onDragLeave={() => {
+              if (over === r.key) setOver(null);
+            }}
+            onDrop={(e) => {
+              if (!dropTarget(r)) return;
+              e.preventDefault();
+              e.stopPropagation();
+              setOver(null);
+              const d = readDrag(e);
+              if (d) dropOn(d, r);
             }}
           >
             <button

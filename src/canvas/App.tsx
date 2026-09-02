@@ -132,7 +132,8 @@ export function App() {
       const snap = SAMPLES["event-driven"];
       loadSnapshot({ ...snap, nodes: snap.nodes.map((n) => ({ ...n })) });
       useStore.getState().setDrawingName("event-driven");
-      const positions = autoLayout(useStore.getState().nodes);
+      const st = useStore.getState();
+      const { positions } = autoLayout(st.nodes, st.edges, st.containers);
       for (const [id, p] of Object.entries(positions)) {
         useStore.getState().moveNode(id, p.x, p.y);
       }

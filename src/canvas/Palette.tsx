@@ -13,7 +13,7 @@ import {
   KIND_META,
   CONTAINER_KINDS,
   ancestorsOf,
-  validateContainerParent,
+  TYPICAL_PARENTS,
   type ContainerKind,
 } from "@/engine/containers";
 import { Icon } from "./Icon";
@@ -104,25 +104,20 @@ export function PaletteFloat() {
     query ? def.term.toLowerCase().includes(query.toLowerCase()) || def.id.includes(query.toLowerCase()) : true,
   );
 
-  // A new container goes under the deepest legal ancestor of the selection ·
-  // a selected frame itself, or the selected node's container, walking up
-  // until the kind fits; otherwise the deepest existing legal container.
+  // Where a new container lands · nothing is ever refused, this only picks
+  // a sensible default: the selected frame (or the selected node's) when
+  // the kind typically sits there, else the nearest typical ancestor, else
+  // the selected frame itself, else the deepest typical frame on the
+  // canvas, else the top level (null).
   const parentFor = useMemo(() => {
     const selectedC = containers.find((c) => c.id === selectedId);
     const selectedN = nodes.find((n) => n.id === selectedId);
     const own = selectedC ?? (selectedN?.container ? containers.find((c) => c.id === selectedN.container) : undefined);
     const chain = own ? [own, ...ancestorsOf(containers, own.id)] : [];
-    const fallback = [
-      ...containers.filter((c) => c.kind === "subnetpri" || c.kind === "subnetpub"),
-      ...containers.filter((c) => c.kind === "vpc"),
-      ...containers.filter((c) => c.kind === "region"),
-      ...containers.filter((c) => c.kind === "cloud"),
-    ];
-    return (kind: ContainerKind) => {
-      for (const c of [...chain, ...fallback]) {
-        if (!validateContainerParent(kind, c.kind)) return c;
-      }
-      return validateContainerParent(kind, null) ? undefined : null; // null = top level ok
+    const deepest = [...containers].sort((a, b) => ancestorsOf(containers, b.id).length - ancestorsOf(containers, a.id).length);
+    return (kind: ContainerKind): (typeof containers)[number] | null => {
+      const typical = TYPICAL_PARENTS[kind];
+      return chain.find((c) => typical.includes(c.kind)) ?? own ?? deepest.find((c) => typical.includes(c.kind)) ?? null;
     };
   }, [nodes, containers, selectedId]);
 
@@ -175,16 +170,10 @@ export function PaletteFloat() {
       {CONTAINER_KINDS.map((kind) => {
         const meta = KIND_META[kind];
         const parent = parentFor(kind);
-        const blocked = parent === undefined;
-        const why = blocked
-          ? validateContainerParent(kind, null)?.message ?? "No legal parent on this canvas yet."
-          : parent
-            ? `Adds inside ${parent.name}`
-            : "Adds at the top level";
+        const why = parent ? `Adds inside ${parent.name} · select a frame first to choose` : "Adds at the top level";
         return (
           <button
             key={kind}
-            disabled={blocked}
             title={why}
             className="col-span-full flex items-center gap-[7px] rounded-lg p-1.5 text-left text-[10.5px] hover:bg-[var(--hover)] disabled:cursor-not-allowed disabled:opacity-40"
             style={{ color: "var(--ink-2)" }}
@@ -208,7 +197,7 @@ export function PaletteFloat() {
             )}
             {meta.label}
             <span className="ml-auto text-[9px]" style={{ color: "var(--ink-4)" }}>
-              {blocked ? "·" : parent ? `in ${parent.name}` : "top"}
+              {parent ? `in ${parent.name}` : "top"}
             </span>
           </button>
         );

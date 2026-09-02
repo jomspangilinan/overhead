@@ -21,12 +21,8 @@ import { ContainerCard, CARD_W, CARD_H } from "./ContainerCard";
 import { TypedEdge } from "./TypedEdge";
 import { ContainerFrames } from "./ContainerFrames";
 import { SectionFrames } from "./SectionFrames";
-import {
-  descendantIds,
-  outermostCollapsedAncestor,
-  validateNodePlacement,
-} from "@/engine/containers";
-import { frameBoxes, hitContainer, movedNodeIds } from "@/engine/frames";
+import { outermostCollapsedAncestor } from "@/engine/containers";
+import { frameBoxes, hitContainer, movedNodeIds, sectionsAfterDrop } from "@/engine/frames";
 
 const nodeTypes: NodeTypes = { aws: AwsNode, container: ContainerCard };
 const edgeTypes: EdgeTypes = { typed: TypedEdge };
@@ -352,6 +348,7 @@ export function Canvas() {
   // same validation move_into_container gives the agent; an illegal drop
   // snaps back and says why.
   const dragStart = useRef<{ x: number; y: number } | null>(null);
+  const connectFrom = useRef<{ x: number; y: number } | null>(null);
   const onNodeDragStart = useCallback(
     (_e: unknown, n: Node) => {
       if (n.id.startsWith("container:")) return;
@@ -376,6 +373,9 @@ export function Canvas() {
       const st = useStore.getState();
       const node = st.nodes.find((x) => x.id === n.id);
       if (!node) return;
+      // Sections follow the drawing: dropped outside a section's box the
+      // node leaves it, dropped inside one it joins.
+      for (const ch of sectionsAfterDrop(st.nodes, st.sections, n.id, { nodeW: NODE_W, nodeH: NODE_H })) st.setSectionNodes(ch.id, ch.nodeIds);
       const boxes = frameBoxes(st.nodes, st.containers, { nodeW: NODE_W, nodeH: NODE_H, exclude: n.id });
       // The node's own frame vanished without it (it was the only content):
       // it stays a member unless it landed inside something else.
@@ -386,12 +386,6 @@ export function Canvas() {
       const targetId = hit?.id ?? null;
       if ((targetId ?? undefined) === node.container) return;
       if (ownGone && !hit) return;
-      const err = validateNodePlacement(node.service, hit?.kind ?? null);
-      if (err) {
-        if (dragStart.current) moveNode(n.id, dragStart.current.x, dragStart.current.y);
-        notify(err.message, "warn");
-        return;
-      }
       const res = moveIntoContainer([n.id], targetId);
       if ("error" in res) {
         if (dragStart.current) moveNode(n.id, dragStart.current.x, dragStart.current.y);
@@ -500,11 +494,21 @@ export function Canvas() {
           const to = sideOf(c.targetHandle);
           storeAddEdge(c.source, c.target, "sync", undefined, from || to ? { anchors: { ...(from ? { from } : {}), ...(to ? { to } : {}) } } : undefined);
         }}
-        onConnectStart={() => setConnecting(true)}
+        onConnectStart={(evt) => {
+          connectFrom.current = "clientX" in evt ? { x: evt.clientX, y: evt.clientY } : { x: evt.touches[0].clientX, y: evt.touches[0].clientY };
+          setConnecting(true);
+        }}
         onConnectEnd={(evt, state) => {
           setConnecting(false);
           if (state.isValid || !state.fromNode || state.fromNode.id.startsWith("container:")) return;
           const client = "clientX" in evt ? { x: evt.clientX, y: evt.clientY } : { x: evt.changedTouches[0].clientX, y: evt.changedTouches[0].clientY };
+          // With the Connect tool the whole node is a handle, so a plain
+          // click (no drag) is a select, not "connect from here".
+          const from = connectFrom.current;
+          if (from && Math.hypot(client.x - from.x, client.y - from.y) < 6) {
+            select(state.fromNode.id);
+            return;
+          }
           const rect = wrapper.current?.getBoundingClientRect();
           setPendingConnection({
             fromNodeId: state.fromNode.id,
@@ -545,7 +549,7 @@ export function Canvas() {
         onSelectionStart={() => setMarquee(true)}
         onSelectionEnd={() => setMarquee(false)}
         nodeDragThreshold={4}
-        nodesDraggable={tool !== "pan"}
+        nodesDraggable={tool !== "pan" && tool !== "connect"}
         zoomOnPinch
         panOnScroll
       >

@@ -18,7 +18,6 @@ import {
   ancestorsOf,
   breadcrumb,
   containerStats,
-  validateNodePlacement,
 } from "@/engine/containers";
 import { contentBoxes, frameBoxes } from "@/engine/frames";
 import { NODE_W, NODE_H } from "./nodeMetrics";
@@ -512,12 +511,6 @@ function NodeInspector({ nodeId }: { nodeId: string }) {
             value={node.container ?? ""}
             onChange={(e) => {
               const target = e.target.value || null;
-              const kind = target ? containers.find((c) => c.id === target)?.kind ?? null : null;
-              const err = validateNodePlacement(node.service, kind);
-              if (err) {
-                setPlaceError(err.message);
-                return;
-              }
               const res = moveIntoContainer([node.id], target);
               setPlaceError("error" in res ? res.error.message : null);
             }}

@@ -10,6 +10,7 @@ import { useMemo } from "react";
 import { ViewportPortal } from "@xyflow/react";
 import { useStore } from "@/store/useStore";
 import { sectionBoxes, movedSectionIds, type Box } from "@/engine/frames";
+import { outermostCollapsedAncestor } from "@/engine/containers";
 import { NODE_W, NODE_H } from "./nodeMetrics";
 import { FrameChrome } from "./frames/FrameChrome";
 import { useFrameGesture } from "./frames/useFrameGesture";
@@ -27,11 +28,19 @@ export function SectionFrames() {
   const setPopover = useStore((s) => s.setPopover);
   const gesture = useFrameGesture("section", setSectionBounds);
 
+  // Members hidden inside a collapsed container leave the section's box;
+  // a section whose every member is hidden is not drawn at all (it folds
+  // with the container it is in).
+  const hidden = useMemo(
+    () => new Set(nodes.filter((n) => outermostCollapsedAncestor(containers, n.container)).map((n) => n.id)),
+    [nodes, containers],
+  );
+
   // Boxes as drawn; a frame mid-drag shifts every section riding along
   // (the dragged section's tree, or sections wholly inside a dragged
   // container), so the preview matches what the commit will do.
   const boxes = useMemo(() => {
-    const out = sectionBoxes(nodes, sections, { nodeW: NODE_W, nodeH: NODE_H, exclude: draggingId });
+    const out = sectionBoxes(nodes, sections, { nodeW: NODE_W, nodeH: NODE_H, exclude: draggingId, hidden });
     if (frameDrag) {
       for (const id of movedSectionIds({ nodes, containers, sections }, frameDrag)) {
         const b = out.get(id);
@@ -40,7 +49,7 @@ export function SectionFrames() {
     }
     if (gesture.resize) out.set(gesture.resize.id, gesture.resize.box);
     return out;
-  }, [sections, nodes, containers, draggingId, frameDrag, gesture.resize]);
+  }, [sections, nodes, containers, draggingId, frameDrag, gesture.resize, hidden]);
 
   if (!on) return null;
 

@@ -265,7 +265,7 @@ body {
 .oh-frame-head,
 .oh-frame-name,
 .oh-frame-grip,
-.oh-collapse,
+.oh-frame-collapse,
 .oh-frame-move,
 .oh-frame-gear,
 .oh-frame-input {
@@ -284,7 +284,8 @@ body {
   transition: opacity 0.12s;
   cursor: nwse-resize;
 }
-.overhead-canvas:hover .oh-frame-grip,
+.oh-frame:hover .oh-frame-grip,
+.oh-frame[data-selected="true"] .oh-frame-grip,
 .oh-frame-grip:hover {
   opacity: 0.85;
 }
@@ -334,9 +335,25 @@ body {
   cursor: pointer;
   z-index: 3;
 }
-.oh-hover-zone:hover .oh-side-pad,
+.react-flow__node:hover .oh-side-pad,
 .oh-side-pad:hover {
   opacity: 1;
+}
+/* Connect tool: the whole visible shape is a handle (AwsNode `body`) */
+.react-flow__handle.oh-body-handle {
+  width: auto;
+  height: auto;
+  min-width: 0;
+  min-height: 0;
+  opacity: 1;
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  border: 1.5px dashed var(--accent);
+  cursor: crosshair;
+  z-index: 4;
+}
+.react-flow__handle.oh-body-handle:hover,
+.react-flow__handle.oh-body-handle.connectingto {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
 }
 .overhead-canvas.connecting .oh-side-pad {
   opacity: 0;
@@ -367,14 +384,22 @@ body {
   font-family: var(--font-mono-jb), ui-monospace, monospace;
 }
 
-/* Container collapse handle: only on hover of the frame's corner region */
-.oh-collapse {
+/* Frame controls (collapse · gear · move grip) and the resize grip show only
+   while the frame is selected or its header is hovered: never permanent.
+   The wrapper never takes pointer events itself; :hover still reaches it
+   through the header band, which does. */
+.oh-frame-cluster {
   opacity: 0;
+  visibility: hidden;
   transition: opacity 0.12s;
 }
-.oh-collapse:hover,
-.overhead-canvas:hover .oh-collapse {
-  opacity: 0.85;
+.oh-frame:hover .oh-frame-cluster,
+.oh-frame[data-selected="true"] .oh-frame-cluster {
+  opacity: 1;
+  visibility: visible;
+}
+.oh-frame-collapse {
+  cursor: pointer;
 }
 
 /* Hover isolation: everything not lit dims */

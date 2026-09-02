@@ -1,21 +1,19 @@
-// Containers are validated, nested and priced. Sections are not — that
-// separation is the thing these tests protect.
+// Containers nest, roll cost up and collapse; they are never validated
+// beyond "no cycles, nothing dangling". Sections are the same without the
+// AWS meaning.
 
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
-  LEGAL_PARENTS,
+  TYPICAL_PARENTS,
   CONTAINER_KINDS,
   ancestorsOf,
   breadcrumb,
   containerStats,
   descendantIds,
-  legalChildren,
   nodesUnder,
   outermostCollapsedAncestor,
-  validateContainerParent,
-  validateNodePlacement,
   wouldCycle,
   type Container,
 } from "../src/engine/containers";
@@ -57,37 +55,13 @@ function snap(nodes: ArchNode[], containers = tree): StateSnapshot {
 }
 
 describe("container placement", () => {
-  it("accepts every legal parent and refuses every illegal one", () => {
+  it("has a typical parent hint for every kind, and every hint is a real kind", () => {
     for (const kind of CONTAINER_KINDS) {
-      for (const parent of [null, ...CONTAINER_KINDS]) {
-        const err = validateContainerParent(kind, parent);
-        const legal = LEGAL_PARENTS[kind].includes(parent);
-        expect(Boolean(err)).toBe(!legal);
-        if (err) expect(err.legalParents?.length).toBeGreaterThan(0);
-      }
+      expect(Array.isArray(TYPICAL_PARENTS[kind])).toBe(true);
+      for (const p of TYPICAL_PARENTS[kind]) expect(CONTAINER_KINDS).toContain(p);
     }
-  });
-
-  it("names the rule in the refusal, so the agent can recover", () => {
-    const err = validateContainerParent("vpc", "cloud")!;
-    expect(err.code).toBe("illegal_parent");
-    expect(err.message).toContain("VPC");
-    expect(err.legalParents).toEqual(["region"]);
-  });
-
-  it("reports which kinds may nest inside which", () => {
-    expect(legalChildren(null)).toEqual(["cloud"]);
-    expect(legalChildren("cloud")).toEqual(["region"]);
-    expect(legalChildren("vpc")).toEqual(["subnetpub", "subnetpri"]);
-    expect(legalChildren("subnetpri")).toEqual([]);
-  });
-
-  it("keeps regional services out of subnets, but lets Lambda be VPC-attached", () => {
-    expect(validateNodePlacement("dynamodb", "region")).toBeNull();
-    expect(validateNodePlacement("lambda", "subnetpri")).toBeNull();
-    const err = validateNodePlacement("dynamodb", "subnetpri")!;
-    expect(err.code).toBe("illegal_placement");
-    expect(err.legalContainers).toContain("region");
+    expect(TYPICAL_PARENTS.cloud).toEqual([]);
+    expect(TYPICAL_PARENTS.vpc).toContain("region");
   });
 
   it("refuses a cycle", () => {
@@ -186,20 +160,25 @@ describe("migration from the previous shape", () => {
     expect("group" in out.nodes[0]).toBe(false);
   });
 
-  it("repairs an illegal parent instead of dropping the container", () => {
+  it("keeps any nesting the user drew, and only cuts a cycle or a dangling parent", () => {
     const out = migrateSnapshot({
       nodes: [],
       edges: [],
       containers: [
         { id: "c1", kind: "cloud", name: "AWS Cloud", collapsed: false },
-        // a subnet directly in the cloud is illegal
+        // a subnet directly in the cloud is fine · the user meant it
         { id: "s1", kind: "subnetpub", name: "public-a", parent: "c1", collapsed: false },
+        { id: "v1", kind: "vpc", name: "vpc", parent: "gone", collapsed: false },
+        { id: "a", kind: "region", name: "a", parent: "b", collapsed: false },
+        { id: "b", kind: "region", name: "b", parent: "a", collapsed: false },
       ],
       sections: [],
       traffic: { ...DEFAULT_TRAFFIC },
     });
-    expect(out.containers).toHaveLength(2);
-    expect(out.containers.find((c) => c.id === "s1")!.parent).toBeUndefined();
+    const by = (id: string) => out.containers.find((c) => c.id === id)!;
+    expect(by("s1").parent).toBe("c1");
+    expect(by("v1").parent).toBeUndefined();
+    expect(by("a").parent === undefined || by("b").parent === undefined).toBe(true);
   });
 
   it("is a no-op on an already-migrated snapshot", () => {

@@ -4,12 +4,7 @@
 
 import type { StateSnapshot, Section, ArchEdge, EdgeStyle } from "./model";
 import { DEFAULT_TRAFFIC } from "./model";
-import {
-  LEGAL_PARENTS,
-  type Container,
-  type ContainerKind,
-  CONTAINER_KINDS,
-} from "./containers";
+import type { Container, ContainerKind } from "./containers";
 
 /** v1 groups → v2 containers; `logical` becomes a section, `az` dissolves. */
 const KIND_MAP: Record<string, ContainerKind | null> = {
@@ -114,15 +109,18 @@ export function migrateSnapshot(raw: unknown): StateSnapshot {
   // ---- drop fields the model no longer carries ----
   for (const n of nodes) delete (n as unknown as { lane?: string }).lane;
 
-  // ---- repair illegal parents rather than dropping the container ----
+  // ---- any parent is legal; only a dangling or cyclic one is repaired ----
   const byId = new Map(containers.map((c) => [c.id, c]));
-  const kindOf = (id?: string) => (id ? byId.get(id)?.kind ?? null : null);
   containers = containers.map((c) => {
-    if (!CONTAINER_KINDS.includes(c.kind)) return c;
-    let parent = c.parent;
-    for (let i = 0; i < 12; i++) {
-      if (LEGAL_PARENTS[c.kind].includes(kindOf(parent))) break;
-      parent = parent ? byId.get(parent)?.parent : undefined;
+    let parent = c.parent && byId.has(c.parent) ? c.parent : undefined;
+    // walk up: if the chain comes back to c (or never ends), cut it
+    const seen = new Set<string>([c.id]);
+    for (let cur = parent; cur; cur = byId.get(cur)?.parent) {
+      if (seen.has(cur)) {
+        parent = undefined;
+        break;
+      }
+      seen.add(cur);
     }
     return { ...c, parent, collapsed: Boolean(c.collapsed) };
   });

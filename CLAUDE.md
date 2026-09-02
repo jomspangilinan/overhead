@@ -48,8 +48,14 @@ Phases 0–9 (§15) are done under the current spec; what remains is **video, RE
   is `pointer-events: none` and the portal inherited it); React Flow logged #015 on every drag because
   controlled nodes never carried `measured`; an unlayered `[data-tip] { position: relative }` beat
   Tailwind's `absolute` on anything with a tooltip (pads, gears).
+  2026-09-02 late: **placement rules are gone** (any frame in any frame, any service in any frame; only
+  cycles and unknown ids are refused), frame controls (collapse · gear · move) show only while a frame is
+  selected or its header hovered, sections fold with the container that holds them and follow the
+  drawing on drop, the Layers tree is an accordion (Connections folded by default) with drag-and-drop,
+  auto-layout is container-aware, the Connect tool drags from anywhere on a node, and the "+" pads show on
+  node hover again (a `pointer-events: none` hover zone never hovered).
 - 33 tools live, 37 while a scenario is open (§9).
-- Tests: 91 across 13 vitest files.
+- Tests: 97 across 14 vitest files.
 
 **Workflow the user asked for:** keep `npm run dev` running; the user reviews every change on
 `localhost:3000` **before** anything is deployed. Deploy only when they say "deploy" (`npx vercel deploy
@@ -131,33 +137,39 @@ extend), NAT/ALB/RDS/ECS, enterprise findings, Terraform, fan-out collapse, `ref
 
 | Criterion | Argument |
 |---|---|
-| **WebMCP Leverage** (tiebreak #1) | 33 semantic tools in seven families, not draw primitives. Dynamic registration via `AbortController` — four tools exist only while a scenario is open, and the bottom bar's count ticks. Correct `readOnlyHint` / `untrustedContentHint`. Structured errors the agent must resolve (illegal container parent, invalid setting). UI state commits before a tool returns. Raw `registerTool` present exactly as the brief prints it. |
+| **WebMCP Leverage** (tiebreak #1) | 33 semantic tools in seven families, not draw primitives. Dynamic registration via `AbortController` — four tools exist only while a scenario is open, and the bottom bar's count ticks. Correct `readOnlyHint` / `untrustedContentHint`. Structured errors the agent must resolve (unknown container, a frame nested in itself, invalid setting). UI state commits before a tool returns. Raw `registerTool` present exactly as the brief prints it. |
 | **Execution** | One screen, no login, no backend, no keys. Seeded sample with real containment. Undo/redo, full keyboard map, empty state, exports that `cdk synth`. |
 | **Potential Impact** | Everyone with an AWS account. The gap between "what we'll build" and "what it'll cost" is served today only by the Pricing Calculator (no topology) or a spreadsheet. |
-| **Creativity & Ambition** | Architecture + live cost + agent on one canvas; bill → diagram; containers that are semantic (validated, priced) not decorative; a diagram language that removes arrow spaghetti. |
+| **Creativity & Ambition** | Architecture + live cost + agent on one canvas; bill → diagram; containers that are semantic (priced, exported as IaC) not decorative; a diagram language that removes arrow spaghetti. |
 
 ## 5. Containment and sections
 
 Two kinds of grouping. Conflating them was the original mistake; so was imposing lanes.
 
-### 5a. Containers — structural, AWS-semantic, nested (`src/engine/containers.ts`)
+### 5a. Containers — frames with an AWS meaning, nested (`src/engine/containers.ts`)
 
-A container is a real thing: it changes what's legal, rolls cost up the tree, and will appear in IaC. A node
-lives in exactly one. Five kinds are enabled; the other four from the mock are a data edit in `LEGAL_PARENTS`
-and `KIND_META` plus the `ContainerKind` union.
+A container is a frame that rolls cost up the tree and appears in IaC. A node lives in exactly one. Five
+kinds are enabled; the other four from the mock are a data edit in `TYPICAL_PARENTS` and `KIND_META` plus
+the `ContainerKind` union.
 
-| Kind | Colour | Border | Icon | Legal parents |
+| Kind | Colour | Border | Icon | Typical parent (a hint) |
 |---|---|---|---|---|
 | `cloud` | `#8B97A8` | solid | `aws-group-cloud` | top level |
 | `region` | `#00A4A6` | **dashed** | `aws-group-region` | cloud |
-| `vpc` | `#8C4FFF` | solid | `aws-group-vpc` | region |
+| `vpc` | `#8C4FFF` | solid | `aws-group-vpc` | region, cloud |
 | `subnetpub` | `#7AA116` | solid | `aws-group-public` | vpc |
 | `subnetpri` | `#00A4A6` | solid | `aws-group-private` | vpc |
 
-- `validateContainerParent(kind, parentKind)` and `validateNodePlacement(service, kind)` return
-  `PlacementError { code, message, legalParents? | legalContainers? }` — the same shape the agent gets from
-  `add_container` / `move_into_container`, and the Add panel shows as a tooltip. Regional services sit in
-  `region`/`cloud`; **Lambda may be VPC-attached** (subnets).
+- **Nothing is validated** (the user overruled the old rules on 2026-09-02: "you should not put
+  restriction to the containers"). Any kind may sit at the top level or inside any other; any service may
+  sit in any container. `TYPICAL_PARENTS` only picks the default parent when the palette adds one (the
+  selected frame if typical, else the nearest typical ancestor, else the selected frame, else the deepest
+  typical frame, else top level). `PlacementError` is now only `no_such_container` / `no_such_node` /
+  `would_cycle`, from `addContainer`, `moveIntoContainer`, `setContainerParent`. `migrateSnapshot` keeps
+  any nesting and only cuts a dangling or cyclic parent.
+- Why containers are still frames and not nodes ("VPC is basically a service"): a VPC has to *hold*
+  subnets and Lambdas, so it is a box; it carries no price because no VPC SKU (NAT, endpoints) is in the
+  price list yet. The palette, the Layers tree and drag-and-drop treat frames and resources alike.
 - `containerStats()` rolls resources and monthly cost up subnet → VPC → region → cloud. Derived.
 - `breadcrumb(snap, nodeId)` → `["AWS Cloud", "ap-southeast-1", "orders-vpc", "private-a"]`; `get_node`
   returns it as `placement`.
@@ -167,17 +179,20 @@ and `KIND_META` plus the `ContainerKind` union.
   a position, never a clip — a member dragged past the edge grows the frame, removing members shrinks it
   back to the stored rectangle and no further. `setContainerBounds` clamps to the content floor.
 - **Direct manipulation** (`canvas/frames/FrameChrome.tsx` + `useFrameGesture.ts`, shared with sections):
-  the header band and the **move grip** (top-right, next to the gear) drag the frame and everything inside
-  (`frameDrag` preview, `moveContainer` → `translateFrame` commits once on release → one undo step); the
-  corner grip resizes; click selects the frame; double-click the name renames (`name · cidr`); the gear
-  opens a popover (name, CIDR, collapse, open in Inspector). **Moving a frame also moves every section
+  the header band and the **move grip** drag the frame and everything inside (`frameDrag` preview,
+  `moveContainer` → `translateFrame` commits once on release → one undo step); the corner grip resizes;
+  click selects the frame; double-click the name renames (`name · cidr`); the gear opens a popover (name,
+  CIDR, collapse, open in Inspector). The right-hand cluster (**collapse · gear · move**) and the resize
+  grip are **never permanent**: `.oh-frame-cluster` is hidden until the frame is selected
+  (`data-selected`) or its header is hovered (`.oh-frame:hover`, reached through the header band since
+  the wrapper itself takes no pointer events). **Moving a frame also moves every section
   whose members are all inside it** (`movedSectionIds`); a section spanning in and out stays and stretches.
   **Gotcha:** everything rendered through `ViewportPortal` inherits React Flow's
   `.react-flow__viewport { pointer-events: none }` — `globals.css` opts the handles back in
   (`.oh-frame-head`, `.oh-frame-grip`, `.oh-frame-move`, `.oh-frame-gear`, …) and they carry `nopan nodrag`.
-- **Drop to re-parent:** dropping a node inside another frame calls `moveIntoContainer` with the same
-  `validateNodePlacement` the agent gets; an illegal drop snaps back and the rule shows in the notice chip.
-  While a node is dragged its own frame leaves it out (`exclude`), so the frame doesn't chase it.
+- **Drop to re-parent:** dropping a node inside another frame calls `moveIntoContainer`; nothing is
+  refused. While a node is dragged its own frame leaves it out (`exclude`), so the frame doesn't chase it.
+  The same drop updates section membership (`sectionsAfterDrop`, §5b).
 - An empty container gets `DEFAULT_SIZE` bounds placed inside its parent (or clear of everything) — this is
   why "Add AWS Cloud" used to look like it did nothing: a memberless frame had nothing to derive from.
 - **Any container collapses** to a 220×84 card (`ContainerCard.tsx`); `outermostCollapsedAncestor` makes a
@@ -200,14 +215,28 @@ and `KIND_META` plus the `ContainerKind` union.
 - **Moving:** `moveSection` → `translateFrame` moves its members through nested sections, its own bounds
   and every descendant section's bounds, in one undo step. Selecting a section sets `selectedIds` to its
   members (deep) so dragging any member carries the rest.
+- **Membership follows the drawing.** A lone node dropped with its centre outside a section's box (drawn
+  without it) leaves that section; dropped inside one it joins (`engine/frames.ts` `sectionsAfterDrop`,
+  called from `Canvas.tsx` on drag stop). A section that would vanish without the node keeps it; groups
+  are never touched. This is what "I can't move a service outside a section" was: membership was only
+  `nodeIds`, and the box stretched to follow.
+- **Folds with its container.** Members hidden inside a collapsed container leave the section's box
+  (`FrameOpts.hidden`); a section whose every member is hidden is not drawn at all. Before this a
+  collapsed container's card sat inside a still-drawn section, which read as the section owning it.
 - A **group** (`kind: 'group'`, ⌘G on a multi-selection, ⇧⌘G ungroups) draws nothing: a folder in Layers
   whose members select and move together. Same model, `addGroup` / `ungroup`.
 - `parentId` nests sections/groups under a section **in the tree only** (`layers.ts`).
 - Never validated; crosses containers freely; a node may be in many sections or none. `sections` is a
   layer (View gear), default on.
-- `auto_layout` arranges by role and **emits** one section per non-empty role (`auto-*` ids, replaced on
-  re-run, user sections untouched). Roles (`ingress/handlers/messaging/workers/data`) are internal to
-  `src/engine/layout.ts` and `ServiceDef.role` — never a model field, never shown.
+- `auto_layout` (`src/engine/layout.ts`, L on the toolbar) is **container-aware**: every frame lays out
+  its own resources as a grid (columns only for the roles present, rows ordered by a one-pass barycentre
+  of each node's sources in the previous column) with its child frames in a row beneath; a frame's size is
+  what that needs plus `FRAME_PAD`/`FRAME_HEAD`, and its parent packs it the same way up to the canvas.
+  Every container's `bounds` is re-fitted; sections are **emitted only for resources outside every
+  frame** (`auto-*` ids, replaced on re-run, user sections untouched). Roles
+  (`ingress/handlers/messaging/workers/data`) are internal to `layout.ts` and `ServiceDef.role` — never a
+  model field, never shown. `tests/layout.test.ts` checks containment, no sibling overlap, compact
+  columns and row order.
 
 ### Migration (`src/engine/migrate.ts`)
 
@@ -292,8 +321,12 @@ the palette at bottom-centre, never `display: none`.
   over the left rail): select V · hand H │ add A · connect C · section S │ trace T · auto-layout L │ grid ⇧G ·
   undo ⌘Z · redo ⇧⌘Z │ View gear. Every button has a `data-tip` tooltip above it; no native `title` on
   chrome buttons. A opens the palette (services and containers together; B still opens it containers
-  first); S arms the rectangle tool; C keeps handles visible; T makes the next node click trace; K toggles
-  card view (also in the View gear). Templates lives in the top bar.
+  first); S arms the rectangle tool; C turns every node's visible shape into one handle (`AwsNode`
+  `body`, `.oh-body-handle`) so a drag from anywhere on a node to anywhere on another connects them (no
+  side recorded, the edge floats; a plain click still selects, nodes don't drag); T makes the next node
+  click trace; K toggles card view (also in the View gear). Templates lives in the top bar. The "+" pads
+  show on **node hover** (`.react-flow__node:hover .oh-side-pad`); the earlier hover zone was
+  `pointer-events: none` and so never hovered, which is why they vanished.
 - **Top bar** (`chrome/TopBar.tsx`): brand · editable **drawing name** · price-list pill with the region
   select · monthly total (23 px mono — the one loud number) · Scenario (forks via `openScenarioFromUi`, so the
   tool count ticks) · Export.
@@ -302,9 +335,14 @@ the palette at bottom-centre, never `display: none`.
   ownership, sections and groups nested *positionally* under every frame that holds one of their members
   (a spanning section appears under each, showing only the members held there; memberless ones sit at the
   top level), resources under their section or frame, and a trailing collapsible **Connections** group.
-  Disclosure triangles fold the tree, not the canvas; click selects the object itself; hover reveals
-  collapse-on-canvas and remove. Header buttons add a section from the selection or open the container
-  palette. No tabs.
+  Disclosure triangles fold the tree, not the canvas; the top level is an **accordion**: Connections
+  starts folded, opening it folds every other top-level row, opening any top-level object folds
+  Connections. Click selects the object itself; hover reveals collapse-on-canvas and remove. **Rows
+  drag**: a resource onto a frame (`moveIntoContainer`) or a section (`setSectionNodes`), a frame onto a
+  frame (`setContainerParent`, cycles refused), a section onto a section (`setSectionParent`) or a frame
+  (its members move in), a resource onto a resource (`placeNodeAfter`: reorder, same frame), anything
+  onto the header line (top level). No header buttons (the toolbar's A and S already add frames and
+  sections). No tabs.
 - **Palette** (`Palette.tsx`, floating above the toolbar, A or `/`): search, the ten services (click adds —
   inside a selected region/cloud — or drag onto the canvas) and the container kinds, which create with the
   validator's verdict as tooltip, select the new frame and **pan to it when it lands off-screen** (a second
@@ -409,10 +447,10 @@ Read tools: `readOnlyHint`. Mutations update the store before returning. `text()
 | `rename_node` | write | |
 | `set_traffic` / `remove_node` / `apply_pattern` / `set_layer` / `trace_request` | write | `set_layer` includes `sections` |
 | `auto_layout` | write | arranges by role, emits `auto-*` sections |
-| `add_container` | write | kind, name, cidr?, parent? → id + `legalChildren`; `illegal_parent` names the rule |
-| `move_into_container` | write | nodeIds, containerId\|null → breadcrumb; `illegal_placement` |
+| `add_container` | write | kind, name, cidr?, parent? → id; any nesting allowed, `no_such_container` only |
+| `move_into_container` | write | nodeIds, containerId\|null → breadcrumb; any service in any frame |
 | `collapse_container` / `expand_container` | write | resources + monthly |
-| `get_containers` | read | flat list with `parent` pointers + `legalChildren` map |
+| `get_containers` | read | flat list with `parent` pointers + `typicalParents` hint |
 | `add_section` / `rename_section` / `set_section_nodes` / `remove_section` | write | no validation |
 | `get_sections` | read | includes `kind` (section / group) |
 | `open_scenario` | **dynamic** | forks; registers the four below under one `AbortController` |

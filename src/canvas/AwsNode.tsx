@@ -59,10 +59,30 @@ const ZONE_MARGIN = 30;
 function SideHandles({ nodeId, cardMode, centre }: { nodeId: string; cardMode: boolean; centre: { x: number; y: number } }) {
   const setPendingConnection = useStore((s) => s.setPendingConnection);
   const setPalette = useStore((s) => s.setPalette);
+  const connectTool = useStore((s) => s.tool === "connect");
   // The same shape the edges anchor to (edgeGeometry.shapeOf), in node-local
   // coordinates: handles sit exactly where an edge would meet the node and
   // the pads 20px outside them.
   const shape = shapeOf({ x: 0, y: 0 }, NODE_W, NODE_H, cardMode);
+  // With the Connect tool armed the whole visible shape is one handle: drag
+  // from anywhere on a node to anywhere on another. No side is recorded, so
+  // the edge floats (its sides are picked by geometry).
+  const body = connectTool ? (
+    <Handle
+      id="body"
+      type="source"
+      position={Position.Right}
+      className="oh-body-handle nodrag"
+      style={{
+        left: shape.cx - shape.hw,
+        top: shape.cy - shape.hh,
+        width: shape.hw * 2,
+        height: shape.hh * 2,
+        transform: "none",
+        borderRadius: cardMode ? 10 : "50%",
+      }}
+    />
+  ) : null;
   const at = (side: Side4): React.CSSProperties => {
     const p = anchorPoint(shape, side);
     return { top: p.y, left: p.x, transform: "translate(-50%, -50%)" };
@@ -79,6 +99,7 @@ function SideHandles({ nodeId, cardMode, centre }: { nodeId: string; cardMode: b
       {SIDES.map(({ side, pos }) => (
         <Handle key={side} id={side} type={side === "left" || side === "top" ? "target" : "source"} position={pos} style={at(side)} />
       ))}
+      {body}
       {/* hover zone: the visible shape plus a margin, so pads appear when the
           pointer approaches the icon/card, not anywhere in the 200×100 hit-box */}
       <div

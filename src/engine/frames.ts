@@ -60,6 +60,9 @@ export interface FrameOpts {
   /** A node being dragged is left out, so its old frame doesn't chase it
    *  and a hit-test on drop sees the frames as they were. */
   exclude?: string | null;
+  /** Nodes not drawn right now (inside a collapsed container): a section
+   *  whose every member is hidden is not drawn either. */
+  hidden?: Set<string>;
 }
 
 /**
@@ -76,7 +79,7 @@ function contentBox(
 ): Box | null {
   let acc: Box | null = null;
   for (const n of nodes) {
-    if (n.container !== c.id || n.id === opts.exclude) continue;
+    if (n.container !== c.id || n.id === opts.exclude || opts.hidden?.has(n.id)) continue;
     const nb = {
       l: n.position.x - opts.nodeW / 2,
       t: n.position.y - opts.nodeH / 2,
@@ -197,7 +200,9 @@ export function sectionBoxes(nodes: ArchNode[], sections: Section[], opts: Frame
   const out = new Map<string, Box>();
   for (const s of sections) {
     if (s.kind === "group") continue;
-    const members = nodes.filter((n) => s.nodeIds.includes(n.id) && n.id !== opts.exclude);
+    const all = nodes.filter((n) => s.nodeIds.includes(n.id));
+    if (all.length && opts.hidden && all.every((n) => opts.hidden!.has(n.id))) continue;
+    const members = all.filter((n) => n.id !== opts.exclude && !opts.hidden?.has(n.id));
     let box: Box | null = null;
     if (members.length) {
       box = {
@@ -216,6 +221,35 @@ export function sectionBoxes(nodes: ArchNode[], sections: Section[], opts: Frame
 /** The members' box alone (no stored bounds): the floor a section resize may not go under. */
 export function sectionContentBox(nodes: ArchNode[], s: Section, opts: FrameOpts): Box | null {
   return sectionBoxes(nodes, [{ ...s, bounds: undefined, kind: "section" }], opts).get(s.id) ?? null;
+}
+
+/**
+ * Section membership after a lone node is dropped: it leaves every section
+ * whose box (drawn without it) no longer holds its centre, and joins every
+ * section whose box does. A section that would vanish without the node (it
+ * was the only member, nothing stored) keeps it. Groups are untouched:
+ * they have no box. Returns the sections that changed, with new nodeIds.
+ */
+export function sectionsAfterDrop(
+  nodes: ArchNode[],
+  sections: Section[],
+  nodeId: string,
+  opts: FrameOpts,
+): { id: string; nodeIds: string[] }[] {
+  const node = nodes.find((n) => n.id === nodeId);
+  if (!node) return [];
+  const boxes = sectionBoxes(nodes, sections, { ...opts, exclude: nodeId });
+  const out: { id: string; nodeIds: string[] }[] = [];
+  for (const s of sections) {
+    if (s.kind === "group") continue;
+    const box = boxes.get(s.id);
+    if (!box) continue; // nothing else in it: it stays as it was
+    const member = s.nodeIds.includes(nodeId);
+    const hit = inside(box, node.position);
+    if (member && !hit) out.push({ id: s.id, nodeIds: s.nodeIds.filter((id) => id !== nodeId) });
+    else if (!member && hit) out.push({ id: s.id, nodeIds: [...s.nodeIds, nodeId] });
+  }
+  return out;
 }
 
 // ---- moving frames ----------------------------------------------------------

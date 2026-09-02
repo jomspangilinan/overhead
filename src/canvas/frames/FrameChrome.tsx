@@ -2,10 +2,11 @@
 
 // The chrome every frame shares, containers and sections alike: the border,
 // a header band that drags, an optional kind icon and kind label, the name
-// (double-click to rename), a right-hand cluster (stat · gear · move grip),
-// an optional collapse control, and the corner resize grip. Rendered
-// inside a ViewportPortal; the interactive parts opt back into pointer
-// events (globals.css) and carry nopan/nodrag.
+// (double-click to rename), a right-hand cluster (stat · collapse · gear ·
+// move grip) that shows only while the frame is selected or its header is
+// hovered, and the corner resize grip. Rendered inside a ViewportPortal;
+// the interactive parts opt back into pointer events (globals.css) and
+// carry nopan/nodrag.
 
 import { useState } from "react";
 import type { Box } from "@/engine/frames";
@@ -52,6 +53,13 @@ const Move = () => (
   </svg>
 );
 
+/** Two arrowheads pointing at each other: fold this frame to a card. */
+const Collapse = () => (
+  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M2 2l5 5M7 3v4H3M14 14l-5-5M9 13V9h4" />
+  </svg>
+);
+
 export function FrameChrome(p: FrameChromeProps) {
   const [editing, setEditing] = useState(false);
   const { box } = p;
@@ -75,7 +83,7 @@ export function FrameChrome(p: FrameChromeProps) {
     onPointerCancel: p.end,
   };
   return (
-    <div>
+    <div className="oh-frame" data-selected={p.selected ? "true" : "false"}>
       <div
         className="pointer-events-none absolute"
         style={{
@@ -139,12 +147,27 @@ export function FrameChrome(p: FrameChromeProps) {
           {p.detail ? `${p.name} · ${p.detail}` : p.name}
         </div>
       )}
-      {/* right cluster: stat · gear · move grip, same place on every frame */}
-      <div className="absolute flex items-center gap-1" style={{ left: clusterRight, top: box.t + 7, transform: "translateX(-100%)" }}>
+      {/* right cluster: stat · collapse · gear · move grip · only while selected or hovered */}
+      <div className="oh-frame-cluster absolute flex items-center gap-1" style={{ left: clusterRight, top: box.t + 7, transform: "translateX(-100%)" }}>
         {p.stat ? (
           <span className="pointer-events-none select-none whitespace-nowrap pr-1 text-[10px] font-semibold" style={{ color: p.color, fontFamily: "var(--font-mono-jb)" }}>
             {p.stat}
           </span>
+        ) : null}
+        {p.onCollapse ? (
+          <button
+            className="oh-frame-collapse nopan nodrag grid w-[22px] place-items-center rounded-md"
+            style={btn}
+            title={p.collapseTitle}
+            aria-label={p.collapseTitle}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              p.onCollapse?.();
+            }}
+          >
+            <Collapse />
+          </button>
         ) : null}
         <button
           className="oh-frame-gear nopan nodrag grid w-[22px] place-items-center rounded-md"
@@ -160,16 +183,6 @@ export function FrameChrome(p: FrameChromeProps) {
           <Move />
         </div>
       </div>
-      {p.onCollapse ? (
-        <button
-          className="oh-collapse nopan nodrag absolute text-[12px] leading-none"
-          style={{ left: box.r - 36, top: box.b - 18, color: "var(--ink-4)" }}
-          title={p.collapseTitle}
-          onClick={p.onCollapse}
-        >
-          ⤡
-        </button>
-      ) : null}
       <div
         className="oh-frame-grip nopan nodrag absolute"
         style={{ left: box.r - 14, top: box.b - 14, width: 14, height: 14 }}

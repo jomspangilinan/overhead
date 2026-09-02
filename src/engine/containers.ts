@@ -1,13 +1,13 @@
-// Containers are structural and AWS-semantic: they nest in a legal order, a
-// node lives in exactly one, they roll costs up the tree, and they appear in
-// the IaC output. Sections (elsewhere) are the opposite — yours, free-form,
-// never validated. Conflating the two was the original mistake.
+// Containers are frames with an AWS meaning: a node lives in exactly one,
+// they roll costs up the tree, and they appear in the IaC output. They are
+// never validated · a VPC may sit at the top level, DynamoDB may sit in a
+// subnet · the user draws what they mean. Sections (elsewhere) are the
+// same idea without the AWS meaning.
 //
-// Five kinds are enabled. Re-enabling external/account/az/asg is a data edit
-// in LEGAL_PARENTS and KIND_META plus one line in the ContainerKind union —
-// no logic changes.
+// Five kinds are enabled. Adding external/account/az/asg is a data edit in
+// TYPICAL_PARENTS and KIND_META plus one line in the ContainerKind union.
 
-import type { ArchNode, ServiceId, StateSnapshot } from "./model";
+import type { ArchNode, StateSnapshot } from "./model";
 import { toMoney } from "./model";
 import type { PricingTable } from "./pricing";
 import { allCosts } from "./cost";
@@ -30,11 +30,17 @@ export interface Container {
   bounds?: { x: number; y: number; w: number; h: number };
 }
 
-/** `null` means "may sit at the top level". */
-export const LEGAL_PARENTS: Record<ContainerKind, (ContainerKind | null)[]> = {
-  cloud: [null],
+/**
+ * Where a kind *usually* sits, used only to pick a sensible default parent
+ * when the user adds one (a VPC lands in the selected region). It is a
+ * hint, never a rule: any container may sit inside any other, or at the
+ * top level, and any service may sit in any container. The only thing
+ * ever refused is a cycle or a reference to something that does not exist.
+ */
+export const TYPICAL_PARENTS: Record<ContainerKind, ContainerKind[]> = {
+  cloud: [],
   region: ["cloud"],
-  vpc: ["region"],
+  vpc: ["region", "cloud"],
   subnetpub: ["vpc"],
   subnetpri: ["vpc"],
 };
@@ -63,64 +69,11 @@ export const KIND_META: Record<
   },
 };
 
-export const CONTAINER_KINDS = Object.keys(LEGAL_PARENTS) as ContainerKind[];
-
-/** Which container kinds a service may sit directly inside. */
-const DEFAULT_PLACEMENT: ContainerKind[] = ["region", "cloud"];
+export const CONTAINER_KINDS = Object.keys(TYPICAL_PARENTS) as ContainerKind[];
 
 export interface PlacementError {
-  code:
-    | "illegal_parent"
-    | "illegal_placement"
-    | "no_such_container"
-    | "would_cycle"
-    | "duplicate_cloud";
+  code: "no_such_container" | "no_such_node" | "would_cycle";
   message: string;
-  legalParents?: string[];
-  legalContainers?: string[];
-}
-
-export function legalChildren(kind: ContainerKind | null): ContainerKind[] {
-  return CONTAINER_KINDS.filter((k) => LEGAL_PARENTS[k].includes(kind));
-}
-
-export function validateContainerParent(
-  kind: ContainerKind,
-  parentKind: ContainerKind | null,
-): PlacementError | null {
-  if (LEGAL_PARENTS[kind].includes(parentKind)) return null;
-  const legal = LEGAL_PARENTS[kind].map((p) => p ?? "top level");
-  return {
-    code: "illegal_parent",
-    message: `A ${KIND_META[kind].label} cannot sit inside ${
-      parentKind ? `a ${KIND_META[parentKind].label}` : "the top level"
-    }. It belongs in: ${legal.join(", ")}.`,
-    legalParents: legal,
-  };
-}
-
-/**
- * Where a service may live. Every v1 service is regional/serverless, so the
- * default covers them — but the rule exists so the moment RDS or ECS lands,
- * the agent already gets "…cannot sit directly in a VPC; it needs a subnet".
- */
-export function validateNodePlacement(
-  service: ServiceId,
-  containerKind: ContainerKind | null,
-  placement: ContainerKind[] = DEFAULT_PLACEMENT,
-): PlacementError | null {
-  if (containerKind === null) return null; // the canvas itself is always fine
-  if (placement.includes(containerKind)) return null;
-  // Lambdas may be VPC-attached — a real pattern, and the only one v1 needs.
-  if (service === "lambda" && (containerKind === "subnetpri" || containerKind === "subnetpub"))
-    return null;
-  return {
-    code: "illegal_placement",
-    message: `${service} cannot sit directly in a ${KIND_META[containerKind].label}. It belongs in: ${placement
-      .map((k) => KIND_META[k].label)
-      .join(", ")}.`,
-    legalContainers: placement,
-  };
 }
 
 const MAX_DEPTH = 12;

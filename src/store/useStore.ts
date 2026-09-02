@@ -23,8 +23,7 @@ import type { PricingTable } from "@/engine/pricing";
 import type { BillSummary } from "@/engine/bill";
 import { autoLayoutWithSections, roleOf, placeInRole } from "@/engine/layout";
 import {
-  validateContainerParent,
-  validateNodePlacement,
+  wouldCycle,
   type ContainerKind,
   type PlacementError,
 } from "@/engine/containers";
@@ -154,6 +153,8 @@ export interface OverheadState {
   removeWaypoint: (id: string, index: number) => void;
   removeNode: (id: string) => void;
   moveNode: (id: string, x: number, y: number) => void;
+  /** Reorder: put a node right after another in the list and in its container (Layers drag). */
+  placeNodeAfter: (id: string, afterId: string) => void;
   setNodeSetting: (id: string, key: string, value: unknown) => void;
   addEdge: (
     from: string,
@@ -207,6 +208,8 @@ export interface OverheadState {
   setContainerCollapsed: (containerId: string, collapsed: boolean) => void;
   /** Translate a frame and everything inside it, one undo step. */
   moveContainer: (containerId: string, dx: number, dy: number) => void;
+  /** Re-parent a frame (undefined = top level); refuses only a cycle. */
+  setContainerParent: (containerId: string, parentId: string | undefined) => { ok: true } | { error: PlacementError };
   /** Store explicit bounds (clamped to the content floor); `undefined` returns to derived. */
   setContainerBounds: (containerId: string, bounds: Bounds | undefined) => void;
   removeContainer: (containerId: string) => void;
@@ -434,9 +437,11 @@ export const useStore = create<OverheadState>((set, get) => ({
   /** Re-running replaces the sections it made before; user sections survive. */
   applyAutoLayout: () =>
     set((s) => {
-      const { positions, sections } = autoLayoutWithSections(s.nodes);
+      const { positions, frames, sections } = autoLayoutWithSections(s.nodes, s.edges, s.containers, { nodeW: NODE_W, nodeH: NODE_H });
       return {
         nodes: s.nodes.map((n) => ({ ...n, position: positions[n.id] ?? n.position })),
+        // every frame is re-fitted to what it holds
+        containers: s.containers.map((c) => (frames[c.id] ? { ...c, bounds: frames[c.id] } : c)),
         sections: [
           ...s.sections.filter((x) => !x.id.startsWith("auto-")),
           ...sections.map((x, i) => ({
@@ -510,8 +515,6 @@ export const useStore = create<OverheadState>((set, get) => ({
           message: `No container "${parent}".`,
         },
       };
-    const err = validateContainerParent(kind, parentC?.kind ?? null);
-    if (err) return { error: err };
     const id = newId(kind);
     // An empty container has nothing to derive a frame from, so it gets a
     // starting rectangle — otherwise "Add AWS Cloud" appears to do nothing.
@@ -553,12 +556,6 @@ export const useStore = create<OverheadState>((set, get) => ({
           message: `No container "${containerId}".`,
         },
       };
-    for (const id of nodeIds) {
-      const node = s.nodes.find((n) => n.id === id);
-      if (!node) continue;
-      const err = validateNodePlacement(node.service, target?.kind ?? null);
-      if (err) return { error: err };
-    }
     set((st) => ({
       nodes: st.nodes.map((n) =>
         nodeIds.includes(n.id) ? { ...n, container: containerId ?? undefined } : n,
@@ -583,6 +580,36 @@ export const useStore = create<OverheadState>((set, get) => ({
         ? translateFrame({ nodes: s.nodes, containers: s.containers, sections: s.sections }, { kind: "container", id: containerId }, dx, dy)
         : {},
     ),
+
+  setContainerParent: (containerId, parentId) => {
+    const s = get();
+    if (!s.containers.some((c) => c.id === containerId))
+      return { error: { code: "no_such_container" as const, message: `No container "${containerId}".` } };
+    if (parentId && !s.containers.some((c) => c.id === parentId))
+      return { error: { code: "no_such_container" as const, message: `No container "${parentId}".` } };
+    if (wouldCycle(s.containers, containerId, parentId))
+      return { error: { code: "would_cycle" as const, message: "A frame cannot sit inside itself." } };
+    set((st) => ({
+      containers: st.containers.map((c) => {
+        if (c.id !== containerId) return c;
+        const { parent: _drop, ...rest } = c;
+        void _drop;
+        return parentId ? { ...rest, parent: parentId } : rest;
+      }),
+    }));
+    return { ok: true as const };
+  },
+
+  placeNodeAfter: (id, afterId) =>
+    set((s) => {
+      const node = s.nodes.find((n) => n.id === id);
+      const after = s.nodes.find((n) => n.id === afterId);
+      if (!node || !after || id === afterId) return {};
+      const rest = s.nodes.filter((n) => n.id !== id);
+      const at = rest.findIndex((n) => n.id === afterId) + 1;
+      const moved = { ...node, container: after.container };
+      return { nodes: [...rest.slice(0, at), moved, ...rest.slice(at)] };
+    }),
 
   setContainerBounds: (containerId, bounds) =>
     set((s) => {
