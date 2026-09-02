@@ -49,6 +49,25 @@ export interface EdgeGeo {
   d: string;
   label: { x: number; y: number };
   caseKind: "forward" | "back" | "bracket";
+  /** Start and end anchors — what a pinned route bends between. */
+  p0: P;
+  p3: P;
+}
+
+/**
+ * A user-routed edge: a quadratic that passes through `through` at t=0.5,
+ * between the same anchors the floating default would use. The stored
+ * point is the one the handle sits on, so what you drag is what you get.
+ */
+export function routedPath(p0: P, p3: P, through: P): { d: string; label: P } {
+  const c = {
+    x: 2 * through.x - (p0.x + p3.x) / 2,
+    y: 2 * through.y - (p0.y + p3.y) / 2,
+  };
+  return {
+    d: `M${p0.x},${p0.y} Q${c.x},${c.y} ${p3.x},${p3.y}`,
+    label: { x: through.x, y: through.y - 12 },
+  };
 }
 
 export function edgeGeometry(
@@ -112,5 +131,7 @@ export function edgeGeometry(
     d: `M${p0.x},${p0.y} C${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y}`,
     label,
     caseKind,
+    p0,
+    p3,
   };
 }

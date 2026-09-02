@@ -37,6 +37,16 @@ export interface ArchNode {
   position: { x: number; y: number };
 }
 
+/** Per-edge appearance overrides. The kind still decides the default
+ *  encoding (solid / dashed / dotted, arrowhead or not); these only pin what
+ *  a user changed by hand. Absent = follow the kind. */
+export interface EdgeStyle {
+  /** Stroke width in px; absent = follow volumePerMonth. */
+  width?: number;
+  dash?: "solid" | "dashed" | "dotted";
+  arrow?: boolean;
+}
+
 export interface ArchEdge {
   id: string;
   from: string;
@@ -44,6 +54,10 @@ export interface ArchEdge {
   kind: EdgeKind;
   volumePerMonth?: number;
   label?: string;
+  style?: EdgeStyle;
+  /** A point the curve passes through, stored once the user drags it;
+   *  absent = the floating default routing. */
+  route?: { x: number; y: number };
 }
 
 /** Yours: free-form, orthogonal to containment, never validated.

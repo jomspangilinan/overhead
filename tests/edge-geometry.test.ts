@@ -83,3 +83,22 @@ describe("edge fan", () => {
     expect(upEnd[0]).toBe(downEnd[0]); // same rim x, different y
   });
 });
+
+describe("routed edges", () => {
+  it("exposes the anchors and bends a quadratic through the pinned point", async () => {
+    const { routedPath } = await import("../src/canvas/edgeGeometry");
+    const geo = edgeGeometry(icon(0, 0), icon(260, 0));
+    expect(geo.p0).toEqual({ x: 134, y: 39 });
+    expect(geo.p3).toEqual({ x: 326, y: 39 });
+    const through = { x: 230, y: 140 };
+    const r = routedPath(geo.p0, geo.p3, through);
+    const m = r.d.match(/^M([\d.-]+),([\d.-]+) Q([\d.-]+),([\d.-]+) ([\d.-]+),([\d.-]+)$/)!;
+    const [p0x, p0y, cx, cy, p3x, p3y] = m.slice(1).map(Number);
+    expect([p0x, p0y]).toEqual([134, 39]);
+    expect([p3x, p3y]).toEqual([326, 39]);
+    // quadratic at t=0.5 = 0.25·p0 + 0.5·c + 0.25·p3 — must land on `through`
+    expect(0.25 * p0x + 0.5 * cx + 0.25 * p3x).toBeCloseTo(through.x);
+    expect(0.25 * p0y + 0.5 * cy + 0.25 * p3y).toBeCloseTo(through.y);
+    expect(r.label.y).toBeLessThan(through.y);
+  });
+});
