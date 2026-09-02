@@ -112,16 +112,15 @@ body {
   height: 100vh;
   width: 100vw;
   min-height: 100vh;
-  grid-template-columns: 52px auto minmax(420px, 1fr) auto;
+  grid-template-columns: auto minmax(420px, 1fr) auto;
   grid-template-rows: 46px minmax(280px, 1fr) 36px;
   background: var(--bg);
 }
-.oh-shell > .oh-top { grid-column: 2 / -1; grid-row: 1; }
-.oh-shell > .oh-rail { grid-column: 1; grid-row: 1 / -1; }
-.oh-shell > .oh-left { grid-column: 2; grid-row: 2; }
-.oh-shell > .oh-main { grid-column: 3; grid-row: 2; position: relative; min-width: 0; min-height: 0; }
-.oh-shell > .oh-right { grid-column: 4; grid-row: 2; }
-.oh-shell > .oh-bottom { grid-column: 2 / -1; grid-row: 3; }
+.oh-shell > .oh-top { grid-column: 1 / -1; grid-row: 1; }
+.oh-shell > .oh-left { grid-column: 1; grid-row: 2; }
+.oh-shell > .oh-main { grid-column: 2; grid-row: 2; position: relative; min-width: 0; min-height: 0; }
+.oh-shell > .oh-right { grid-column: 3; grid-row: 2; }
+.oh-shell > .oh-bottom { grid-column: 1 / -1; grid-row: 3; }
 
 /* Docks read their width from a variable so they can narrow before the
    canvas has to. */
@@ -189,12 +188,11 @@ body {
   stroke: var(--accent);
 }
 /* Attribution stays visible (we are not on React Flow Pro) — restyled to
-   the palette and moved to bottom-centre so it clears the zoom pill. */
+   the palette and moved to bottom-left, clear of the toolbar and zoom pill. */
 .react-flow__attribution {
-  left: 50%;
+  left: 14px;
   right: auto;
   bottom: 4px;
-  transform: translateX(-50%);
   background: transparent;
   font-size: 9px;
   letter-spacing: 0.02em;
@@ -330,6 +328,21 @@ body {
 [data-tip]:focus-visible::after {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
+}
+/* …or above it, for chrome that sits at the bottom of the canvas */
+[data-tip][data-tip-pos="top"]::after {
+  top: auto;
+  bottom: calc(100% + 7px);
+  transform: translateX(-50%) translateY(2px);
+}
+[data-tip][data-tip-pos="top"]:hover::after,
+[data-tip][data-tip-pos="top"]:focus-visible::after {
+  transform: translateX(-50%) translateY(0);
+}
+/* tooltips on a flex row must not be clipped by the pill */
+.oh-toolbar,
+.oh-float {
+  overflow: visible;
 }
 
 button:focus-visible,

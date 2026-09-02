@@ -1,13 +1,13 @@
 "use client";
 
-// Every key the rail prints is bound here, and nothing is printed that
+// Every key the toolbar prints is bound here, and nothing is printed that
 // isn't. Single letters pick tools; ⇧G grid; ⌘Z/⇧⌘Z undo/redo; / focuses
 // search; Delete removes the selection; Escape backs out.
 
 import { useEffect } from "react";
 import { useStore } from "@/store/useStore";
 import { initHistory, redo, undo } from "@/store/history";
-import { pickTool } from "./chrome/Rail";
+import { pickTool } from "./chrome/Toolbar";
 import { closePalette } from "./Palette";
 
 export function Keyboard() {

@@ -26,6 +26,8 @@ export function TopBar() {
   const setExportPanel = useStore((s) => s.setExportPanel);
   const drawingName = useStore((s) => s.drawingName);
   const setDrawingName = useStore((s) => s.setDrawingName);
+  const templatesOpen = useStore((s) => s.templatesOpen);
+  const setTemplatesOpen = useStore((s) => s.setTemplatesOpen);
 
   const total = useMemo(() => {
     try {
@@ -100,6 +102,20 @@ export function TopBar() {
         <span className="text-[11px] text-ink-3">estimate</span>
       </div>
 
+      <button
+        className="flex items-center gap-[7px] rounded-lg px-3 py-[7px] text-[12px] font-medium hover:bg-[var(--hover)]"
+        style={{
+          border: "1px solid var(--line-2)",
+          background: templatesOpen ? "var(--accent-bg)" : "var(--panel)",
+          color: "var(--ink-15)",
+        }}
+        data-tip="Templates — load a seeded architecture"
+        aria-label="Templates"
+        onClick={() => setTemplatesOpen(!templatesOpen)}
+      >
+        <Icon name="samples" size={14} />
+        Templates
+      </button>
       <button
         className="flex items-center gap-[7px] rounded-lg px-3 py-[7px] text-[12px] font-medium hover:bg-[var(--hover)]"
         style={{

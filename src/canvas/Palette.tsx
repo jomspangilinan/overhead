@@ -1,6 +1,6 @@
 "use client";
 
-// The Add palette: a floating, searchable panel over the canvas (A, or /),
+// The Add palette: a floating, searchable panel above the toolbar (A, or /),
 // not a dock tab competing with the layer tree. Services add on click or
 // drag onto the canvas; container kinds are real buttons that create, with
 // the validator's own verdict as the tooltip when a kind can't go where the
@@ -46,12 +46,12 @@ export function PaletteFloat() {
   const [query, setQuery] = useState("");
   const ref = useRef<HTMLDivElement>(null);
 
-  // click outside closes; the rail's own buttons toggle it themselves
+  // click outside closes; the toolbar's own buttons toggle it themselves
   useEffect(() => {
     if (!open) return;
     const onDown = (e: PointerEvent) => {
       const t = e.target as HTMLElement;
-      if (ref.current?.contains(t) || t.closest(".oh-rail")) return;
+      if (ref.current?.contains(t) || t.closest(".oh-toolbar")) return;
       closePalette();
     };
     document.addEventListener("pointerdown", onDown);
@@ -176,8 +176,8 @@ export function PaletteFloat() {
   return (
     <div
       ref={ref}
-      className="glass absolute z-[8] flex max-h-[calc(100%-28px)] w-[292px] flex-col rounded-xl"
-      style={{ left: 14, top: 14 }}
+      className="glass absolute z-[8] flex max-h-[calc(100%-90px)] w-[292px] flex-col rounded-xl"
+      style={{ left: "50%", bottom: 64, transform: "translateX(-50%)" }}
       role="dialog"
       aria-label="Add"
     >

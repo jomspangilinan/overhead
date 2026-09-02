@@ -1,7 +1,7 @@
 "use client";
 
-// The two floating pills at the bottom of the canvas: layers on the left,
-// zoom on the right.
+// The floating pills: layers top-left, zoom bottom-right. The toolbar owns
+// the bottom-centre (chrome/Toolbar.tsx).
 
 import { useReactFlow } from "@xyflow/react";
 import { useStore, type Layer } from "@/store/useStore";
@@ -16,7 +16,7 @@ function Shell({
 }) {
   return (
     <div
-      className="glass absolute z-[7] flex items-center gap-0.5 rounded-xl p-1"
+      className="oh-float glass absolute z-[7] flex items-center gap-0.5 rounded-xl p-1"
       style={style}
     >
       {children}
@@ -30,6 +30,7 @@ function FloatButton({
   square,
   onClick,
   title,
+  tipPos,
   children,
 }: {
   label?: string;
@@ -37,12 +38,14 @@ function FloatButton({
   square?: boolean;
   onClick: () => void;
   title?: string;
+  tipPos?: "top" | "bottom";
   children?: React.ReactNode;
 }) {
   return (
     <button
       aria-pressed={on}
-      title={title ?? label}
+      data-tip={title ?? label}
+      data-tip-pos={tipPos}
       aria-label={title ?? label}
       onClick={onClick}
       className={`rounded-lg text-[11px] font-medium hover:bg-[var(--hover-2)] ${
@@ -68,11 +71,12 @@ export function LayerSwitch() {
   const layers = useStore((s) => s.layers);
   const setLayer = useStore((s) => s.setLayer);
   return (
-    <Shell style={{ left: 14, bottom: 14 }}>
+    <Shell style={{ left: 14, top: 14 }}>
       {SWITCHES.map(({ layer, label }) => (
         <FloatButton
           key={layer}
           label={label}
+          title={`${label} layer`}
           on={layers[layer]}
           onClick={() => setLayer(layer, !layers[layer])}
         />
@@ -106,31 +110,25 @@ export function ZoomPill() {
 
   return (
     <Shell style={{ right: 14, bottom: 14 }}>
-      <FloatButton square title="Zoom out" onClick={() => applyZoom(zoom - 0.15)}>
+      <FloatButton square tipPos="top" title="Zoom out · scroll" onClick={() => applyZoom(zoom - 0.15)}>
         <Icon name="minus" size={15} />
       </FloatButton>
-      <input
-        type="range"
-        min={50}
-        max={180}
-        step={5}
-        value={Math.round(zoom * 100)}
-        onChange={(e) => applyZoom(Number(e.target.value) / 100)}
-        className="w-[92px]"
-        style={{ accentColor: "var(--accent)" }}
-        aria-label="Zoom"
-      />
-      <FloatButton square title="Zoom in" onClick={() => applyZoom(zoom + 0.15)}>
-        <Icon name="plus" size={15} />
-      </FloatButton>
-      <span
-        className="min-w-[42px] text-center text-[11px]"
+      <button
+        className="min-w-[42px] rounded-md px-1 text-center text-[11px] hover:bg-[var(--hover-2)]"
         style={{ fontFamily: "var(--font-mono-jb)", color: "var(--ink-15)" }}
+        data-tip="Reset to 100%"
+        data-tip-pos="top"
+        aria-label="Reset zoom to 100%"
+        onClick={() => applyZoom(1)}
       >
         {Math.round(zoom * 100)}%
-      </span>
+      </button>
+      <FloatButton square tipPos="top" title="Zoom in" onClick={() => applyZoom(zoom + 0.15)}>
+        <Icon name="plus" size={15} />
+      </FloatButton>
       <FloatButton
         square
+        tipPos="top"
         title="Fit to view"
         onClick={() => fitView({ duration: 150, maxZoom: 1, padding: 0.15 })}
       >

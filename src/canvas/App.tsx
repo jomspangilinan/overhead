@@ -20,7 +20,7 @@ import { BillDrop } from "./BillDrop";
 import { Keyboard } from "./Keyboard";
 import { HowTo } from "./HowTo";
 import { Notice } from "./Notice";
-import { Rail } from "./chrome/Rail";
+import { Toolbar } from "./chrome/Toolbar";
 import { Dock } from "./chrome/Dock";
 import { TopBar } from "./chrome/TopBar";
 import { BottomBar } from "./chrome/BottomBar";
@@ -137,9 +137,6 @@ export function App() {
   return (
     <ReactFlowProvider>
       <div className="oh-shell">
-        <div className="oh-rail">
-          <Rail />
-        </div>
         <div className="oh-top">
           <TopBar />
         </div>
@@ -152,6 +149,7 @@ export function App() {
           <HowTo />
           <PaletteFloat />
           <Notice />
+          <Toolbar />
           <LayerSwitch />
           <ZoomPill />
         </div>

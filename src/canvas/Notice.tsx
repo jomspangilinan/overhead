@@ -19,7 +19,7 @@ export function Notice() {
   if (!notice) return null;
   const color = notice.tone === "warn" ? "var(--warn)" : notice.tone === "bad" ? "var(--bad)" : "var(--ink-15)";
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-[58px] z-[9] flex justify-center px-4">
+    <div className="pointer-events-none absolute inset-x-0 bottom-[68px] z-[9] flex justify-center px-4">
       <div
         className="glass pointer-events-auto max-w-[520px] rounded-lg px-3 py-1.5 text-[11.5px] leading-snug"
         style={{ color, borderColor: notice.tone === "info" ? undefined : color }}
