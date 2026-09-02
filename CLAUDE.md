@@ -340,6 +340,16 @@ the palette at bottom-centre, never `display: none`.
   click trace; K toggles card view (also in the View gear). Templates lives in the top bar. The "+" pads
   show on **node hover** (`.react-flow__node:hover .oh-side-pad`); the earlier hover zone was
   `pointer-events: none` and so never hovered, which is why they vanished.
+  **Two stacking rules make connections possible at all** (2026-09-03, found by `elementFromPoint` on
+  every handle): `.react-flow__handle` needs `z-index: 4`, because a node's artwork is an `inset-0`
+  sibling painted after the handles and otherwise covers all four, so a press meant to start a
+  connection started a node drag; and `.react-flow__viewport-portal` needs `z-index: 0` under
+  `.react-flow__nodes` (`z-index: 1`), because the portal is the viewport's last child and a frame's
+  header band otherwise swallowed the pads and handles of any node beneath it. Frames are the drawing's
+  background, so painting them under the resources is also the right order.
+  **A handle React Flow has not measured cannot start a connection**: the Connect tool's `body` handle
+  appears only while the tool is armed, so `ModeInternals` calls `updateNodeInternals` on that flip as
+  well as the card flip. Without it the handle rendered, took the pointerdown, and did nothing.
 - **Top bar** (`chrome/TopBar.tsx`): brand · editable **drawing name** · price-list pill with the region
   select · monthly total (23 px mono — the one loud number) · Scenario (forks via `openScenarioFromUi`, so the
   tool count ticks) · Export.

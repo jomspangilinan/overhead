@@ -175,7 +175,11 @@ body {
 }
 /* Connection handles: hidden until the node is hovered, then a small
    accent dot at the anchor. Kept deliberately small so they don't steal
-   pointerdown from node dragging. */
+   pointerdown from node dragging.
+   `z-index` is load-bearing: a node's artwork (the icon column, the card)
+   is an inset-0 sibling painted after the handles, so without this it
+   covers all four of them and a press meant to start a connection starts
+   a node drag instead. */
 .react-flow__handle {
   width: 11px;
   height: 11px;
@@ -183,6 +187,7 @@ body {
   border: 2px solid var(--panel);
   opacity: 0;
   transition: opacity 0.12s;
+  z-index: 4;
 }
 .overhead-canvas.connecting .react-flow__handle,
 .react-flow__node:hover .react-flow__handle,
@@ -261,6 +266,14 @@ body {
    inert; the handles opt back in — without this no frame ever saw a pointer. */
 .react-flow__viewport-portal {
   pointer-events: none;
+  /* Frames are the background of the drawing, so they paint *under* the
+     resources · without this the portal (last child of the viewport) sits
+     above every node and a frame's header band swallows the pads and
+     handles of any node beneath it. */
+  z-index: 0;
+}
+.react-flow__nodes {
+  z-index: 1;
 }
 .oh-frame-head,
 .oh-frame-name,
@@ -345,6 +358,7 @@ body {
   min-width: 0;
   min-height: 0;
   opacity: 1;
+  z-index: 5;
   background: color-mix(in srgb, var(--accent) 8%, transparent);
   border: 1.5px dashed var(--accent);
   cursor: crosshair;

@@ -142,12 +142,19 @@ function SideHandles({ nodeId, cardMode, centre }: { nodeId: string; cardMode: b
   );
 }
 
-/** Re-measure handles when the icon/card mode flips, so edges re-anchor. */
+/**
+ * Re-measure handles whenever the set of them changes: the icon/card flip
+ * moves all four (so edges re-anchor), and the Connect tool adds or removes
+ * the whole-shape `body` handle. React Flow only starts a connection from a
+ * handle it has measured (`handleBounds`), so without this the body handle
+ * renders, takes the pointerdown, and nothing happens.
+ */
 function ModeInternals({ nodeId, cardMode }: { nodeId: string; cardMode: boolean }) {
   const updateNodeInternals = useUpdateNodeInternals();
+  const connectTool = useStore((s) => s.tool === "connect");
   useEffect(() => {
     updateNodeInternals(nodeId);
-  }, [nodeId, cardMode, updateNodeInternals]);
+  }, [nodeId, cardMode, connectTool, updateNodeInternals]);
   return null;
 }
 
