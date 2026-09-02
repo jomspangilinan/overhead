@@ -36,8 +36,10 @@ Phases 0–9 (§15) are done under the current spec; what remains is **video, RE
   samples), bill ingest.
 - Model: **containers + sections** replaced the old lanes/groups (§5). Autosave migrates v1 state.
 - Chrome: Instrument palette in a **docked** shell (§7) — the user overruled the mock's floating panels.
+  2026-09-02 UX pass: the shell has a hard floor so the canvas never measures zero; frames drag, resize and
+  accept dropped nodes; the Inspector is sectioned; Add is a floating palette and Templates a dialog.
 - 33 tools live, 37 while a scenario is open (§9).
-- Tests: 55 across 9 vitest files.
+- Tests: 69 across 10 vitest files.
 
 **Workflow the user asked for:** keep `npm run dev` running; the user reviews every change on
 `localhost:3000` **before** anything is deployed. Deploy only when they say "deploy" (`npx vercel deploy
@@ -145,9 +147,19 @@ and `KIND_META` plus the `ContainerKind` union.
 - `containerStats()` rolls resources and monthly cost up subnet → VPC → region → cloud. Derived.
 - `breadcrumb(snap, nodeId)` → `["AWS Cloud", "ap-southeast-1", "orders-vpc", "private-a"]`; `get_node`
   returns it as `placement`.
-- Frames (`ContainerFrames.tsx`) are painted parents-first via `ViewportPortal`; bounds are **derived** from
-  members and child frames (per-kind padding) unless `bounds` is stored. Double-click the name to rename
-  (`name · cidr`).
+- Frames (`ContainerFrames.tsx`, geometry in `src/engine/frames.ts`) are painted parents-first via
+  `ViewportPortal`. The drawn box is **content ∪ stored `bounds`**: content = members + child frames with
+  per-kind padding; `bounds` (set by a drag, a resize, or on creation of an empty container) is a floor and
+  a position, never a clip — a member dragged past the edge grows the frame, removing members shrinks it
+  back to the stored rectangle and no further. `setContainerBounds` clamps to the content floor.
+- **Direct manipulation:** the header band drags the frame and everything inside (`frameDrag` preview,
+  `moveContainer` commits once on release → one undo step); the corner grip resizes; click selects the
+  frame (Inspector shows a container panel); double-click the name to rename (`name · cidr`).
+- **Drop to re-parent:** dropping a node inside another frame calls `moveIntoContainer` with the same
+  `validateNodePlacement` the agent gets; an illegal drop snaps back and the rule shows in the notice chip.
+  While a node is dragged its own frame leaves it out (`exclude`), so the frame doesn't chase it.
+- An empty container gets `DEFAULT_SIZE` bounds placed inside its parent (or clear of everything) — this is
+  why "Add AWS Cloud" used to look like it did nothing: a memberless frame had nothing to derive from.
 - **Any container collapses** to a 220×84 card (`ContainerCard.tsx`); `outermostCollapsedAncestor` makes a
   collapsed VPC win over a collapsed subnet inside it. Edges re-route to the card and edges wholly inside are
   dropped (`Canvas.tsx` `collapsedByNode`).
@@ -187,7 +199,10 @@ carrying its members, `az` dissolves upward, `subnet` → `subnetpub`, `node.gro
    rim ±34, y 39 · card edge ±100, y 50), never from handle coordinates. Cases: forward (right-mid → left-mid,
    controls at 50% Δx), back (S-curve leaving left, entering right), bracket (same column, out one side).
    Edges converging on one node **fan** their anchors (`fan` in edge data) so arrowheads never stack.
-   Connections can start from either side (`ConnectionMode.Loose`).
+   Connections can start from either side (`ConnectionMode.Loose`). A selected edge shows a midpoint
+   handle: drag it and the curve becomes a quadratic **through** that point, stored as `edge.route`
+   (`routedPath`) between the same anchors; double-click the handle or "reset" in the Inspector lets go.
+   `edge.style` pins weight / dash / arrowhead a user changed by hand; absent = follow the kind and volume.
 6. **Layers:** `request` · `events` · `data` · `security` · `cost` · `sections`. Default on: request, events,
    data, sections.
 7. **Volume on edges.** Stroke width follows `volumePerMonth` on a log scale (1.2 → 3.5 px).
@@ -220,27 +235,43 @@ Direction is **Instrument** (dark, dense, pro-tool). The mock floats every panel
 ("too many floating things") — panels are **docked** and reserve space. Only two small pills float.
 
 ```
-grid-template-columns: 52px  auto(left dock)  1fr(canvas)  auto(right dock)
-grid-template-rows:    46px(top bar)  1fr  36px(bottom bar)
+grid-template-columns: 52px  auto(left dock)  minmax(420px, 1fr)(canvas)  auto(right dock)
+grid-template-rows:    46px(top bar)  minmax(280px, 1fr)  36px(bottom bar)
 ```
 
+The canvas track has a **hard floor**. Without it a small window resolved `1fr` to 0, React Flow measured a
+zero box (its error #004) and the canvas went blank for good. Docks narrow first via `.oh-dock` media
+queries; past that the shell overflows and the body clips. `.overhead-canvas` is `absolute; inset: 0` in
+`.oh-main` — never percentage-sized. React Flow's attribution stays **visible** (no Pro plan): restyled to
+the palette at bottom-centre, never `display: none`.
+
 - **Rail** (`chrome/Rail.tsx`, 52 px): select V · pan H │ add A · connect C · container B · section S │ trace T
-  · auto-layout L · cards K │ … │ grid ⇧G · undo ⌘Z · redo ⇧⌘Z. Active = `--accent-bg` + a 2.5 px accent tick
-  bleeding out the left edge. A/B/S switch the left dock's tab; C keeps connection handles visible; T makes
-  the next node click trace.
+  · auto-layout L · cards K │ templates │ … │ grid ⇧G · undo ⌘Z · redo ⇧⌘Z. Active = `--accent-bg` + a 2.5 px
+  accent tick bleeding out the left edge. A and B open the floating palette (B lists container kinds first);
+  S reveals the layer tree; C keeps connection handles visible; T makes the next node click trace.
 - **Top bar** (`chrome/TopBar.tsx`): brand · editable **drawing name** · price-list pill with the region
   select · monthly total (23 px mono — the one loud number) · Scenario (forks via `openScenarioFromUi`, so the
   tool count ticks) · Export.
-- **Left dock** (`chrome/Dock.tsx`, 248 px, collapsible to a spine), tabs: **Structure** (containment tree with
-  counts or costs, sections list with `+` and `×`) · **Add** (sticky search `/`, services with names, container
-  kinds that create with the validator's verdict as tooltip) · **Templates** (the three samples).
-- **Right dock** (300 px): Inspector — name field, schema-driven settings, cost lines with SKU links, findings;
-  or the **edge inspector** (kind / volume / label / remove) when an edge is selected. `ExportPanel` overlays
-  this dock.
+- **Left dock** (`chrome/Dock.tsx`, 248 px, collapsible to a spine): one panel, **Layers**
+  (`chrome/StructurePanel.tsx`) — the containment tree with a disclosure triangle per frame (folds the tree,
+  not the canvas), per-type icons, click selects a frame or a resource, hover reveals collapse-on-canvas and
+  remove; sections listed beneath with `+` and `×`. No tabs.
+- **Palette** (`Palette.tsx`, floating over the canvas top-left, A or `/`): search, the ten services (click
+  adds — inside a selected region/cloud — or drag onto the canvas), container kinds that create with the
+  validator's verdict as tooltip and the new frame selected. Escape / click outside closes.
+- **Templates** (`Templates.tsx`): a modal dialog from the rail with the three samples.
+- **Right dock** (300 px): the **Inspector** (`Inspector.tsx`) in named, independently collapsible sections
+  (state remembered in `localStorage`): node → Position (X/Y numeric, Inside select validated like the tool,
+  breadcrumb) · Settings (schema-driven) · Cost · Findings; container → Identity (CIDR, ancestry) · Frame
+  (X/Y/W/H, pinned/derived, Fit to contents) · Contents; edge → Semantics (kind / volume / label) ·
+  Appearance (weight with auto-from-volume, dash, arrowhead, route reset). `ExportPanel` overlays this dock.
+- **Notice chip** (`Notice.tsx`): one transient message over the canvas — a refused drop and its rule, a
+  created frame, a re-parented node. No `window.alert`.
 - **Bottom bar** (`chrome/BottomBar.tsx`): title-block facts (Drawing · Region · Containers · Resources ·
   Findings · Est. monthly) and the WebMCP readout — live count, last three calls (ring buffer in
   `toolRegistry.ts`'s execute wrapper), click for the tool list.
-- **Floating:** layer switch (bottom-left) and zoom pill (bottom-right, 50–180%, Fit).
+- **Floating:** layer switch (bottom-left), zoom pill (bottom-right, 50–180%, Fit), the palette when open,
+  the notice chip while it shows.
 - Canvas: radial stage lift; React Flow `<Background>` dots (26 px, `#2A3441`) that pan and zoom; ⇧G toggles.
 - Inline editing: double-click a node label or container name on the canvas. Delete/Backspace removes the
   selected edge, else node. Escape backs out (export → selection/trace → select tool).
@@ -267,7 +298,8 @@ number, code and log line. Uppercase only for 9.5 px labels at `.14em` tracking.
 
 ```ts
 Node      { id, service, name, settings, container?, position }
-Edge      { id, from, to, kind: 'sync'|'async'|'data', volumePerMonth?, label? }
+Edge      { id, from, to, kind: 'sync'|'async'|'data', volumePerMonth?, label?,
+            style?: { width?, dash?: 'solid'|'dashed'|'dotted', arrow? }, route?: { x, y } }  // overrides, absent = by kind
 Container { id, kind, name, cidr?, parent?, collapsed, bounds? }      // structural — validated, priced
 Section   { id, name, color, bounds?, nodeIds[], collapsed }          // yours — never validated
 Traffic   { requestsPerMonth, avgPayloadKb }
@@ -277,9 +309,10 @@ Finding   { rule, severity, message, docUrl, nodeIds, estimatedSaving? }  // der
 Cost      { nodeId, lines: [{ sku, unit, qty, rate, monthly, sourceUrl }], monthly }  // derived
 ```
 
-Store (`src/store/useStore.ts`, zustand) also holds UI state: layers, tool, docks, `leftTab`, `drawingName`,
-`gridOn`, `cardsForced`, zoom, selection (`selectedId` / `selectedEdgeId`, mutually exclusive), trace,
-scenario, export panel, bill, `webmcpOutcome`. `snapshotOf(s)` feeds autosave, undo (`store/history.ts`), and
+Store (`src/store/useStore.ts`, zustand) also holds UI state: layers, tool, docks, `palette`, `templatesOpen`,
+`notice`, `drawingName`, `gridOn`, `cardsForced`, zoom, selection (`selectedId` — a node **or a container**
+id — / `selectedEdgeId`, mutually exclusive), `draggingId`, `frameDrag`, trace, scenario, export panel, bill,
+`webmcpOutcome`. Container actions: `moveContainer(id, dx, dy)`, `setContainerBounds(id, bounds|undefined)`. `snapshotOf(s)` feeds autosave, undo (`store/history.ts`), and
 scenarios. **Selectors must return stable values** — derive objects in `useMemo`, not in `useStore(fn)`
 (returning a fresh object per call is a React #185 render loop; it bit us once).
 
@@ -367,27 +400,30 @@ papaparse, html-to-image, vitest, puppeteer-core (dev, headless checks). Vercel.
 
 ```
 src/
-  engine/           pure TS: model, containers, migrate, layout(roles), pricing, cost, findings, delta, bill,
-                    services/*.ts (defineService), rules/*.ts, exporters/{json,markdown,mermaid,cdk,index}.ts
+  engine/           pure TS: model, containers, frames(boxes/hit-test/translate), migrate, layout(roles),
+                    pricing, cost, findings, delta, bill, services/*.ts (defineService), rules/*.ts,
+                    exporters/{json,markdown,mermaid,cdk,index}.ts
   webmcp/           register.ts · tools.ts · scenario.ts · toolRegistry.ts · provider.tsx
   store/            useStore.ts · history.ts (undo/redo)
-  canvas/           App.tsx (shell) · Canvas.tsx · AwsNode · ContainerCard · ContainerFrames · SectionFrames ·
-                    TypedEdge · edgeGeometry.ts · nodeMetrics.ts · Inspector · Palette · Templates ·
-                    ExportPanel · ScenarioBanner · BillDrop · HowTo · Keyboard · Icon · Sprite
+  canvas/           App.tsx (shell) · Canvas.tsx (drag → drop re-parent) · AwsNode · ContainerCard ·
+                    ContainerFrames (drag/resize) · SectionFrames · TypedEdge (style, route handle) ·
+                    edgeGeometry.ts · nodeMetrics.ts · Inspector (sections) · Palette (floating) ·
+                    Templates (dialog) · Notice · ExportPanel · ScenarioBanner · BillDrop · HowTo · Keyboard ·
+                    Icon · Sprite
     chrome/         Rail · Dock · TopBar · BottomBar · Floats (layers, zoom) · StructurePanel
   app/              layout.tsx (fonts, provider) · page.tsx · globals.css (tokens, shell grid)
 scripts/            fetch-pricing.ts · synth-samples.ts
 data/               pricing.us-east-1.json · pricing.ap-southeast-1.json
 samples/            api-backend · media-pipeline · event-driven (seeded; has cloud›region›vpc›subnet)
 public/icons/aws/   sprite.svg (26 symbols) · Arch_*_64.svg · NOTICE.md
-tests/              containers · migrate(in containers) · rules · exporters · golden-costs · edge-geometry ·
-                    bill · define-service · delta · write-cdk-stacks
+tests/              containers · migrate(in containers) · frames · rules · exporters · golden-costs ·
+                    edge-geometry(incl. routed) · bill · define-service · delta · write-cdk-stacks
 ```
 
 ```
 npm run dev            # localhost:3000 — the user reviews here first
 npm run build          # static export (kills the dev cache — restart dev after)
-npm test               # vitest (55)
+npm test               # vitest (69)
 npm run synth          # cdk synth on the three sample exports
 npm run fetch-pricing  # refresh data/pricing.*.json
 npx vercel deploy --prod --yes   # only when the user says deploy
