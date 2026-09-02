@@ -17,6 +17,8 @@ export const cognito = defineService({
     },
   },
   cardLines: ["monthlyActiveUsers"],
+  cdk: (_s, { varName, resourceName }) =>
+    `new cognito.UserPool(this, "${varName}", { userPoolName: "${resourceName}" });`,
   price: (s, _traffic, pricing) => {
     const maus = num(s.monthlyActiveUsers, 10000);
     return [line(price(pricing, "cognito.maus"), maus)];

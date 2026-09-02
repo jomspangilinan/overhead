@@ -44,6 +44,14 @@ export const apigateway = defineService({
     },
   },
   cardLines: ["apiType", "requestsPerMonth"],
+  cdk: (s, { varName, resourceName }) =>
+    s.apiType === "REST"
+      ? `const ${varName} = new apigateway.RestApi(this, "${varName}", { restApiName: "${resourceName}" });
+${varName}.root.addMethod("ANY", new apigateway.MockIntegration({
+  integrationResponses: [{ statusCode: "200" }],
+  requestTemplates: { "application/json": '{"statusCode": 200}' },
+}), { methodResponses: [{ statusCode: "200" }] }); // stub integration`
+      : `new apigwv2.HttpApi(this, "${varName}", { apiName: "${resourceName}" });`,
   price: (s, traffic, pricing) => {
     const requests = num(s.requestsPerMonth, traffic.requestsPerMonth);
     const key =

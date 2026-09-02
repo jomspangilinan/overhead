@@ -18,6 +18,8 @@ export const eventbridge = defineService({
     },
   },
   cardLines: ["eventsPerMonth"],
+  cdk: (_s, { varName, resourceName }) =>
+    `new events.EventBus(this, "${varName}", { eventBusName: "${resourceName}" });`,
   price: (s, traffic, pricing) => {
     const events = num(s.eventsPerMonth, traffic.requestsPerMonth);
     return [line(price(pricing, "eventbridge.customEvents"), events)];

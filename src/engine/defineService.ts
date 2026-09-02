@@ -51,6 +51,11 @@ export interface ServiceDef {
     traffic: Traffic,
     pricing: PricingTable,
   ) => CostLine[];
+  /** CDK construct code for this node — settings in, TypeScript out. */
+  cdk?: (
+    settings: Record<string, unknown>,
+    ctx: { varName: string; resourceName: string },
+  ) => string;
 }
 
 export function defineService(def: ServiceDef): ServiceDef {

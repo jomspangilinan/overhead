@@ -32,6 +32,19 @@ export const cloudfront = defineService({
     },
   },
   cardLines: ["dataOutGbPerMonth", "requestsPerMonth"],
+  cdk: (s, { varName, resourceName }) => {
+    const pc =
+      s.priceClass === "PriceClass_100"
+        ? "PRICE_CLASS_100"
+        : s.priceClass === "PriceClass_200"
+          ? "PRICE_CLASS_200"
+          : "PRICE_CLASS_ALL";
+    return `// distribution "${resourceName}" — stub origin, point at your real one
+new cloudfront.Distribution(this, "${varName}", {
+  defaultBehavior: { origin: new origins.HttpOrigin("origin.example.com") },
+  priceClass: cloudfront.PriceClass.${pc},
+});`;
+  },
   price: (s, traffic, pricing) => {
     const defaultGb =
       (traffic.requestsPerMonth * traffic.avgPayloadKb) / (1024 * 1024);

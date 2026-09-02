@@ -52,6 +52,13 @@ export const stepfunctions = defineService({
     },
   },
   cardLines: ["workflowType", "executionsPerMonth", "avgTransitionsPerExecution"],
+  cdk: (s, { varName, resourceName }) =>
+    `new sfn.StateMachine(this, "${varName}", {
+  stateMachineName: "${resourceName}",
+  stateMachineType: sfn.StateMachineType.${s.workflowType === "express" ? "EXPRESS" : "STANDARD"},
+  // stub definition — replace with your states
+  definitionBody: sfn.DefinitionBody.fromChainable(new sfn.Pass(this, "${varName}Start")),
+});`,
   price: (s, traffic, pricing) => {
     const executions = num(s.executionsPerMonth, traffic.requestsPerMonth);
     if (s.workflowType === "express") {

@@ -58,6 +58,23 @@ export const lambda = defineService({
     },
   },
   cardLines: ["architecture", "memoryMb", "avgDurationMs"],
+  cdk: (s, { varName, resourceName }) => {
+    const arch = s.architecture === "x86_64" ? "X86_64" : "ARM_64";
+    const reserved =
+      typeof s.reservedConcurrency === "number"
+        ? `\n  reservedConcurrentExecutions: ${s.reservedConcurrency},`
+        : "";
+    return `new lambda.Function(this, "${varName}", {
+  functionName: "${resourceName}",
+  runtime: lambda.Runtime.NODEJS_20_X,
+  architecture: lambda.Architecture.${arch},
+  memorySize: ${Number(s.memoryMb) || 512},
+  timeout: cdk.Duration.seconds(${Number(s.timeoutSec) || 3}),${reserved}
+  handler: "index.handler",
+  // stub handler — replace with your code asset
+  code: lambda.Code.fromInline("exports.handler = async () => ({ statusCode: 200 });"),
+});`;
+  },
   price: (s, traffic, pricing) => {
     const invocations = num(s.invocationsPerMonth, traffic.requestsPerMonth);
     const memoryGb = num(s.memoryMb, 512) / 1024;

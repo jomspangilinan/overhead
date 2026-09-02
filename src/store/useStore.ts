@@ -45,6 +45,7 @@ export interface OverheadState {
   hoveredId: string | null;
   traceIds: string[] | null;
   scenario: { name: string; base: StateSnapshot } | null;
+  exportPanel: "json" | "markdown" | "mermaid" | "cdk" | "svg" | null;
 
   // mutations (synchronous — tools depend on it)
   loadSnapshot: (snap: StateSnapshot) => void;
@@ -73,6 +74,7 @@ export interface OverheadState {
   select: (id: string | null) => void;
   hover: (id: string | null) => void;
   setTrace: (ids: string[] | null) => void;
+  setExportPanel: (format: OverheadState["exportPanel"]) => void;
   addGroup: (kind: ArchGroup["kind"], name: string, cidr?: string, parent?: string) => string;
   moveIntoGroup: (nodeIds: string[], groupId: string | null) => void;
   setGroupCollapsed: (groupId: string, collapsed: boolean) => void;
@@ -94,6 +96,7 @@ export const useStore = create<OverheadState>((set, get) => ({
   hoveredId: null,
   traceIds: null,
   scenario: null,
+  exportPanel: null,
 
   loadSnapshot: (snap) =>
     set({
@@ -175,6 +178,7 @@ export const useStore = create<OverheadState>((set, get) => ({
   select: (id) => set({ selectedId: id }),
   hover: (id) => set({ hoveredId: id }),
   setTrace: (ids) => set({ traceIds: ids }),
+  setExportPanel: (format) => set({ exportPanel: format }),
 
   addGroup: (kind, name, cidr, parent) => {
     const id = newId("group");

@@ -11,6 +11,7 @@ import { Toolbar } from "./Toolbar";
 import { Inspector } from "./Inspector";
 import { Palette } from "./Palette";
 import { ScenarioBanner } from "./ScenarioBanner";
+import { ExportPanel } from "./ExportPanel";
 import apiBackend from "../../samples/api-backend.json";
 import mediaPipeline from "../../samples/media-pipeline.json";
 import eventDriven from "../../samples/event-driven.json";
@@ -20,6 +21,30 @@ export const SAMPLES: Record<string, StateSnapshot> = {
   "media-pipeline": mediaPipeline as StateSnapshot,
   "event-driven": eventDriven as StateSnapshot,
 };
+
+const AUTOSAVE_KEY = "overhead-state-v1";
+
+function Autosave() {
+  useEffect(() => {
+    const unsub = useStore.subscribe((s) => {
+      try {
+        localStorage.setItem(
+          AUTOSAVE_KEY,
+          JSON.stringify({
+            nodes: s.nodes,
+            edges: s.edges,
+            groups: s.groups,
+            traffic: s.traffic,
+          }),
+        );
+      } catch {
+        // storage full or unavailable — autosave is best-effort
+      }
+    });
+    return unsub;
+  }, []);
+  return null;
+}
 
 function SampleBar() {
   const loadSnapshot = useStore((s) => s.loadSnapshot);
@@ -54,9 +79,24 @@ function SampleBar() {
 export function App() {
   const loadSnapshot = useStore((s) => s.loadSnapshot);
 
-  // Seed the canvas so a first visit shows value in ten seconds.
+  // Restore autosave; otherwise seed a sample so a first visit shows
+  // value in ten seconds.
   useEffect(() => {
-    if (useStore.getState().nodes.length === 0) {
+    if (useStore.getState().nodes.length !== 0) return;
+    let restored = false;
+    try {
+      const saved = localStorage.getItem(AUTOSAVE_KEY);
+      if (saved) {
+        const snap = JSON.parse(saved) as StateSnapshot;
+        if (Array.isArray(snap.nodes) && snap.nodes.length > 0) {
+          loadSnapshot(snap);
+          restored = true;
+        }
+      }
+    } catch {
+      // corrupt autosave — fall through to the seed
+    }
+    if (!restored) {
       const snap = SAMPLES["api-backend"];
       loadSnapshot({
         ...snap,
@@ -79,11 +119,13 @@ export function App() {
           <div className="relative min-w-0 flex-1">
             <Canvas />
             <ScenarioBanner />
+            <ExportPanel />
           </div>
           <Inspector />
         </div>
       </div>
       <Sprite />
+      <Autosave />
     </ReactFlowProvider>
   );
 }

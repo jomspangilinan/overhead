@@ -50,6 +50,21 @@ export const s3 = defineService({
     },
   },
   cardLines: ["storageGb", "getsPerMonth", "purpose"],
+  cdk: (s, { varName, resourceName }) => {
+    const lifecycle =
+      s.lifecycleRules === true
+        ? `\n  lifecycleRules: [{
+    transitions: [{
+      storageClass: s3.StorageClass.INFREQUENT_ACCESS,
+      transitionAfter: cdk.Duration.days(90),
+    }],
+  }],`
+        : "";
+    return `// bucket for "${resourceName}" — names are global, so CDK generates one
+new s3.Bucket(this, "${varName}", {${lifecycle}
+  blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+});`;
+  },
   price: (s, traffic, pricing) => {
     const storageGb = num(s.storageGb, 50);
     const puts = num(s.putsPerMonth, traffic.requestsPerMonth * 0.1);

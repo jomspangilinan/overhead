@@ -25,6 +25,8 @@ export const sns = defineService({
     },
   },
   cardLines: ["publishesPerMonth", "subscriberCount"],
+  cdk: (_s, { varName, resourceName }) =>
+    `new sns.Topic(this, "${varName}", { topicName: "${resourceName}" });`,
   price: (s, traffic, pricing) => {
     const publishes = num(s.publishesPerMonth, traffic.requestsPerMonth);
     return [line(price(pricing, "sns.requests"), publishes)];

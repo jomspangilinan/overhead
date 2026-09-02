@@ -117,6 +117,14 @@ export function Toolbar() {
         </button>
       </div>
 
+      <button
+        className="ml-2 rounded border border-rule px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-ink-2 hover:bg-surface-2"
+        style={{ fontFamily: "var(--font-archivo)" }}
+        onClick={() => useStore.getState().setExportPanel("markdown")}
+      >
+        Export
+      </button>
+
       <div className="ml-auto flex items-center gap-3">
         <a
           className="hidden text-[10.5px] text-ink-3 underline decoration-dotted lg:block"

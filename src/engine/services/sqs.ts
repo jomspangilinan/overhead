@@ -30,6 +30,23 @@ export const sqs = defineService({
     },
   },
   cardLines: ["queueType", "requestsPerMonth"],
+  cdk: (s, { varName, resourceName }) => {
+    const fifo = s.queueType === "fifo";
+    const suffix = fifo ? ".fifo" : "";
+    const fifoProp = fifo ? "\n  fifo: true," : "";
+    if (s.dlqConfigured === true) {
+      return `const ${varName}Dlq = new sqs.Queue(this, "${varName}Dlq", {
+  queueName: "${resourceName}-dlq${suffix}",${fifoProp}
+});
+new sqs.Queue(this, "${varName}", {
+  queueName: "${resourceName}${suffix}",${fifoProp}
+  deadLetterQueue: { queue: ${varName}Dlq, maxReceiveCount: 3 },
+});`;
+    }
+    return `new sqs.Queue(this, "${varName}", {
+  queueName: "${resourceName}${suffix}",${fifoProp}
+});`;
+  },
   price: (s, traffic, pricing) => {
     const requests = num(s.requestsPerMonth, traffic.requestsPerMonth);
     const key = s.queueType === "fifo" ? "sqs.fifoRequests" : "sqs.requests";

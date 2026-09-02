@@ -13,6 +13,13 @@ import { SERVICES, getService } from "@/engine/services";
 import { validateSetting, defaultSettings } from "@/engine/defineService";
 import { allCosts, monthlyTotal, nodeCost } from "@/engine/cost";
 import { allFindings } from "@/engine/findings";
+import {
+  chunkCount,
+  chunkOf,
+  exportAs,
+  EXPORT_FORMATS,
+  type ExportFormat,
+} from "@/engine/exporters";
 import { toMoney, type EdgeKind } from "@/engine/model";
 import { laneOf } from "@/engine/layout";
 import { errorResult, text, type ToolSpec } from "./toolRegistry";
@@ -635,6 +642,70 @@ export function coreTools(): ToolSpec[] {
           });
         s.setGroupCollapsed(g.id, false);
         return text({ groupId: g.id, collapsed: false });
+      },
+    },
+    {
+      name: "export",
+      description:
+        "Export the design as json (reloadable state), markdown (client-readable report with Mermaid), mermaid, cdk (TypeScript stack), or svg. Opens the export panel; text formats deliver via get_export_chunk.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          format: { type: "string", enum: [...EXPORT_FORMATS, "svg"] },
+        },
+        required: ["format"],
+        additionalProperties: false,
+      },
+      readOnly: true,
+      execute: ({ format }) => {
+        const s = useStore.getState();
+        if (format === "svg") {
+          s.setExportPanel("svg");
+          return text({
+            format: "svg",
+            note: "Export panel opened — SVG/PNG render from the live canvas in the browser; use the panel's download button.",
+          });
+        }
+        if (!EXPORT_FORMATS.includes(format as ExportFormat))
+          return errorResult("no_such_format", `Unknown format.`, {
+            formats: [...EXPORT_FORMATS, "svg"],
+          });
+        const content = exportAs(format as ExportFormat, snapshotOf(s), pricingOf(s));
+        s.setExportPanel(format as ExportFormat);
+        const chunks = chunkCount(content);
+        return text({
+          format,
+          chars: content.length,
+          chunks,
+          note: `Fetch content with get_export_chunk (index 0..${chunks - 1}).`,
+        });
+      },
+    },
+    {
+      name: "get_export_chunk",
+      description:
+        "One ~1.2K-character slice of an export. Call export first for the chunk count, then walk index 0..n-1 and concatenate.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          format: { type: "string", enum: [...EXPORT_FORMATS] },
+          index: { type: "number", minimum: 0 },
+        },
+        required: ["format", "index"],
+        additionalProperties: false,
+      },
+      readOnly: true,
+      execute: ({ format, index }) => {
+        if (!EXPORT_FORMATS.includes(format as ExportFormat))
+          return errorResult("no_such_format", `Unknown format.`, { formats: EXPORT_FORMATS });
+        const s = useStore.getState();
+        const content = exportAs(format as ExportFormat, snapshotOf(s), pricingOf(s));
+        const total = chunkCount(content);
+        const i = Number(index);
+        if (!Number.isInteger(i) || i < 0 || i >= total)
+          return errorResult("bad_index", `index must be 0..${total - 1}.`, { chunks: total });
+        // raw chunk, not JSON-wrapped — the agent concatenates chunks verbatim
+        return { content: [{ type: "text", text: chunkOf(content, i) }] };
       },
     },
     {

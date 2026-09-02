@@ -54,6 +54,18 @@ export const dynamodb = defineService({
     },
   },
   cardLines: ["capacityMode", "storageGb", "readsPerMonth"],
+  cdk: (s, { varName, resourceName }) => {
+    const provisioned = s.capacityMode === "provisioned";
+    const capacity = provisioned
+      ? `\n  readCapacity: ${Number(s.provisionedRcu) || 5},\n  writeCapacity: ${Number(s.provisionedWcu) || 5},`
+      : "";
+    return `new dynamodb.Table(this, "${varName}", {
+  tableName: "${resourceName}",
+  // stub key schema — set your real partition/sort keys
+  partitionKey: { name: "pk", type: dynamodb.AttributeType.STRING },
+  billingMode: dynamodb.BillingMode.${provisioned ? "PROVISIONED" : "PAY_PER_REQUEST"},${capacity}
+});`;
+  },
   price: (s, traffic, pricing) => {
     const storageGb = num(s.storageGb, 5);
     const lines = [line(price(pricing, "dynamodb.storageGbMonth"), storageGb)];
