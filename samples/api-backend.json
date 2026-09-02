@@ -1,0 +1,31 @@
+{
+  "nodes": [
+    {
+      "id": "api",
+      "service": "apigateway",
+      "name": "public-api",
+      "settings": { "apiType": "HTTP" },
+      "position": { "x": 60, "y": 200 }
+    },
+    {
+      "id": "handler",
+      "service": "lambda",
+      "name": "api-handler",
+      "settings": { "architecture": "arm64", "memoryMb": 512, "avgDurationMs": 200 },
+      "position": { "x": 320, "y": 200 }
+    },
+    {
+      "id": "table",
+      "service": "dynamodb",
+      "name": "orders",
+      "settings": { "capacityMode": "on-demand", "storageGb": 10 },
+      "position": { "x": 580, "y": 200 }
+    }
+  ],
+  "edges": [
+    { "id": "e1", "from": "api", "to": "handler", "kind": "sync" },
+    { "id": "e2", "from": "handler", "to": "table", "kind": "sync" }
+  ],
+  "groups": [],
+  "traffic": { "requestsPerMonth": 5000000, "avgPayloadKb": 8 }
+}

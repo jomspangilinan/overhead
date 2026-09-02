@@ -1,0 +1,40 @@
+{
+  "nodes": [
+    {
+      "id": "cdn",
+      "service": "cloudfront",
+      "name": "asset-cdn",
+      "settings": {},
+      "position": { "x": 60, "y": 140 }
+    },
+    {
+      "id": "assets",
+      "service": "s3",
+      "name": "media-assets",
+      "settings": { "storageGb": 500, "purpose": "assets", "publiclyServed": false },
+      "position": { "x": 580, "y": 140 }
+    },
+    {
+      "id": "thumb-queue",
+      "service": "sqs",
+      "name": "thumbnail-jobs",
+      "settings": { "queueType": "standard", "dlqConfigured": true },
+      "position": { "x": 320, "y": 300 }
+    },
+    {
+      "id": "thumb-worker",
+      "service": "lambda",
+      "name": "thumbnailer",
+      "settings": { "architecture": "arm64", "memoryMb": 1024, "avgDurationMs": 900, "invocationsPerMonth": 200000, "dlqConfigured": true },
+      "position": { "x": 460, "y": 300 }
+    }
+  ],
+  "edges": [
+    { "id": "e1", "from": "cdn", "to": "assets", "kind": "data", "label": "origin fetch" },
+    { "id": "e2", "from": "assets", "to": "thumb-queue", "kind": "async", "label": "upload events" },
+    { "id": "e3", "from": "thumb-queue", "to": "thumb-worker", "kind": "async" },
+    { "id": "e4", "from": "thumb-worker", "to": "assets", "kind": "data", "label": "thumbnails" }
+  ],
+  "groups": [],
+  "traffic": { "requestsPerMonth": 2000000, "avgPayloadKb": 128 }
+}
