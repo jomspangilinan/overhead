@@ -75,6 +75,11 @@ Phases 0–9 (§15) are done under the current spec; what remains is **video, RE
   goes stale the moment a human drags something; an id does not), merges object fields one level deep so
   touching `memoryMb` does not wipe `architecture`, creates on an unknown id, and refuses the **whole**
   patch when any part of it fails the service schema · a half-applied document is worse than a refused one.
+  2026-09-03 (the user: "can we also support mermaid diagrams? I feel like it's a good idea to have it
+  be editable instead of just stuck with AWS Diagram"): **the canvas is not only AWS** and **Mermaid
+  goes both ways** · §5c and §12c. Six flow shapes through the same `defineService()` spine, a
+  Mermaid reader beside the CloudFormation one, and a **Mermaid tab** in the right dock that edits
+  the drawing live the way the Code tab does.
   2026-09-03 (the user: "importing event-driven is not auto layout?"): **the samples are arranged on
   disk** now (`npm run layout-samples` → `tests/sample-layout.test.ts`, which also asserts it) and the app's
   seed just loads one. It used to re-run `autoLayout` at seed time, so the app's copy of event-driven and
@@ -85,8 +90,8 @@ Phases 0–9 (§15) are done under the current spec; what remains is **video, RE
   the Import dialog and the zoom pill's Fit): React Flow's `fitView` only knows its own nodes, and frames
   are painted through a `ViewportPortal`, so a VPC reaching below its lowest resource was cut off at 100%.
   The rectangle is node bounds ∪ every stored frame rectangle · the same union the picture exporters use.
-- 38 tools live, 42 while a scenario is open (§9).
-- Tests: 244 across 23 vitest files (on `multiplayer`).
+- 39 tools live, 43 while a scenario is open (§9).
+- Tests: 261 across 24 vitest files (on `multiplayer`).
 
 **Workflow the user asked for:** keep `npm run dev` running; the user reviews every change on
 `localhost:3000` **before** anything is deployed. Deploy only when they say "deploy" (`npx vercel deploy
@@ -159,13 +164,16 @@ brought — no platform's permission, no partnership, no backend.
 
 ## 3. Scope
 
-**v1 (shipped):** sixteen services — Lambda, API Gateway, DynamoDB, S3, CloudFront, SQS, SNS, EventBridge,
+**v1 (shipped):** sixteen AWS services and six flow shapes (§5c) — Lambda, API Gateway, DynamoDB, S3, CloudFront, SQS, SNS, EventBridge,
 Step Functions, Cognito, Kinesis Data Streams, Data Firehose, KMS, Secrets Manager, Parameter Store,
 CloudWatch Logs. The last six answer "what does the plumbing cost": **encryption is not free** (a customer
 managed key is $1 per key version per month before it is used, and every request is billed), a secret is
 $0.40 a month against a standard parameter's nothing, and CloudWatch Logs ingestion routinely beats the
 Lambda that wrote the log. Driver-based pricing. Scenario forking with delta. Findings with doc links and savings.
 Exports. Live tool readout. Containers (cloud/region/VPC/subnets) and sections.
+
+Flow shapes are the one thing on this canvas AWS has no name for, and they are deliberately
+**unpriced** rather than priced at zero · §5c.
 
 **Deferred:** `external` / `account` / `az` / `asg` container kinds (the validator tables are the only thing to
 extend), NAT/ALB/RDS/ECS, enterprise findings, Terraform, fan-out collapse, `refresh_pricing`.
@@ -322,6 +330,34 @@ the `ContainerKind` union.
   `tests/layout.test.ts` checks containment, no sibling overlap, edge-driven columns, the ignored back
   edge, row order, the section rule, and the two measured-spacing rules.
 
+### 5c. Flow shapes — the canvas is not only AWS (`src/engine/services/flow.ts`)
+
+2026-09-03, the user: *"we can have like a flow diagram outside the AWS stuff."* Six definitions —
+`step`, `decision`, `terminal` (start/end), `actor`, `store`, `external` — go through the **same**
+`defineService()` spine every AWS service goes through, so the palette, the Inspector,
+`add_service`, `patch_state`, containers, sections, the Layers tree, undo, auto-layout and every
+exporter treat them like anything else. A decision can sit in a VPC; a section can hold one; the
+agent adds one with the tool it already has.
+
+- **What they do not have is a price.** `price()` returns no lines, so the card shows **no figure at
+  all** rather than `$0.00` (`AwsNode` reads `family`) and the total is unmoved. `family: "flow"` on
+  `ServiceDef` is what splits them from `"aws"` (the default); `servicesInFamily()` is the one
+  reader, and the sweeping tests (`golden-costs`, `define-service`) now say which family they mean.
+  No `cfn`, no `cdk` · the CDK exporter already wrote `// <name>: no CDK mapping` for anything
+  without one, and `npm run synth` passes with a flow sample in it.
+- **Their icons are ours** (`Sprite.tsx`, `FLOW_SPRITE`): drawn on the AWS sprite's 80-unit grid so
+  `<use>` sizes them identically, injected into the same `[data-oh-sprite]` element so the picture
+  exporters keep working, and kept **out** of `public/icons/aws/sprite.svg` because `NOTICE.md`
+  carves that file out of the MIT licence. Literal colours, not `currentColor` or a token: the
+  exporters serialise into an isolated document where neither resolves.
+- **Auto-layout does not box them in a role section.** A section it emits is named after a role
+  ("Ingress", "Data"), and a role is an AWS idea · a decision and a start marker sharing a column
+  are not "Data". They keep every other part of the layout (`layout.ts`, asserted in
+  `tests/layout.test.ts`).
+- `samples/checkout-flow.json` is the showcase: a shopper, a decision, a payment provider and a
+  warehouse ledger around an HTTP API, two Lambdas, a queue and a table. One canvas, one total, and
+  the total counts only the parts AWS bills for.
+
 ### Migration (`src/engine/migrate.ts`)
 
 Everything loaded from outside the current build (autosave `overhead-state-v2`, legacy `overhead-state-v1`,
@@ -437,7 +473,7 @@ the palette at bottom-centre, never `display: none`.
 - **Top bar** (`chrome/TopBar.tsx`): brand · editable **drawing name** · price-list pill with the region
   select · monthly total (23 px mono — the one loud number) · Scenario · **Import** · Export.
   There is no Templates button: a template is an import too (our JSON instead of your YAML), so the
-  three seeded architectures are a **source inside the Import dialog** and `Templates.tsx` is gone.
+  four seeded architectures are a **source inside the Import dialog** and `Templates.tsx` is gone.
   Import opens `ImportPanel.tsx` (§12b); dropping a template on the canvas opens the same dialog.
 - **Scenario** forks on the click (`openScenarioFromUi("what-if")`, so the tool count ticks) and **asks
   nothing**: a `window.prompt` was the one modal dialog left in the app and it blocked the page to
@@ -465,7 +501,7 @@ the palette at bottom-centre, never `display: none`.
   a row moves **out** of something: drop it beside a shallower row, or on the header line for the top
   level. Two resources beside each other also reorder (`placeNodeBeside`). No header buttons (the
   toolbar's A and S already add frames and sections). No tabs.
-- **Palette** (`Palette.tsx`, floating above the toolbar, A or `/`): search, the sixteen services (click adds —
+- **Palette** (`Palette.tsx`, floating above the toolbar, A or `/`): search, the sixteen AWS services and the six flow shapes in their own group (click adds —
   inside a selected region/cloud — or drag onto the canvas) and the container kinds, which create with the
   validator's verdict as tooltip, select the new frame and **pan to it when it lands off-screen** (a second
   AWS Cloud is placed clear of everything, to the right). With a `pendingConnection` it opens at that point
@@ -475,8 +511,9 @@ the palette at bottom-centre, never `display: none`.
   **Security** (schema, `group: 'security'`, drives the badge and CDK) · Cost · Findings; container →
   Identity · Frame · Contents; section/group → Appearance · Members · Frame; edge → **Connection** (type
   chips = `kind`, volume, label) · **Styling** (`EdgeStylePicker`, anchor sides, bends).
-  Two tabs (2026-09-03, the user: "I want to be able to draw the diagram through code"): **Inspector** and
-  **Code** (`CodePanel.tsx`, the dock widens to 360 px for it) · the whole drawing as JSON, **live both
+  Three tabs: **Inspector**, **Code** and **Mermaid** (`CodePanel.tsx` / `MermaidPanel.tsx`, the dock
+  widens to 360 px for either document view · §12c). Code first (2026-09-03, the user: "I want to be
+  able to draw the diagram through code") · the whole drawing as JSON, **live both
   ways**. Typing redraws the canvas as soon as the text parses (300 ms debounce); invalid JSON is not an
   error state but a document half typed, so the canvas holds the last good version and the footer names
   the line. It is not a second writer: the document goes through **`applyPatch` against an empty
@@ -645,7 +682,7 @@ actions keep semantics and style apart: `setEdge` (kind/label/volume) vs `setEdg
 (`migrateEdge`) turns the old single `route` into `waypoints` and boolean `arrow` into a mode. **Selectors must return stable values** — derive objects in `useMemo`, not in `useStore(fn)`
 (returning a fresh object per call is a React #185 render loop; it bit us once).
 
-## 9. Tool surface (38 live · 42 in a scenario)
+## 9. Tool surface (39 live · 43 in a scenario)
 
 Read tools: `readOnlyHint`. Mutations update the store before returning. `text()` caps output at 1.5K.
 
@@ -655,7 +692,7 @@ Read tools: `readOnlyHint`. Mutations update the store before returning. `text()
 | `get_node` | read | settings, cost lines, `placement` breadcrumb, findings (≤2) |
 | `get_cost_breakdown` | read | by node or service |
 | `get_findings` | read | severity filter, first 5 |
-| `list_services` | read | ids, terms, roles, drivers; or one service's schema |
+| `list_services` | read | one line per AWS service (`id · term · price drivers`) plus the flow shape ids; or one service's full schema. **Was over budget**: the old object-per-service shape was 1713 chars against `text()`'s 1500 cap, so the tool every agent calls first returned `output_too_large` instead of the vocabulary. A test holds the new shape under the cap |
 | `get_pricing_source` | read | region, fetch date, files |
 | `add_service` | write | type, name, settings?, container? (validated) |
 | `connect` | write | from, to, kind, volumePerMonth? |
@@ -678,6 +715,7 @@ Read tools: `readOnlyHint`. Mutations update the store before returning. `text()
 | `patch_state` | write | **spot editing by id** · partial objects merge in (settings one level deep), an unknown id creates, `remove` deletes, all-or-nothing. `engine/patch.ts`, the same validator the Code panel and `set_property` use. Structured errors carry `at` (`nodes[fn].settings.architecture`) and `allowed` |
 | `share_link` | read | a URL that opens this drawing on the page · the document rides in the fragment (`iac/share.ts`), nothing is uploaded, no backend involved. Too long to send = say so and point at `export` json |
 | `import_state` | write | the same reader the Import dialog uses (`importOverheadState`) · positions kept, never re-laid-out |
+| `import_mermaid` | write | a flowchart becomes the drawing, priced (§12c). `mode` replace or merge, through the same `reconcile` the template import uses. The door an agent hands a diagram through · a flowchart is what every model already writes when asked to draw an architecture |
 | `diff_cloudformation` | read | what a template would add, drop and change · nothing is applied |
 | `import_cloudformation` | write | YAML or JSON → the drawing, priced. `mode` replace or merge (§12b) |
 | `overhead_ping` | read | the raw brief-shape registration |
@@ -725,7 +763,7 @@ storage on `productFamily: Storage Snapshot`. `refresh_pricing` was not built.
 |---|---|
 | JSON | whole model incl. containers + sections + pricing snapshot id; reloads via `import_state` |
 | Markdown | title = drawing name, assumptions, cost table, findings with links, Mermaid inline |
-| Mermaid | `flowchart LR`, labels carry monthly cost |
+| Mermaid | `flowchart LR`, labels carry monthly cost, **containers become nested subgraphs**, and a trailing `%% overhead: {…}` comment carries what Mermaid has no syntax for (each node's service, each subgraph's kind, the sections). Same "state in a comment" carrier the CDK export uses, so the file is still a plain flowchart in anybody's renderer · and it is what makes §12c exact. `exportMermaid(snap, pricing, { cost, meta, direction })` · the Mermaid tab passes `cost: false`, because a derived figure inside an editable box reads as an input |
 | PNG / SVG / PDF | `canvas/exportImage.ts` · the **whole drawing**, not the current viewport: the union of every node and every stored frame rectangle becomes the picture, and `getViewportForBounds` gives the viewport element a fitting transform for the duration of the `html-to-image` capture. PNG at 1×/2×/3× with an optional transparent ground; SVG vector; **PDF is built here** (`jpegToPdf`: a JPEG wrapped in a one-page PDF · catalog, page tree, DCTDecode XObject, content stream, hand-counted xref) so there is no print dialog and no new dependency. **The sprite has to ride along**: every icon is a `<use href="#aws-…">` into the sprite injected at the app root, and `html-to-image` serialises only the captured element into an isolated document where those ids resolve to nothing · pictures came out as labels with no icons until `captureDrawing` began appending a clone of `[data-oh-sprite]` inside the captured subtree for the length of the capture |
 | CDK (TypeScript) | one stack named from the drawing, one construct per node from `defineService().cdk`, header listing every stub. **It carries the drawing** in a trailing comment block (`exporters/overheadState.ts` · `overheadStateBlock` is shared with the CloudFormation exporter so the two cannot drift, and `cdkStateComment`/`cdkStateFrom` are the comment carrier), which is what makes CDK import-able back · comments only, so `cdk synth` is unaffected. Variable names never shadow an imported namespace (a node called `logs` or `secretsmanager` used to emit a stack that failed at "cannot access before initialization" · `varNames()` in `cdk.ts` resolves it), and **`npm run synth` runs `cdk synth` on the three samples plus an `all-services` fixture holding one node of every service** |
 | CloudFormation (YAML) | deployable template from `defineService().cfn`, so it cannot drift from the CDK. A `Metadata.Overhead` block carries what a template has no place for (positions, containers, sections, traffic, the settings that only drive price) and each resource carries its `nodeId`, which is what makes the round-trip exact. YAML is written by `iac/yaml.ts` (no dependency); §12b is the way back |
@@ -739,7 +777,7 @@ drawing, not a build artefact. `export`/`get_export_chunk` stay text-only · a p
 
 ### 12b. Import and reconciliation (`src/engine/iac/`)
 
-CloudFormation is the only format that goes both ways, and it was chosen because it is the interchange
+CloudFormation was the first format to go both ways, and it was chosen because it is the interchange
 format: CDK and SAM both synthesise to it, so reading it works for all three without parsing anybody's
 TypeScript. **CDK goes both ways too, but only ours** (2026-09-03, "why can we export a CDK and not import
 one?"): a generated stack carries the drawing in a comment block, so `importCdkStack` reads it back through
@@ -770,7 +808,7 @@ Import dialog re-lays-out on replace only when the document brought no geometry*
   template says a Lambda is 512 MB and says nothing about how often it runs, and resetting that would
   quietly rewrite the estimate. `placeNewNodes` gives merged-in resources a column to the right.
 - UI: `ImportPanel.tsx`, built as **the mirror of `ExportPanel.tsx`** · the same dialog, the same named
-  list down the left (Samples · Build · Project) with a line each, the same view of the artefact in the
+  list down the left (Samples · Diagram · Build · Project) with a line each, the same view of the artefact in the
   middle, the same action bar. Three differences, each earned: the middle box is **editable** and
   **indents itself** (`canvas/textIndent.ts` · Enter carries the line's indent and opens a level after a
   YAML key, a list dash or an open bracket; Tab / ⇧Tab is one level in or out over every line the selection
@@ -813,6 +851,43 @@ Import dialog re-lays-out on replace only when the document brought no geometry*
 - Not built, and named as not built in `SCRIPT.md`: a live sync. Nothing watches a repo and nothing writes
   to one.
 
+### 12c. Mermaid, both ways (`src/engine/iac/mermaid.ts` · `src/canvas/MermaidPanel.tsx`)
+
+The fourth format, and the only one that starts life as somebody else's picture. Two documents arrive
+and both have to work.
+
+- **Ours** comes back exactly, through the `%% overhead:` comment (§12). Round-tripped in
+  `tests/mermaid.test.ts`.
+- **Anybody's** is read for what it says. `parseMermaid` handles `flowchart`/`graph` in any
+  direction, every bracket shape, chains (`a --> b -.-> c`), inline labels (`a -- writes --> b`),
+  `A-->B` with no spaces, and subgraphs at any depth; `classDef` / `class` / `style` / `click` are
+  skipped. Then: a label matched against the service vocabulary becomes that service, **priced**
+  (`[Lambda worker]`, `[SQS queue]`, `[(DynamoDB orders)]`); a label that names none keeps its
+  **shape** (`{}` a decision, `[( )]` a store, `(( ))` an actor, `[[ ]]` an external system, `([ ])`
+  a start/end, anything else a step · §5c); a subgraph whose title names a container kind ("Orders
+  VPC", "ap-southeast-1", "AWS Cloud") becomes that container and **any other subgraph becomes a
+  section**, which is exactly what a section is for and what is never validated. **This is the
+  point**: a diagram somebody drew as a picture arrives as a design and starts carrying a number.
+- Mermaid holds **no positions**, so `report.source` is always `"foreign"` and an import is laid
+  out on arrival · the Import dialog already reads that field to decide.
+- **The Mermaid tab is a third writer on one document.** It obeys the Code tab's two rules (nothing
+  writes over you mid-edit; a write of our own is remembered so the round trip does not reformat
+  what you are typing) and adds a third, because Mermaid is **lossy**: it has no syntax for a
+  position, a memory size, a traffic figure or an edge's volume. So the panel never rebuilds ·
+  `applyMermaid` merges the parsed document into the live one **by id**, the way `patch_state`
+  does, and everything the text did not mention is left alone. Drag a node, then type here: the
+  drag survives. Edges keep their identity by endpoint (a Mermaid edge has no id), which is what
+  preserves a waypoint and a volume through an edit. **A service is only changed where the document
+  actually named one** (`statedServices` on the import result) · otherwise "worker" would be
+  demoted from a Lambda to a plain box on the first keystroke, because the label names no service
+  and the shape would answer for it.
+- The caret's **line** is the object here (Mermaid has no nesting to walk): it bands, it is named in
+  the footer, and it selects that resource on the canvas · and selecting on the canvas scrolls the
+  document to its line. The same loop the Code tab has, one line deep instead of one object deep.
+- **Code and Mermaid are one editor** (`canvas/LiveEditor.tsx`): gutter, caret band, the shared
+  indent behaviour (`textIndent.ts`), the caret restore after a controlled write, and Escape as the
+  way back to the canvas hotkeys. Only what a document *means* lives in the panel that uses it.
+
 ## 13. Stack, repo layout, commands
 
 Next.js 15 (App Router, `output: "export"`), React 19, TypeScript, `@xyflow/react` v12, Zustand, Tailwind 4,
@@ -823,7 +898,10 @@ src/
   engine/           pure TS: model, containers, frames(boxes/hit-test/translate), migrate, layout(roles),
                     pricing, cost, findings, delta, bill, services/*.ts (defineService), rules/*.ts,
                     exporters/{json,markdown,mermaid,cdk,cloudformation,index}.ts
+  engine/services/flow.ts  step · decision · terminal · actor · store · external (§5c, unpriced)
   engine/iac/       share.ts (a drawing in a link · #doc / #template, no backend) ·
+                    mermaid.ts (a flowchart in, ours exactly and anyone's for what it says, +
+                    applyMermaid for the live tab) ·
                     yaml.ts (writer + reader, short-form intrinsics) · cloudformation.ts (import, ours and
                     foreign) · import.ts (detectFormat + the Overhead JSON reader, shared by the dialog
                     and import_state) · reconcile.ts (diff + replace/merge · what stands in for a sync)
@@ -841,6 +919,8 @@ src/
                     edgeGeometry.ts · edgeStyle.ts · nodeMetrics.ts · Inspector (node/container/section/edge)
                     · Popovers (view + card gears only) · Palette (floating, connect-from) ·
                     Notice · TracePill · CodePanel (the drawing as live JSON) + codeRanges.ts ·
+                    MermaidPanel (the drawing as a live flowchart) · LiveEditor (the editor both
+                    document tabs are made of) ·
                     fitDrawing.ts (fit the drawing, frames included) ·
                     ExportPanel (dialog) + exportImage.ts
                     (PNG/SVG/PDF of the whole drawing) · ImportPanel (its mirror: samples, formats,
@@ -850,12 +930,13 @@ src/
   app/              layout.tsx (fonts, provider) · page.tsx · globals.css (tokens, shell grid)
 scripts/            fetch-pricing.ts · synth-samples.ts
 data/               pricing.us-east-1.json · pricing.ap-southeast-1.json
-samples/            api-backend · media-pipeline · event-driven · all three are **laid out on disk**
+samples/            api-backend · media-pipeline · event-driven · checkout-flow · all four are **laid out on disk**
                     (`npm run layout-samples`) and framed like a real diagram: cloud › region
                     everywhere, CloudFront in the cloud beside the region because it is global,
                     event-driven adding vpc › private subnet
 public/icons/aws/   sprite.svg (26 symbols) · Arch_*_64.svg · NOTICE.md
-tests/              share (a drawing in a link) · patch (merge by id, refusals) · code-ranges (which object a caret is in) ·
+tests/              mermaid (both ways, the live merge, a hand-written chart) ·
+                    share (a drawing in a link) · patch (merge by id, refusals) · code-ranges (which object a caret is in) ·
                     sample-layout (the samples are arranged on disk) ·
                     layout-crossings (edges crossing, counted geometrically) · remove (mixed-selection delete) · text-indent · cloudformation (incl.
                     the CDK round-trip and the label fallback) ·
@@ -896,7 +977,7 @@ vitest) — that's why `nodeMetrics.ts` exists.
 | 0 · Prove the pipe | one tool executed from the ChatGPT desktop app and Chrome | ✅ 2026-09-02 |
 | 1 · Engine | sixteen services, pricing data, cost, golden tests | ✅ |
 | 2 · Canvas | icon/card nodes, floating typed edges, inspector from schema | ✅ |
-| 3 · Tools | read/write tools, live readout | ✅ (38 live) |
+| 3 · Tools | read/write tools, live readout | ✅ (39 live) |
 | 4 · Findings | nine rules, rings/stripes | ✅ |
 | 5 · Scenarios | fork, delta, dynamic registration | ✅ |
 | 6 · Cards + containers + sections | 130% LOD, containers with validation/rollup/collapse, sections | ✅ |
