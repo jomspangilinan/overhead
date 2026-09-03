@@ -24,11 +24,12 @@
 // here watches a repo, and nothing writes to one.
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useReactFlow } from "@xyflow/react";
 import { useStore, pricingOf, snapshotOf } from "@/store/useStore";
+import { useFitDrawing } from "./fitDrawing";
 import { getService } from "@/engine/services";
 import type { StateSnapshot } from "@/engine/model";
 import { importAny, type ImportFormat } from "@/engine/iac/import";
+import { onBackspace, onEnter, onTab, type TextEdit } from "./textIndent";
 import { applyReconciliation, placeNewNodes, reconcile, type MergeMode } from "@/engine/iac/reconcile";
 import { monthlyTotal } from "@/engine/cost";
 import { toMoney } from "@/engine/model";
@@ -65,6 +66,17 @@ const BLURB: Record<string, string> = {
 };
 
 const FILE_SOURCES: FileSource[] = [
+  {
+    id: "cdk",
+    from: "file",
+    kind: "cdk",
+    label: "CDK · TypeScript",
+    accept: ".ts,.js,.txt",
+    group: "Build",
+    blurb: "A stack Overhead wrote comes back · anyone else's: cdk synth.",
+    where:
+      "The stack Export writes under Build. It carries the drawing in a comment block, so it comes back with its positions, containers, sections and traffic intact · the same round-trip a template gets. Somebody else's stack is a program: it has loops and lookups and does not say what it builds until it runs, so run `cdk synth > template.yaml` in that app and bring the template instead.",
+  },
   {
     id: "cloudformation",
     from: "file",
@@ -105,8 +117,12 @@ export function ImportPanel({ samples }: { samples: Record<string, StateSnapshot
   const region = useStore((s) => s.region);
   const nodes = useStore((s) => s.nodes);
   const setDrawingName = useStore((s) => s.setDrawingName);
-  const { fitView } = useReactFlow();
+  const fitDrawing = useFitDrawing();
   const fileInput = useRef<HTMLInputElement>(null);
+  const box = useRef<HTMLTextAreaElement>(null);
+  // The box is controlled by the store, so an indent edit has to put the
+  // caret back itself once React has written the new text.
+  const caret = useRef<[number, number] | null>(null);
   const [dragging, setDragging] = useState(false);
 
   const sources: Source[] = useMemo(
@@ -161,7 +177,34 @@ export function ImportPanel({ samples }: { samples: Record<string, StateSnapshot
     return () => window.removeEventListener("keydown", onKey);
   }, [panel, setImportPanel]);
 
+  useEffect(() => {
+    if (!caret.current || !box.current) return;
+    box.current.setSelectionRange(caret.current[0], caret.current[1]);
+    caret.current = null;
+  }, [panel?.template]);
+
   if (!panel) return null;
+
+  /** Every path that changes the text goes through here · typing over a
+   *  sample makes it your text, not that sample, and the pinned format goes
+   *  with it so pasting a template into a sample is read as a template. A
+   *  format the user picked themselves stays pinned, so the mismatch is
+   *  still reported rather than guessed away. */
+  const write = (template: string) => {
+    const wasSample = panel.source?.startsWith("sample:");
+    setImportPanel({
+      ...panel,
+      template,
+      fileName: "",
+      drawingName: undefined,
+      ...(wasSample ? { format: undefined, source: undefined } : {}),
+    });
+  };
+
+  const edit = (next: TextEdit) => {
+    caret.current = [next.selStart, next.selEnd];
+    write(next.value);
+  };
 
   const take = async (file: File) => {
     setImportPanel({ fileName: file.name, template: await file.text() });
@@ -198,12 +241,17 @@ export function ImportPanel({ samples }: { samples: Record<string, StateSnapshot
     const next = applyReconciliation(current, parsed.snapshot, diff, mode, parsed.stated);
     const addedIds = diff.nodes.filter((n) => n.kind === "added").map((n) => diff.matched[n.id] ?? n.id);
     loadSnapshot(mode === "merge" ? placeNewNodes(next, addedIds) : next);
-    // A template carries no geometry · a wholesale import has to be arranged.
-    // A saved drawing brings its own positions and must not be rearranged.
-    if (mode === "replace" && parsed.format !== "overhead") applyAutoLayout();
+    // What decides this is whether the document carried the drawing, not what
+    // format it was: our own template and our own stack both bring positions,
+    // and re-arranging those would throw away the thing that came back.
+    if (mode === "replace" && parsed.report.source !== "overhead") applyAutoLayout();
     if (mode === "replace" && panel.drawingName) setDrawingName(panel.drawingName);
     setImportPanel(null);
-    requestAnimationFrame(() => fitView({ maxZoom: 1, padding: 0.15, duration: 150 }));
+    // Two frames, not one: React Flow fits what it has measured, and after a
+    // wholesale load the new nodes are not measured until the frame after the
+    // one that rendered them · fitting on the first frame left the drawing at
+    // 100% with its top cut off.
+    requestAnimationFrame(() => requestAnimationFrame(() => fitDrawing({ duration: 150 })));
     notify(
       mode === "replace"
         ? `Imported ${parsed.report.nodes} resources from ${panel.fileName}`
@@ -344,21 +392,29 @@ export function ImportPanel({ samples }: { samples: Record<string, StateSnapshot
 
             <div className="flex min-h-0 flex-1">
               <textarea
+                ref={box}
                 value={panel.template}
                 spellCheck={false}
-                onChange={(e) => {
-                  // Typing over a sample makes it your text, not that sample ·
-                  // the pinned format goes with it, so pasting a template into
-                  // a sample is read as a template. A format the user picked
-                  // themselves stays pinned, so the mismatch is still reported.
-                  const wasSample = panel.source?.startsWith("sample:");
-                  setImportPanel({
-                    ...panel,
-                    template: e.target.value,
-                    fileName: "",
-                    drawingName: undefined,
-                    ...(wasSample ? { format: undefined, source: undefined } : {}),
-                  });
+                onChange={(e) => write(e.target.value)}
+                onKeyDown={(e) => {
+                  // YAML is whitespace, so the box has to keep it: Enter
+                  // carries the indent, Tab is a level and not the next
+                  // control, Backspace in the indent goes back a level.
+                  const el = e.currentTarget;
+                  const at = [el.value, el.selectionStart, el.selectionEnd] as const;
+                  if (e.key === "Enter" && !e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey) {
+                    e.preventDefault();
+                    edit(onEnter(...at));
+                  } else if (e.key === "Tab" && !e.metaKey && !e.ctrlKey && !e.altKey) {
+                    e.preventDefault();
+                    edit(onTab(...at, e.shiftKey));
+                  } else if (e.key === "Backspace" && !e.metaKey && !e.ctrlKey && !e.altKey) {
+                    const next = onBackspace(...at);
+                    if (next) {
+                      e.preventDefault();
+                      edit(next);
+                    }
+                  }
                 }}
                 aria-label="Template or Overhead file"
                 placeholder={`Paste a ${fileSpec.label} document here, drop a file anywhere in this pane, or start typing.\n\n${fileSpec.where}`}
@@ -381,8 +437,8 @@ export function ImportPanel({ samples }: { samples: Record<string, StateSnapshot
                   </>
                 ) : !parsed?.ok ? (
                   <>
-                    <div className="lab pb-1.5" style={{ color: "var(--bad)" }}>
-                      Cannot read this
+                    <div className="lab pb-1.5" style={{ color: parsed?.code === "cdk_source" ? "var(--warn)" : "var(--bad)" }}>
+                      {parsed?.code === "cdk_source" ? "Synthesise it first" : "Cannot read this"}
                     </div>
                     <p className="text-[11.5px] leading-relaxed" style={{ color: "var(--ink-2)" }}>
                       {parsed?.message ?? "That document could not be read."}

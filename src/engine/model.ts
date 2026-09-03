@@ -5,6 +5,8 @@ import type { Container } from "./containers";
 export type { Container, ContainerKind } from "./containers";
 
 export type EdgeKind = "sync" | "async" | "data";
+/** The three, as a list · what a patch or a tool validates against. */
+export const EDGE_KINDS: readonly EdgeKind[] = ["sync", "async", "data"];
 
 /** Internal layout role — not a model concept and never shown in the UI.
  *  autoLayout() uses it to arrange left to right and emits sections. */
