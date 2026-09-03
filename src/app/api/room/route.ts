@@ -30,6 +30,24 @@ import { Relay } from "@/net/relay";
 
 export const dynamic = "force-dynamic";
 
+/** A frame off the wire, as text.
+ *
+ *  Not `String(data)`: the platform hands binary frames over as a typed
+ *  array, and `String(new Uint8Array(...))` is `"123,34,116…"` · the bytes,
+ *  comma-separated. That parses as nothing, so every patch and every cursor
+ *  was silently dropped in production while presence (which the server
+ *  generates) kept working, and it looked like a room where nobody could
+ *  draw. The local `ws` server hands over a Buffer, whose `String()` *is* the
+ *  text, which is exactly why it never showed up in dev. */
+function toText(data: WebSocketData): string {
+  if (typeof data === "string") return data;
+  if (data instanceof ArrayBuffer) return new TextDecoder().decode(data);
+  if (ArrayBuffer.isView(data)) {
+    return new TextDecoder().decode(new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
+  }
+  return String(data);
+}
+
 const relay = new Relay();
 const newId = () => Math.random().toString(36).slice(2, 10);
 
@@ -37,6 +55,14 @@ export async function GET(request: Request) {
   const room = new URL(request.url).searchParams.get("room") ?? "";
   if (!ROOM_ID.test(room)) {
     return new Response("A room id is 6 to 24 lowercase letters and digits.", { status: 400 });
+  }
+  // Opening this address in a browser is not an error worth a 500 · say what
+  // it is for. Only an upgrade request goes any further.
+  if (request.headers.get("upgrade")?.toLowerCase() !== "websocket") {
+    return new Response("This is a WebSocket relay for live rooms · connect with wss://, not GET.", {
+      status: 426,
+      headers: { Upgrade: "websocket" },
+    });
   }
 
   return experimental_upgradeWebSocket((ws) => {
@@ -52,9 +78,7 @@ export async function GET(request: Request) {
       return;
     }
 
-    ws.on("message", (data: WebSocketData) => {
-      relay.message(room, member, typeof data === "string" ? data : String(data));
-    });
+    ws.on("message", (data: WebSocketData) => relay.message(room, member, toText(data)));
     ws.on("close", () => relay.leave(room, member));
   });
 }
