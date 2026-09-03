@@ -284,6 +284,16 @@ export interface OverheadState {
   discardScenario: () => void;
 }
 
+/** Re-arrange when card mode has just flipped · one place, so K, the View
+ *  gear, the Cost layer and the zoom all behave the same. Nothing to arrange
+ *  on an empty canvas, and nothing to do when the mode did not change (the
+ *  zoom fires on every wheel tick and crosses the threshold once). */
+function retidy(get: () => OverheadState, was: boolean) {
+  const s = get();
+  if (!s.nodes.length || cardModeOf(s) === was) return;
+  s.applyAutoLayout();
+}
+
 export const useStore = create<OverheadState>((set, get) => ({
   nodes: [],
   edges: [],
@@ -522,24 +532,32 @@ export const useStore = create<OverheadState>((set, get) => ({
       };
     }),
 
-  setLayer: (layer, on) =>
-    set((s) => ({ layers: { ...s.layers, [layer]: on } })),
-
-  /** Toggling cards re-arranges the drawing for the view you switched to.
-   *  Rows are the one thing still pitched by what a node draws (§5b), so
-   *  this is the only moment the arrangement can improve · and it is one
-   *  undo step, because history subscribes to the model and the layout is a
-   *  model change like any other.
-   *
-   *  Only the explicit toggle, never the zoom: cards also appear on their
-   *  own past 130%, and re-arranging the drawing under a zoom gesture would
-   *  make the canvas move while you are trying to read it. Nothing to
-   *  arrange on an empty canvas either. */
-  setCardsForced: (on) => {
-    set({ cardsForced: on });
-    if (get().nodes.length) get().applyAutoLayout();
+  setLayer: (layer, on) => {
+    const was = cardModeOf(get());
+    set((s) => ({ layers: { ...s.layers, [layer]: on } }));
+    retidy(get, was);
   },
-  setZoom: (zoom) => set({ zoom }),
+
+  /** Reaching card mode re-arranges the drawing for it, whichever way you
+   *  got there · K, the View gear, the Cost layer, or zooming past 130%.
+   *
+   *  The trigger is the **mode changing**, not the keystroke. It was the
+   *  keystroke for an hour, on the reasoning that re-arranging under a zoom
+   *  gesture moves the canvas while you are reading it · but a card layout
+   *  you only get by remembering to press K is not a layout, and zooming in
+   *  to read a label is exactly when the crowding shows. Whatever moves is
+   *  one ⌘Z away, because history subscribes to the model and a layout is a
+   *  model change like any other. */
+  setCardsForced: (on) => {
+    const was = cardModeOf(get());
+    set({ cardsForced: on });
+    retidy(get, was);
+  },
+  setZoom: (zoom) => {
+    const was = cardModeOf(get());
+    set({ zoom });
+    retidy(get, was);
+  },
   select: (id) =>
     set((s) => {
       const section = id ? s.sections.find((x) => x.id === id) : undefined;

@@ -356,15 +356,20 @@ the `ContainerKind` union.
   appear**, and the way out is that toggling cards re-arranges (below). The one path with no answer
   is reaching card mode by *zooming* past 130% without pressing K · that arrangement was spaced for
   icons and nothing re-ran.
-  **Toggling cards re-arranges** (2026-09-03, the user: "switch off Card and switching on should
-  automatically layout"): `setCardsForced` runs `applyAutoLayout` after flipping, so K and the View
-  gear's Cards checkbox lay the drawing out for the view you switched to. Rows are the one thing
-  still pitched by what a node draws, so that is the only thing it changes · which is also why it is
-  cheap. It is **one undo step** (history subscribes to the model and a layout is a model change
-  like any other), and it fires **only on the explicit toggle**: cards also appear on their own past
-  130% zoom, and re-arranging the drawing under a zoom gesture would move the canvas while you are
-  reading it. Nothing happens on an empty canvas. ⌘Z brings the positions back; the view stays in
-  cards, because the view is not the model.
+  **Reaching card mode re-arranges the drawing for it** · K, the View gear, the Cost layer, or
+  zooming past 130%. The trigger is `retidy(get, was)` in the store, called by `setCardsForced`,
+  `setLayer` and `setZoom`, and it does nothing unless `cardModeOf` actually flipped (the zoom fires
+  on every wheel tick and crosses the threshold once). It is **one undo step** · history subscribes
+  to the model and a layout is a model change like any other; ⌘Z brings the positions back and the
+  view stays in cards, because the view is not the model.
+  It was the **explicit toggle only** for an hour, on the reasoning that re-arranging under a zoom
+  gesture moves the canvas while you are reading it. The user found the hole immediately (2026-09-03,
+  at 175%: "it didn't automatically tidy"): a card layout you only get by remembering to press K is
+  not a layout, and zooming in to read a label is exactly when the crowding shows.
+  **The View gear says which source is live.** Cards have three, and the checkbox is only one of
+  them, so on its own it read as broken · cards on screen, box unticked, the reason buried in a
+  parenthesis. It now reads "Cards are on from 165% zoom · the box pins them on when that changes",
+  and falls back to naming the other two sources when they are off.
   Auto-layout also **says what it did** ("Arranged 13 resources in 5 columns by dependency · icon spacing · 1 section"),
   including when it removes `auto-` sections a previous run left behind: a four-node chain has no column
   worth a section, so re-running looked like it was deleting them for no reason.

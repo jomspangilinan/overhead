@@ -8,7 +8,7 @@
 // click or Escape.
 
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { useStore } from "@/store/useStore";
+import { useStore, cardModeOf } from "@/store/useStore";
 import { getService } from "@/engine/services";
 import { validateSetting, settingsInGroup, defaultSettings, type SettingDef } from "@/engine/defineService";
 import { DEFAULT_CARD_SHOW, DEFAULT_COST_DISPLAY } from "@/engine/model";
@@ -257,11 +257,23 @@ function CardsPopover() {
   const set = useStore((s) => s.setCardShow);
   const cardsForced = useStore((s) => s.cardsForced);
   const setCardsForced = useStore((s) => s.setCardsForced);
+  // Cards have three sources and the checkbox is only one of them, so on its
+  // own it reads as broken: cards on screen, box unticked. It says which
+  // source is live instead of leaving you to work it out from a parenthesis.
+  const cards = useStore(cardModeOf);
+  const zoom = useStore((s) => s.zoom);
+  const costOn = useStore((s) => s.layers.cost);
+  const why = cardsForced ? null : costOn ? "the cost layer" : cards ? `${Math.round(zoom * 100)}% zoom` : null;
   return (
     <div className="flex flex-col gap-2">
       <Check checked={cardsForced} onChange={setCardsForced}>
-        Card view · K (else cards appear from 130% zoom or with cost on)
+        Card view · K
       </Check>
+      <div className="text-[10.5px] leading-snug" style={{ color: why ? "var(--accent-ink)" : "var(--ink-4)" }}>
+        {why
+          ? `Cards are on from ${why} · the box pins them on when that changes.`
+          : "Cards also appear on their own from 130% zoom, or with the cost layer on."}
+      </div>
       <div className="text-[10px] uppercase tracking-[0.12em]" style={{ color: "var(--ink-4)" }}>
         Every card shows
       </div>
