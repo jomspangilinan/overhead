@@ -1,118 +1,104 @@
-# Video script · under 3:00
+# Demo video · under 3:00
 
-**The line:** **a web page that turns any agent into a cloud architect — and lets you draw alongside
-it, live.**
+**The line:** *a web-native canvas powered by WebMCP that turns any agent into a cloud architect.
+Design alongside it live while it calculates real-time infrastructure costs.*
 
-Every beat is evidence for it. A beat that only shows a feature is cut — which is why the bill drop
-and the trace tool aren't in this cut, even though both work.
+**Built against Devpost's stated rules:** working product inside 15 seconds · best material first · already
+logged in · no live typing · no dead air · jump cuts · short clips.
 
-**WebMCP is the star, not the plumbing.** This is a WebMCP hackathon: the story is that a *page* hands
-capability to whatever agent the visitor brought — no install, no API key, no backend. Say that out
-loud, and show the tool list and the live count on camera.
+**Where this is filmed: inside the ChatGPT desktop app.** That is the client that consumes WebMCP, so
+the whole demo lives there — the site open in ChatGPT's in-app browser, the conversation beside it. The
+"agent" on camera is ChatGPT calling our site's tools. Frame so both are visible in one shot: we need to
+see the request go in and the canvas move, without a cut. If site tools do not appear for a take, stop
+and fix it before rolling — nothing in this video works without them.
 
-**Never compare on camera.** What we're up against is the status quo — an agent that can draw an
-architecture and has no idea what it costs — not a named product. Rebuttals are at the bottom of this
-doc for the Q&A. Saying a rival's name in the video makes us the challenger.
+**An agent has no cursor.** Cursors belong to people. The agent is visible as tool calls landing, the
+count in the bottom bar, and the canvas changing without my hand on it. Never narrate a cursor as
+though it were the agent — anyone who has used the app will catch it.
 
-**Why it's built this way:** judges spend
-[4–10 min per entry](https://help.devpost.com/article/64-judging-public-voting) and watch the video
-first. Devpost judge Jono Bacon: *"You need to get your audience of judges sharing your frustration."*
-Show something working inside [~90 seconds](https://blog.jetbrains.com/ai/2026/06/how-to-win-a-hackathon-notes-from-the-judging-table/).
-
----
-
-## The hook · 0:00–0:12
-
-| Shot | Screen | Said |
-|---|---|---|
-**Open on the thing that actually made me build this: an agent overwriting my work.**
-
-| Shot | Screen | Said |
-|---|---|---|
-| **A** · 0:00–0:07 | A diagram tool with an MCP server. The agent draws. **I move one box by hand. The agent's next call redraws the page and my change is gone.** Let it sting for a beat. | "This is what I had. I move something, it redraws from the copy it remembers, and my edit's gone." |
-| **B** · 0:07–0:14 | Hard cut: same architecture here. **I drag a Lambda into a subnet while the agent's `set_property` lands in the same second — both survive.** A monthly total resolves from real rates. | "There's no copy here. It adapts to me instead of overwriting me — and it knows what the thing costs." |
-
-**Alternates** (pick in the booth):
-
-- *"This page turns any agent into a cloud architect. No install, no API key, no admin granting anyone anything."*
-- *"I didn't want a faster way to draw. I wanted to stop redoing the drawing."*
-- *"Two cursors on one architecture. One's mine. One isn't a person. Neither of us is losing work."*
-
-Say it flat. Don't name the product — the brand's in the top bar from 0:08.
+**Never compare on camera.** No competitor's name, no competitor's screen. Our opening seconds belong to
+our product working, not to someone else failing. The "it overwrote my edits" story is *narration over our
+own footage*, never a shot of another tool.
 
 ---
 
-## What the audience has to understand by 0:30
+## First 15 seconds — the product, already working
 
-```
-   me (canvas)      ──┐
-   me (JSON panel)  ──┤
-   my agent         ──┼──►  applyPatch  ──►  ONE DOCUMENT  ──► priced · reviewed · compiles
-   their agent      ──┘     one validator     by id
-   (via a Live room)
-```
+No logo card. No title. No "hi, I'm —". Frame one is the canvas, mid-motion.
 
-One line on camera: **"Everything anyone does — me, my agent, their agent — is the same operation on
-the same document."**
+| Time | Screen | Said |
+|---|---|---|
+| **0:00–0:07** | Canvas already populated. **My cursor drags a Lambda into a subnet while the agent's `set_property` lands in the strip in the same second.** Both survive. | "That's my hand moving that. The call landing underneath it is ChatGPT, in the same second." |
+| **0:07–0:15** | The monthly total resolves in the top bar. An amber finding ring appears on a node. | "And it knows what this costs — and what's wrong with it." |
+
+That is the whole pitch, performed, before a judge can bounce. Everything after is evidence.
+
+**Alternates for 0:00** (pick in the booth):
+
+- *"I'm dragging. ChatGPT is calling `set_property`. Same document, same second, neither of us waiting."*
+- *"Nothing here is waiting for the other one to finish."*
 
 ---
 
 ## Shot list
 
-| Time | On screen | Said |
-|---|---|---|
-| **0:00–0:14** | **Cold open** (above). My edit destroyed by the agent's redraw → hard cut → both edits landing together here, total resolving. | "This is what I had. I move something, it redraws from the copy it remembers, and my edit's gone. There's no copy here — it adapts to me instead of overwriting me, and it knows what the thing costs." |
-| **0:12–0:26** | Bottom bar tool list open: `add_service`, `set_property`, `get_findings`, `patch_state`. Not a shape or a coordinate in sight. | "Thirty-six tools, and none of them draw. They speak AWS — services, settings, connections. So the agent says what it means, in the words I use." |
-| **0:26–0:52** | Empty canvas. I type one sentence: *"HTTP API to Lambda to DynamoDB, S3 behind CloudFront, SQS for thumbnails, five million requests a month."* Resources land in AWS Cloud › ap-southeast-1, left to right, no crossing edges. Total counts up. | "It builds. Not shapes — resources, carrying the settings that decide what they cost, priced from AWS's own list. That number isn't one I typed." |
-| **0:52–1:14** | **Both hands on it.** I drag the worker into the private subnet and rename it by hand; agent's `set_property` lands mid-drag. Then: *"Check your own work."* → `get_findings` → two amber rings → arm64 + a DLQ → total drops. | "I'm not watching it work, I'm working next to it. Then I ask it to review what we both just did. Nine rules, each citing an AWS doc. It fixed two itself — a picture can't do that." |
-| **1:14–1:32** | Right dock → **Code**. Same drawing as JSON. Caret into a resource → it lights on canvas. Edit `memoryMb` in text → node and total move. | "Same document, as code. I type here, the agent patches by id, neither of us guesses what the other did." |
-| **1:32–1:56** | **Live.** URL gains a room id, pill green, link copied. Second window: two named cursors. **They drag while my agent is mid-answer. Both land.** | "Press Live and the URL is a room. My colleague opens it and *their* agent is in the same document as mine. Four writers, one validator. No account, nothing stored — the page just passes our changes across." |
-| **1:56–2:20** | **Scenario.** Count ticks **39 → 43**. Lambda to 1024 MB: change list reads `memoryMb 512 → 1024`, per-resource delta, total goes **down**. Commit → back to 39. | "A scenario forks the whole design — more memory, lower bill, because it finishes faster. And watch the count: four tools exist only while the fork is open. Capability appearing because the state changed." |
-| **2:20–2:42** | **Export** → CDK to the coding agent → written into a repo → `cdk synth` → green. Import the same stack back: drawing rebuilds, priced. | "And what we built together compiles. CDK into the repo — it synthesises. Hand it back and the drawing comes back with it." |
-| **2:42–2:55** | Full canvas, both cursors still live, total and rings legible. The cold open's frame. | "One web page, and any agent that opens it is a cloud architect — working next to you, not at you." |
+| Time | Screen | Said | Edit |
+|---|---|---|---|
+| **0:00–0:15** | Cold open, above. | see above | — |
+| **0:15–0:42** | Cut to an empty canvas with the prompt **already typed into ChatGPT**, unsent. Hit enter. Resources land inside AWS Cloud › ap-southeast-1, left to right, no crossing edges. Total counts up. | "I ask ChatGPT for it in one sentence. It doesn't drive the interface — it calls the page's own tools. Resources, carrying the settings that decide what they cost, priced from AWS's own list. That number isn't one I typed." | **Never film typing.** Paste the prompt before you roll. Speed the landing 1.5× if it dawdles. |
+| **0:42–1:05** | I drag the worker into the private subnet and rename it by hand; the agent's call lands mid-drag. Neither edit is lost. | "I'm not watching it work, I'm working next to it. Most tools hand the agent a copy of your file — so the moment you move something, its copy is wrong and the next thing it writes wins. There's no copy here." | The one place the origin story is told. Over **our** footage. |
+| **1:05–1:32** | Ask ChatGPT: *"check your own work."* → `get_findings` → two amber rings → it switches the Lambda to arm64 and adds a DLQ → total drops. | "Then I ask it to review what we both just did. Nine rules, each citing an AWS doc. It fixed two of them itself." | Jump-cut the agent's thinking time. No spinner on screen. |
+| **1:32–1:58** | **Scenario.** Tool count ticks **39 → 43**. Lambda to 1024 MB: change list reads `memoryMb 512 → 1024`, per-resource delta, total goes **down**. Commit → back to 39. | "A scenario forks the whole design — more memory, lower bill, because it finishes faster. And watch the count: four tools that exist only while this fork is open. The page hands the agent new capability because its state changed." | **The WebMCP money shot.** Count must be legible. Hold two beats on the tick. |
+| **1:58–2:18** | **Live.** URL gains a room id, pill green, link copied. A second ChatGPT window, **already joined**, on the other machine — **two named cursors, both human**. My colleague drags a node while my ChatGPT's call lands and theirs lands after it. Three edits, nothing lost. | "Press Live and the URL is a room. My colleague opens it in their own ChatGPT, and now there are two of us and two agents on one document. The cursors are the people. The agents show up as calls." | Second machine **pre-joined, site tools already working there**. Never film a join or a load. |
+| **2:18–2:38** | **Export** → ChatGPT takes the CDK straight out of the tool result → into a repo → `cdk synth` → green. | "And what we built together compiles. ChatGPT takes the CDK out of the page and into the repo — and it synthesises." | Speed the synth 4×, or cut straight to green. Nobody watches a build. |
+| **2:38–2:50** | Full canvas, both human cursors present, a tool call still landing, total and rings legible. The cold open's frame. | "One web page. Any agent that opens it is a cloud architect — working next to you, not at you." | Hold two beats after the last word. It's the YouTube still. |
 
-**Cuts if long:** the import, then the Code tab. **Never cut:** the cold open, the Live beat, the
-findings loop, the count ticking.
-
-**Hold the last frame** two beats after the last word — both cursors visible. It's the YouTube still,
-and it's the cold open's image, which makes 3:00 feel closed rather than stopped.
+**Cut if long:** the Live beat, then the export's repo half. **Never cut:** the first 15 seconds, the
+findings loop, the tool count ticking.
 
 ---
 
-## Criteria coverage
+## Production rules
 
-| Devpost criterion | Beat that earns it |
+| Rule | How it applies here |
 |---|---|
-| Technological Implementation | 0:12 semantic tools · 1:56 count ticking 39 → 43 under `AbortController` |
-| Ease of Use | 0:26 one sentence builds it · no login, no keys |
-| Demonstration | product working by 0:26; every claim performed, not asserted |
-| Potential Impact | 1:32 four writers one document · 2:20 it compiles |
-| Quality of Idea | 0:00 cold open: watching vs working |
-| Design | zero crossing edges, findings as rings not dialogs |
-
----
-
-## If a judge pushes back
-
-| "..." | Answer |
-|---|---|
-| **"Isn't this draw.io with an MCP?"** | Their tools are shapes and coordinates; the file is a picture that can't be wrong because it means nothing. Ours are services and settings — so the number moves, the finding fires, the export compiles, and the agent can be *told* it's wrong. |
-| **"Isn't it just multiplayer diagramming?"** | The multiplayer is a consequence, not the feature. Patches are addressed by id because an agent's state goes stale when a human drags something — that decision predates rooms by weeks. Multiplayer needed a transport, not a redesign. |
-| **"Cloudcraft does cost."** | Manually, as line-item budgeting, with no agent interface. Tools that *do* have agent interfaces — draw.io, Structurizr, IcePanel, Excalidraw — have no cost model at all. |
-| **"Where does the price come from?"** | `scripts/fetch-pricing.ts` pulls the AWS Price List Bulk API and writes a dated file per region with a source URL per SKU. Nothing in the app holds a literal rate. |
-| **"Can I trust the CDK?"** | `npm run synth` runs `cdk synth` on every AWS sample plus a fixture holding one node of every service · five stacks. Stubs are listed in a header comment in the file, never hidden. |
-| **"Does my bill leave the browser?"** | No. The CSV is parsed in the tab. There's no backend to send it to. |
-| **"Why serverless only?"** | That's where the estimate is hard and the drivers are real — requests, duration, memory, storage class. An EC2 hourly rate doesn't need a tool. |
+| **Working in 15s** | Frame one is the canvas mid-edit. No logo, no title card, no narration before the product moves. |
+| **Already logged in** | Nothing to do — there's no login. Say it once, late ("no account, nothing installed"), not as a feature tour. |
+| **No live typing** | Every prompt is pasted before the take. The only keystroke on camera is Enter. |
+| **No load times or dead air** | Never film a page load, a room join, a build, or an agent thinking. Cut to the result. |
+| **Speed up slow parts** | Layout landing 1.5×. `cdk synth` 4× or straight to green. Findings resolution 2×. |
+| **Short clips** | Record each row of the shot list as its own take, so one bad beat costs one retake, not the whole video. |
+| **Audio required** | Record narration separately against the cut. Don't try to speak and drive at once. |
 
 ---
 
 ## Recording checklist
 
-- [x] **Tool count verified 2026-09-03: 39 base + 4 in a scenario.** Counted in `src/webmcp/` (37 in `tools.ts`, plus `open_scenario` and `overhead_ping`, plus 4 in `scenario.ts`) and read off the app's own bottom bar. Every doc now says **39 → 43**. Re-read the bar in the ChatGPT desktop browser before recording · what is said must match what is on screen.
-- [ ] **The cold open needs two things moving at once.** Rehearse the drag so my cursor and the agent's call land in the same second. It is the whole thesis in one shot; re-record until it's clean.
-- [ ] Second machine (or profile) ready and *already in the room* before the Live beat — no waiting on a join.
+- [ ] **Tool count is 39 → 43**, confirmed from the live pill and now consistent across the
+      README, DEVPOST.md and this script. Re-read the bottom bar on the day in case it moved.
+- [ ] **ChatGPT desktop app open, site loaded in its in-app browser, site tools confirmed working.**
+      Do one throwaway tool call before every session — if tools are not registered, nothing else matters.
+- [ ] Window laid out so the conversation and the canvas are both legible in one frame at 1080p.
 - [ ] `npm run synth` passing, so the CDK claim is true.
+- [ ] Prompt pasted into the box, unsent, before the 0:15 take.
+- [ ] Second browser profile **already in the room** before the Live take.
 - [ ] 1600 × 1000, dark room, `ap-southeast-1`, zoom 100%, HowTo dismissed, right dock open.
 - [ ] Bottom bar count legible in frame when it ticks.
-- [ ] Audio recorded separately. Under 3:00.
-- [ ] Uploaded **public**, not "made for kids" (judges can't open age-gated video). Upload early — processing time is unpredictable.
+- [ ] Rehearse the opening drag until your cursor and the agent's call land in the same second — it is
+      the whole thesis in one shot and it has to be clean.
+- [ ] Narration recorded separately, under 3:00.
+- [ ] Uploaded **public**, not "made for kids". Upload early; processing time is unpredictable.
+
+---
+
+## If a judge pushes back
+
+| "…" | Answer |
+|---|---|
+| **"Isn't this a diagram tool with an MCP?"** | A drawing tool's tools are shapes and coordinates, and the file it makes is a picture that can't be wrong because it doesn't mean anything. Ours are services and settings — so the number moves, the finding fires, the export compiles, and the agent can be told it's wrong. |
+| **"Isn't multiplayer just a nice-to-have?"** | It's a consequence, not a feature. Patches are addressed by id because an agent's view goes stale when a human drags something — that predates rooms by weeks. Multiplayer needed a transport, not a redesign. |
+| **"Other tools do cost."** | Manually, as line-item budgeting, and none of them hand an agent tools. The ones that do expose agent tools have no cost model at all. |
+| **"Where does the price come from?"** | `scripts/fetch-pricing.ts` pulls the AWS Price List Bulk API and writes a dated file per region with a source URL per SKU. Nothing in the app holds a literal rate. |
+| **"Can I trust the CDK?"** | `npm run synth` runs `cdk synth` on all three samples. Stubs are listed in a header comment in the file itself, never hidden. |
+| **"Does my bill leave the browser?"** | No. The CSV is parsed in the tab, and nothing is stored anywhere · the one server route is a WebSocket relay for live rooms, which never sees a bill and keeps nothing. |
+| **"Why serverless only?"** | That's where the estimate is hard and the drivers are real — requests, duration, memory, storage class. An EC2 hourly rate doesn't need a tool. |

@@ -1,6 +1,7 @@
 # Devpost · copy-paste ready
 
-*WebMCP is the star. Sell the ceiling, don't count inventory. Never name a competitor — rebuttals are in `SCRIPT.md`.*
+*WebMCP is the star. Don't name competitors. Verify the tool count before submitting (note at the end).*
+*Three spots marked `[YOU]` need a detail only you have — they're what make this read like a person.*
 
 ---
 
@@ -13,112 +14,163 @@ Overhead
 ## Elevator pitch
 
 ```
-A web page that turns any agent into a cloud architect — and lets you draw alongside it, live.
+A web-native canvas powered by WebMCP that turns any agent into a cloud architect. Design alongside it live while it calculates real-time infrastructure costs.
 ```
 
 ---
 
 ## Inspiration
 
-I wanted less friction between proposing a project and starting one.
+I wanted zero friction between proposing an architecture and actually starting one.
 
-So I pointed agents at the diagramming tools I had. Connecting one took permissions that weren't mine
-to grant. Once it worked, it overwrote my edits — I'd move something, it would redraw from memory, my
-change was gone. Slow, and piles of SVG to say very little. I ended up with a picture: no number for
-the proposal, nothing to hand a repo.
+Canvas and whiteboard tools make agents work from stale copies. You move a box, the agent redraws from
+whatever it remembered, and your change is gone. `[YOU: name the tool, and roughly when this was —
+"back in July, wiring up a client's ingest pipeline in <tool>" beats any sentence I can write here]`
 
-The overwriting isn't a bug. It's the arrangement — the agent holds a copy, and my next move makes it
-wrong.
+Then the rest of it. One app for the costing. Another for the components. Save in whatever format the
+next app will actually open. Imagine spending 8+ hours of work to finish a technical documentation that
+*nobody reads*.
 
-WebMCP changes the terms: a page hands tools straight to whatever agent shows up. No API, no install,
-no admin.
+**Overhead uses WebMCP to eliminate this entirely.** Semantic tools go straight to whatever agent shows
+up in the visitor's browser tab, so the design, the number and the code stop being five separate things.
 
-So there is no copy. My drag and the agent's patch are one operation on one document, addressed by id.
-And that document exports as both ends of what I wanted — the proposal's numbers, and the repo's code.
+```mermaid
+flowchart LR
+  idea(["An idea for a system"]) --> sketch["Sketch it — you and the agent, same canvas"]
+  sketch --> priced["Priced while you draw"]
+  priced --> check{"Findings clean?"}
+  check -->|"no — it fixes what it flagged"| sketch
+  check -->|yes| proposal["PROPOSE · Markdown + the number"]
+  check -->|yes| build["START BUILDING · CDK / CloudFormation"]
+```
 
 ## What it does
 
-**Gives your agent somewhere to work, and you a canvas you're standing at too.**
+Overhead is one web page where you, your agent and your teammates design an architecture that prices
+itself, audits itself, and compiles.
 
-- **39 tools from a page.** `add_service`, `connect`, `set_property`, `get_findings`, `patch_state` —
-  the architect's vocabulary, never "draw a rectangle at 420,180."
-- **Capability that appears with state.** Open a scenario, four more tools register under an
-  `AbortController`. The count goes **39 → 43**, then back on commit.
-- **Real prices.** Per SKU from the AWS Price List Bulk API, each rate keeping its source URL. No
-  hardcoded rate anywhere.
-- **It reviews itself.** Rules cite an AWS doc and a monthly saving. Ask the agent to check its own
-  work and it fixes what it flagged.
-- **It argues back.** Bad setting → allowed values. Illegal nesting → refused with the rule.
-- **It compiles.** CDK that `cdk synth` passes, deployable CloudFormation, Markdown, Mermaid, JSON,
-  PNG, SVG, PDF. CloudFormation comes back in, priced, diff first.
-- **Paste a picture, get a design.** Any Mermaid flowchart. `[Lambda]` arrives priced; `{approved?}`
-  arrives as a decision; a subgraph titled VPC becomes a VPC. It goes back out with every AWS service
-  drawn as its official icon, so the document renders as an architecture in mermaid.live and not as
-  grey boxes · and there is a third tab in the dock that edits the drawing *as* Mermaid, live.
-- **Not only AWS.** Six flow shapes go through the same definition spine as the sixteen services, so
-  a decision or a third-party system is a first-class object the agent can add. They carry no price,
-  because a box labelled "billing team approves" has no SKU · a flowchart shows **$0.00** and no
-  price list at all.
-- **You're both editing.** Press Live and the URL is a room — your colleague and their agent, same
-  document.
+- **Deep WebMCP integration.** Agents get structural verbs (`add_service`, `connect`, `patch_state`) and
+  edit the canvas directly, with no coordinate math burning tokens. Open a scenario and four more tools
+  register themselves under an `AbortController`, then abort on commit.
+- **Real prices, per SKU**, generated from the AWS Price List Bulk API with every rate keeping its source
+  URL. No number on screen is one we typed.
+- **It audits its own work.** The agent checks the design against rules citing cloud documentation, then
+  patches what it flagged.
+- **Zero-setup multiplayer.** Ephemeral rooms. Several designers, their agents, one document object.
+- **Production code compilation.** Layouts compile to infrastructure code that passes `cdk synth`, plus
+  deployable CloudFormation and diagrams that go both ways, which matters more than it sounds like it
+  does: a Mermaid flowchart pasted out of anyone's README comes back as a priced, editable drawing.
 
-No login, no keys, no backend. Every tool runs in the visitor's tab.
+Everything runs client-side. No login, no API keys, no enterprise middleware.
+
+```mermaid
+flowchart LR
+  you["You<br/>drag · type · rename"] --> v
+  agent["Your agent<br/>semantic tools"] --> v
+  peer["Teammate<br/>+ their agent"] --> v
+  v{{"applyPatch<br/>one strict validator"}} --> doc[("ONE DOCUMENT<br/>addressed by id")]
+  doc --> price["Live price · per SKU"]
+  doc --> find["Findings · citing docs"]
+  doc --> out["CDK · CloudFormation<br/>Mermaid · Markdown"]
+```
 
 ## How we built it
 
-- **Patches by id, not index.** An index needs the agent's view to be current. It never is. An id
-  survives me dragging and renaming mid-thought. Chosen before multiplayer existed — then multiplayer
-  needed only a transport.
-- **One validator.** Canvas, JSON panel, agent tool and peer message all go through `applyPatch`. A
-  peer can't set something your own build would refuse.
-- **`defineService()` is the spine.** One definition gives the Inspector form, `set_property`
-  validation, `list_services`, pricing and every export. Human and agent can't drift. A new diagram
-  language is a data edit, not a fork — that's how flowcharts landed.
-- **WebMCP, imperative, top-level.** `registerTool` after hydration, `AbortSignal` for removal, read
-  tools hinted read-only, every mutation committed before its tool returns.
+**Stack**
 
-**Stack:** Next.js 15 static export, React 19, TypeScript, `@xyflow/react`, Zustand, Tailwind 4,
-vitest, Vercel. Only server: a ~40-line WebSocket relay for rooms, storing nothing.
+- WebMCP (native agent runtime)
+- Next.js 15
+- React 19
+- React Flow (canvas UI)
+- Zustand (state layer)
+- Hosted on **Vercel**
+
+The core decision was addressing state patches by **id** rather than array index. Canvas mouse input,
+agent tool calls and peer messages all go through one strict `applyPatch` validator, and because every
+patch names what it touches instead of where it sits, the agent can't clobber a change you made while it
+was mid-thought. That was chosen for the agent's benefit. It turned out to be the reason two people can
+edit at once, which we didn't plan for and got almost free.
+
+`defineService()` does the rest. One definition per service produces the inspector form, the tool
+schemas, the pricing calculation and the infrastructure exports, so what the human sees and what the
+agent gets can't drift apart.
+
+No central database. Browser state only, with a WebSocket relay that routes multiplayer traffic and keeps
+none of it.
 
 ## Challenges we ran into
 
-- **The AWS Price List isn't uniform.** CloudFront lives only in the global file. EventBridge's offer
-  code is `AWSEvents`. Secrets Manager writes `-Secret` in one region, `-Secrets` in another. Each was
-  found by a wrong number on the canvas.
-- **Tool output caps at ~1.5K chars.** It forced summaries of what changed instead of state dumps.
-  Made the tools better.
-- **One grammar per drawing.** A decision diamond next to a Lambda asserts two things and means
-  neither. The samples teach the split; the engine doesn't forbid it.
-- **A JSON editor that doesn't fight you.** It applies as you type while the canvas writes to the same
-  document, so it re-seeds only when clean and unfocused.
+**Normalising the price APIs.** Regional string variations, inconsistent schemas, offer codes that don't
+match the service name. Every mismatch surfaced as a wrong number on the canvas, which is a miserable way
+to find a bug and a very effective one.
+
+**The ~1.5K character cap on tool output.** Tight, and it forced us to send condensed diffs instead of
+dumping canvas state. Better tools came out of the constraint.
+
+**Mixing grammars.** A decision diamond sitting next to a Lambda asserts two incompatible things at once:
+architecture says what exists, a flowchart says what happens in what order. We let the samples teach the
+split instead of having the validator forbid it.
 
 ## Accomplishments that we're proud of
 
-- A human and an agent edit one document at once — and the wire format proves it's one document.
-- Multiplayer arrived nearly free, because the patch format was already agent-shaped.
-- The agent audits its own work and fixes what it finds.
-- **39 → 43** on screen: capability appearing because state changed. A screenshot can't fake it.
-- `npm run synth` runs `cdk synth` on every sample. The claim on camera is checked by a command.
+- The agent audits its own work. Ask it to build something, then ask it to check what it built, and it
+  calls `get_findings`, gets back rules citing AWS docs, and fixes them. That loop only exists because
+  the tools are semantic.
+- Dynamic registration you can watch happen. The tool count ticking up when a scenario opens, and back
+  down on commit, is WebMCP doing something a screenshot can't fake.
+- `npm run synth` runs `cdk synth` on all three samples plus a fixture holding one node of every service.
+  So the claim we make on camera is checked by a command.
+- CloudFormation round-trips. A template we wrote comes back as the same drawing, positions and
+  containers and traffic intact, because the exporter also writes the things a template has no place for.
+  Someone else's template comes back structurally, connections inferred from what references what.
+- Never a hardcoded price. Every rate traces to a SKU in a dated file with a source URL.
+- One document, three writers: canvas, code panel, agent. A mistake typed into the JSON gets the same
+  error an agent gets from `set_property`.
 
 ## What we learned
 
-- **Design for the agent's staleness first.** Every frustration traced to the agent working from a
-  copy my next move invalidated. Fix the addressing and the tools, the JSON panel and multiplayer all
-  fall out.
-- **Shapes are slow; meaning is fast.** Piles of SVG to say "there's a Lambda here" — or one
-  `add_service` call. Less on the wire, more to reason about.
-- **Semantic tools can be wrong**, which means they can be corrected, which means they can be trusted
-  with the next step. Coordinates can only look right.
-- **WebMCP changes who gets to offer capability.** Before, you needed a platform. Now a page will do.
+**Semantic tools beat drawing primitives, and it is not close.** Give an agent services and settings and
+it can be trusted with the next step, because its answers can be wrong in ways you can review and audit.
+Handing it long lists of SVG, or rules for making a diagram look right, is strictly worse.
+
+**Constraints improved the surface.** The output cap forced summaries instead of state dumps. Keeping
+state out of a server forced everything into the page, which is exactly what makes it work for a
+visitor with no account · the one server route is a relay that stores nothing, and the design would
+be the same without it.
+
+**WebMCP changes who gets to offer capability.** Before it, you needed to be a platform big enough to
+ship an API and run an official MCP server. Now any page can serve whatever agent the visitor brought. No
+partnership, no permission, no server.
+
+**Measure what you claim.** "Fewer crossing edges" and "the CDK works" are both testable. Both were wrong
+at some point, in ways that looked completely fine on screen.
 
 ## What's next for Overhead
 
-- **More vocabularies.** Sequence diagrams, org charts, network topology, other clouds — each a
-  definition file, and the agent's tools come free with it.
-- **A CRDT when a room needs one.** Same-instant edits are last-writer-wins today; the ids are already
-  there for Yjs.
-- **Generate the wiring.** The edges already know what should be connected to what.
-- **More services as their SKUs land.** Never hardcode a price.
+1. **Resource identity that survives a repo.** Right now a foreign template matches back by service and
+   name. Stamping the logical id onto the node would make a second import an update instead of a new
+   drawing, even after a rename.
+2. **Generate the wiring.** The CloudFormation export names its stubs honestly: permissions, event
+   sources and targets aren't generated yet. The edges already know what should be wired to what.
+3. **"Visualise my architecture."** The real destination. A coding agent has your repo, the page has the
+   tools, and the diagram appears priced with no export step and no file to hand over. A crude version of
+   this works today.
+4. **More services as their SKUs land:** NAT Gateway, ALB, RDS, ECS Fargate. The rule doesn't bend. Never
+   hardcode a price, and a service arrives when its rate does.
 
-**Plainly:** no live sync. Nothing watches a repo. Reconciliation is a file you hand over and a diff
-you approve.
+---
+
+### ⚠ Before you paste this in
+
+**Three `[YOU]` gaps to fill.** They're in Inspiration. The tool that overwrote your edits, roughly when,
+and what you were building at the time. Specificity is the thing no model produces, and Devpost's own
+guidance says judges can tell.
+
+**The tool count is settled: 39 → 43.** That's what the live pill reads, and the live UI beats my count
+from the source. Fixed here, in SCRIPT.md and in the README. If you add or remove a tool before you
+record, re-read the pill and update all three again.
+
+**Two claims I softened, so they'd survive a judge reading the repo.** "P2P rooms" became "ephemeral
+rooms", because `app/api/room/route.ts` is a relay, not peer-to-peer. And "live price feeds" became
+"generated from", because `fetch-pricing.ts` runs at build time and the page makes no runtime pricing
+call. The provenance story is strong without the word "live."

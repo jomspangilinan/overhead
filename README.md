@@ -1,6 +1,6 @@
 # Overhead
 
-**A web page that turns any agent into a cloud architect — and lets you draw alongside it, live.**
+**A web-native canvas powered by WebMCP that turns any agent into a cloud architect. Design alongside it live while it calculates real-time infrastructure costs.**
 
 An entry for the [WebMCP Challenge](https://webmcp.devpost.com/). Your agent can
 estimate an architecture's cost from memory, in a chat, and lose it the moment you
@@ -9,9 +9,11 @@ on a canvas you're drawing at the same time it is. Findings flag what's wrong (w
 the AWS doc to prove it), scenarios fork the design and draw the delta, and the whole
 thing exports as CDK, CloudFormation, Markdown, Mermaid, SVG, or reloadable JSON.
 
-No install, no API key, no backend.
+No install, no API key, no account.
 
-**Live:** https://overhead-ecru.vercel.app · no login, no backend — everything runs in the tab.
+**Live:** https://overhead-ecru.vercel.app · no login, no keys. Every tool, every
+price and every export runs in your tab. The one server route is a WebSocket
+relay for Live rooms, and it is never contacted unless a URL carries `?room=`.
 
 ## Try it
 
@@ -40,7 +42,7 @@ No install, no API key, no backend.
 Before WebMCP, only platforms big enough to ship an API and an official
 MCP server could expose capability to agents. Now any web page can, to
 whatever agent the visitor brought — no platform's permission, no
-partnership, no backend. Overhead leans into exactly that: 39 semantic
+partnership, no API to publish. Overhead leans into exactly that: 39 semantic
 tools in nine families (read, write, frames and sections, findings,
 scenarios, bill, export, import and reconcile, whole-document state) —
 not draw-primitives. A draw.io MCP lets an agent *draw* an AWS diagram;
@@ -67,8 +69,10 @@ becomes a diagram both of you can point at.
 
 ## How it's implemented
 
-- **Next.js 15** static export, **React Flow** canvas, **Zustand** store.
-  No API routes, no auth.
+- **Next.js 15**, **React Flow** canvas, **Zustand** store. No auth, no
+  accounts, no database. **One server route**: `app/api/room/route.ts`, the
+  WebSocket relay behind Live rooms · it stores nothing, reads nothing back,
+  and is idle unless a URL carries `?room=`. Everything else is the page.
 - `src/engine/**` is pure TypeScript: one `defineService()` per AWS
   service derives the inspector form, tool schemas, card lines, pricing
   function, CDK props and CloudFormation (written *and* read back) from a
