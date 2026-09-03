@@ -465,7 +465,13 @@ carrying its members, `az` dissolves upward, `subnet` → `subnetpub`, `node.gro
    visual shape (`shapeOf`: icon rim ±34 around centre y 39 · card ±100 × ±38), never from handle
    coordinates; the node's handles and "+" pads are placed from the same `shapeOf`/`anchorPoint`.
    `pickSides` chooses exit/entry sides by geometry (the axis with the larger clear gap wins, so a target
-   below is left from the bottom and entered from the top); a **`return`** case leaves and enters from
+   below is left from the bottom and entered from the top), with one bias: **a run that climbs about as
+   far as it travels (`|dy| > |dx| · 0.75`) is a vertical move** (2026-09-04, the user: "two branches,
+   one goes up one goes down, but the system decided we should intersect the arrows"). `domain-bus →
+   order-events` in event-driven is dx 129 / dy −120 and the horizontal branch won it by a hair, so it
+   entered `order-events` on the **left** · the same side `order-events → notifier` leaves from, and the
+   two lay on top of each other at the node. Routed vertically it rises out of the top and that left
+   side is free; a **`return`** case leaves and enters from
    underneath when a back edge sits on the same row as its target and spans more than `RETURN_SPAN`,
    because a write-back two columns to the left used to run its line and its label straight through
    whatever was in between; `bracket` only when shapes overlap;
@@ -522,6 +528,10 @@ carrying its members, `az` dissolves upward, `subnet` → `subnetpub`, `node.gro
 10. **Settings never sit on the diagram.** The Inspector shows the schema form; the card shows the three that
     decide price.
 11. **Findings are rings and stripes.** Icon mode: amber/red ring. Card mode: stripe on the left edge.
+    The scenario's `.forked` ring goes on the **same element** (`.oh-icon-body`): it was on
+    `.overhead-node`, the 200×100 hit-box, so in icon mode it drew a rectangle three times the width of
+    a 56 px icon and two touched resources side by side produced overlapping boxes that read as a frame
+    around both rather than as two marked nodes (2026-09-04).
 
 ### The spine: one schema per service
 
