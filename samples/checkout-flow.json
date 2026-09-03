@@ -70,7 +70,7 @@
       "name": "Payment provider",
       "settings": {},
       "position": {
-        "x": 1040,
+        "x": 1300.5,
         "y": 130
       }
     },
@@ -83,8 +83,8 @@
         "batchSize": 10
       },
       "position": {
-        "x": 466,
-        "y": 368
+        "x": 858,
+        "y": 248
       },
       "container": "region"
     },
@@ -98,8 +98,8 @@
         "avgDurationMs": 420
       },
       "position": {
-        "x": 604,
-        "y": 368
+        "x": 993,
+        "y": 248
       },
       "container": "region"
     },
@@ -109,8 +109,8 @@
       "name": "Warehouse ledger",
       "settings": {},
       "position": {
-        "x": 1040,
-        "y": 250
+        "x": 1485,
+        "y": 130
       }
     },
     {
@@ -119,8 +119,8 @@
       "name": "Email a backorder notice",
       "settings": {},
       "position": {
-        "x": 1040,
-        "y": 370
+        "x": 1300.5,
+        "y": 250
       }
     },
     {
@@ -129,8 +129,8 @@
       "name": "Order placed",
       "settings": {},
       "position": {
-        "x": 1040,
-        "y": 490
+        "x": 1485,
+        "y": 250
       }
     }
   ],
@@ -212,7 +212,7 @@
       "bounds": {
         "x": 286,
         "y": 90,
-        "w": 626.5,
+        "w": 887,
         "h": 408
       }
     },
@@ -225,7 +225,7 @@
       "bounds": {
         "x": 332,
         "y": 150,
-        "w": 534.5,
+        "w": 795,
         "h": 302
       }
     }

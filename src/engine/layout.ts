@@ -258,7 +258,12 @@ interface Placed {
  *  the gap between two columns is opened up by whatever edge labels have to
  *  sit in it. A gap of one constant put "upload events" on top of an
  *  arrowhead. */
-function place(boxes: Box[], links: { from: string; to: string; id: string; label?: string }[]): Placed {
+function place(
+  boxes: Box[],
+  links: { from: string; to: string; id: string; label?: string }[],
+  /** Each box's depth in the **whole** drawing, frames ignored · see below. */
+  globalDepth?: Map<string, number>,
+): Placed {
   const ids = new Set(boxes.map((b) => b.id));
   const within = links.filter((e) => e.from !== e.to && ids.has(e.from) && ids.has(e.to));
   const rank = ranks(
@@ -266,9 +271,42 @@ function place(boxes: Box[], links: { from: string; to: string; id: string; labe
     within as ArchEdge[],
   );
   const depth = Math.max(-1, ...boxes.map((b) => rank.get(b.id)!));
-  const columns = Array.from({ length: depth + 1 }, (_, r) => boxes.filter((b) => rank.get(b.id) === r)).filter(
-    (c) => c.length,
-  );
+  // A scope ranks what it holds, and a frame is one box in it · so every
+  // path that leaves a frame and comes back collapses to the same rank. In
+  // checkout-flow the whole flow outside AWS did: the payment provider (fed
+  // by a decision inside the region) and the warehouse ledger (written by a
+  // Lambda two steps later) both came out one column after the cloud, four
+  // boxes stacked in a line with the arrows crossing between them.
+  //
+  // So a box starts at its depth in the **whole** drawing (a frame at the
+  // depth of the shallowest thing it holds · that is where the path feeding
+  // it arrives), and the scope's own edges then relax over that seed the way
+  // a longest path does. Both constraints hold at once: an edge inside this
+  // scope still runs strictly left to right, and two boxes that are at
+  // genuinely different depths of the drawing stop sharing a column even
+  // when this scope cannot see why.
+  //
+  // Seeding rather than tie-breaking is the part that matters. As a
+  // tie-break inside each local rank, checkout-flow put the orders queue
+  // (five steps deep) in the column before the validator (two), because both
+  // are local roots · the queue is only fed from outside the region.
+  const seed = new Map(boxes.map((b) => [b.id, globalDepth?.get(b.id) ?? rank.get(b.id)!]));
+  for (let pass = 0; pass <= boxes.length; pass++) {
+    let moved = false;
+    for (const e of within) {
+      // Only forward edges of this scope · the local pass has already
+      // decided which edge of a cycle is the back one.
+      if (rank.get(e.from)! >= rank.get(e.to)!) continue;
+      const need = seed.get(e.from)! + 1;
+      if (seed.get(e.to)! < need) {
+        seed.set(e.to, need);
+        moved = true;
+      }
+    }
+    if (!moved) break;
+  }
+  const levels = [...new Set(boxes.map((b) => seed.get(b.id)!))].sort((a, b) => a - b);
+  const columns = levels.map((l) => boxes.filter((b) => seed.get(b.id) === l)).filter((c) => c.length);
   // The row order, decided on a layered graph: one layer per column, a
   // placeholder in every column an edge skips over, and the sweeps above.
   const rankOf = new Map<string, number>();
@@ -366,7 +404,25 @@ function place(boxes: Box[], links: { from: string; to: string; id: string; labe
  *  An edge to anything inside a frame (at any depth) counts as an edge to
  *  the frame, so a resource three levels down still pulls its frame into
  *  the right column. */
-function scope(id: string | undefined, nodes: ArchNode[], edges: ArchEdge[], containers: Container[], opts: LayoutOpts, depth = 0): Block {
+/** A box's depth in the whole drawing: a resource's own, and for a frame the
+ *  shallowest thing it holds · a frame sits at the depth of the first thing
+ *  inside it, which is where the path that feeds it arrives. */
+function depthOf(
+  boxes: Box[],
+  standsFor: Map<string, string>,
+  global: Map<string, number>,
+): Map<string, number> {
+  const out = new Map<string, number>();
+  for (const b of boxes) if (!b.frame) out.set(b.id, global.get(b.id) ?? 0);
+  for (const [nid, frameId] of standsFor) {
+    const d = global.get(nid) ?? 0;
+    out.set(frameId, Math.min(out.get(frameId) ?? Infinity, d));
+  }
+  for (const b of boxes) if (b.frame && !out.has(b.id)) out.set(b.id, 0);
+  return out;
+}
+
+function scope(id: string | undefined, nodes: ArchNode[], edges: ArchEdge[], containers: Container[], opts: LayoutOpts, depth = 0, globalDepth: Map<string, number> = new Map()): Block {
   const own = nodes.filter((n) => (n.container ?? undefined) === id);
   const kids = depth < 12 ? containers.filter((c) => (c.parent ?? undefined) === id) : [];
   const drawW = opts.drawW ?? opts.nodeW;
@@ -387,7 +443,7 @@ function scope(id: string | undefined, nodes: ArchNode[], edges: ArchEdge[], con
   const standsFor = new Map<string, string>();
   const inner = new Map<string, { block: Block; pad: number }>();
   for (const c of kids) {
-    const laid = scope(c.id, nodes, edges, containers, opts, depth + 1);
+    const laid = scope(c.id, nodes, edges, containers, opts, depth + 1, globalDepth);
     const pad = FRAME_PAD[c.kind] ?? 24;
     inner.set(c.id, { block: laid, pad });
     const w = Math.max(laid.w, 160) + pad * 2;
@@ -404,7 +460,7 @@ function scope(id: string | undefined, nodes: ArchNode[], edges: ArchEdge[], con
     return from && to && from !== to ? [{ id: e.id, from, to, label: e.label }] : [];
   });
 
-  const { centres, w, h } = place(boxes, links);
+  const { centres, w, h } = place(boxes, links, depthOf(boxes, standsFor, globalDepth));
   for (const b of boxes) {
     const p = centres[b.id];
     if (!p) continue;
@@ -432,7 +488,9 @@ export function autoLayout(
   containers: Container[] = [],
   opts: LayoutOpts = DEFAULT_OPTS,
 ): { positions: Record<string, { x: number; y: number }>; frames: Record<string, Bounds> } {
-  const root = scope(undefined, nodes, edges, containers, opts);
+  // Dependency depth over the whole drawing, frames ignored · every scope
+  // uses it to split its own ranks (see `place`). Computed once.
+  const root = scope(undefined, nodes, edges, containers, opts, 0, ranks(nodes, edges));
   const positions: Record<string, { x: number; y: number }> = {};
   for (const [id, p] of Object.entries(root.nodes)) positions[id] = { x: X0 + p.x, y: Y0 + p.y };
   const frames: Record<string, Bounds> = {};

@@ -299,6 +299,21 @@ the `ContainerKind` union.
   that did **not** fix it, tried and measured first: sweeping the row order harder, and shifting the
   frame row sideways under the column that feeds it · both left the count at 2, because the edge still
   had to travel down and back. As boxes in the flow it is **0**.
+  **A scope's columns are seeded by depth in the *whole* drawing** (2026-09-03, the user: "I think
+  the auto layout didn't involve our added stuff?"). A scope ranks what it holds and a frame is one
+  box in it, so **every path that leaves a frame and comes back collapses to one rank**: in
+  checkout-flow the payment provider (fed by a decision inside the region) and the warehouse ledger
+  (written by a Lambda two steps later) came out in the same column, four boxes stacked in a line
+  with the arrows crossing between them · **4 crossings**. So each box now *starts* at its depth in
+  the whole drawing (a frame at the shallowest depth it holds · where the path feeding it arrives),
+  and the scope's own edges relax over that seed the way a longest path does. Both constraints hold:
+  an edge inside the scope still runs strictly left to right, and two boxes at genuinely different
+  depths stop sharing a column even when the scope cannot see why. **0 crossings.**
+  Seeding rather than tie-breaking is the part that matters, and it was measured: as a tie-break
+  inside each local rank the same drawing put the orders queue (five steps deep) in the column
+  *before* the validator (two), because both are local roots · the queue is only fed from outside
+  the region. `tests/layout.test.ts` holds the rule with two nodes a frame feeds and no edge between
+  them, and `checkout-flow` is in the crossing ceilings.
   **Crossing reduction** (`reduceCrossings`): the row order inside each column is what decides how many
   edges cross, so an edge that skips a column gets a **placeholder vertex** in every column it passes
   (it had no say at all before, and it is the one crossing everything), and the order is swept **down
@@ -306,7 +321,7 @@ the `ContainerKind` union.
   dragged around by one distant member of a fan-out), keeping the best arrangement seen. Placeholders
   decide order and never take a row. The old pass looked backwards only, which can never account for
   what a column feeds.
-  `tests/layout-crossings.test.ts` counts crossings **geometrically** on the real output · the three
+  `tests/layout-crossings.test.ts` counts crossings **geometrically** on the real output · all four
   samples are at 0, and the ceilings are asserted so a future change cannot quietly make a drawing worse.
   **Columns used to come from the service's role**, which drew the media-pipeline chain
   (cdn → assets → queue → worker) as cdn, worker, queue, assets with every arrow running backwards ·

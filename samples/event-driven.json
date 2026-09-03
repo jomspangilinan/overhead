@@ -47,7 +47,7 @@
       "name": "domain-bus",
       "settings": {},
       "position": {
-        "x": 846,
+        "x": 975.5,
         "y": 238
       },
       "container": "region"
@@ -63,7 +63,7 @@
         "expressMemoryMb": 128
       },
       "position": {
-        "x": 974.5,
+        "x": 1104,
         "y": 238
       },
       "container": "region"
@@ -76,7 +76,7 @@
         "subscriberCount": 2
       },
       "position": {
-        "x": 974.5,
+        "x": 1104,
         "y": 358
       },
       "container": "region"
@@ -93,8 +93,8 @@
         "dlqConfigured": true
       },
       "position": {
-        "x": 613,
-        "y": 446
+        "x": 742.5,
+        "y": 326
       },
       "container": "priv-a"
     },
@@ -107,7 +107,7 @@
         "storageGb": 25
       },
       "position": {
-        "x": 1106.5,
+        "x": 1236,
         "y": 238
       },
       "container": "region"
@@ -171,8 +171,8 @@
       "bounds": {
         "x": 80,
         "y": 80,
-        "w": 1206.5,
-        "h": 546
+        "w": 1336,
+        "h": 426
       }
     },
     {
@@ -184,8 +184,8 @@
       "bounds": {
         "x": 126,
         "y": 140,
-        "w": 1114.5,
-        "h": 440
+        "w": 1244,
+        "h": 320
       }
     },
     {
@@ -198,8 +198,8 @@
       "bounds": {
         "x": 463,
         "y": 198,
-        "w": 300,
-        "h": 348
+        "w": 429.5,
+        "h": 228
       }
     },
     {
@@ -212,8 +212,8 @@
       "bounds": {
         "x": 491,
         "y": 240,
-        "w": 244,
-        "h": 278
+        "w": 373.5,
+        "h": 158
       }
     }
   ],

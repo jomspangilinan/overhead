@@ -135,6 +135,26 @@ describe("autoLayout", () => {
     expect(sections.map((s) => s.nodeIds)).toEqual([["db", "db2"]]);
   });
 
+  it("keeps depth for a path that leaves a frame", () => {
+    // p and q are both outside, both fed by the frame, and there is no edge
+    // between them · to this scope they look identical. They are not: q is a
+    // step further into the drawing, and a column each is what says so.
+    // Before, everything a frame fed shared one column, which is how
+    // checkout-flow came out with the payment provider and the warehouse
+    // ledger stacked together and the arrows crossing between them.
+    const containers: Container[] = [{ id: "f", kind: "vpc", name: "f", collapsed: false }];
+    const nodes = [
+      node("a", "apigateway"),
+      node("b", "lambda", "f"),
+      node("c", "lambda", "f"),
+      node("p", "dynamodb"),
+      node("q", "dynamodb"),
+    ];
+    const edges = [edge("a", "b"), edge("b", "p"), edge("b", "c"), edge("c", "q")];
+    const { positions } = autoLayout(nodes, edges, containers, OPTS);
+    expect(positions.q.x).toBeGreaterThan(positions.p.x);
+  });
+
   it("never boxes flow shapes in a role section", () => {
     // An auto section is named after a role ("Data", "Ingress"), and a flow
     // shape has no role · a decision and a start marker sharing a column are
