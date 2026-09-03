@@ -96,6 +96,27 @@ export async function captureDrawing(
     carried.removeAttribute("data-oh-sprite");
     fit.el.appendChild(carried);
   }
+  // The same problem one layer down. An edge's colour comes from a
+  // stylesheet rule (`.react-flow__edge-path { stroke: var(--edge) }`), and
+  // a rule is not part of the element · html-to-image serialises the subtree
+  // into an isolated document where neither the rule nor `--edge` exists, so
+  // every line came out with no stroke at all. The arrowheads still drew
+  // (a marker is painted whatever the stroke is), which is why the picture
+  // looked like a drawing of labels and arrowheads floating in space.
+  //
+  // Width, dash and linecap were already inline (`TypedEdge`), so they
+  // survived · the colour is the one thing that was only ever in CSS. It is
+  // frozen onto each path for the length of the capture and put back after,
+  // which keeps the token in CSS where the theme lives and still hands the
+  // picture a paint it can carry. Whatever is on screen is what is frozen,
+  // so a traced or selected edge exports in the colour you are looking at.
+  const strokes = [...fit.el.querySelectorAll<SVGPathElement>(".react-flow__edge-path")].map((el) => {
+    const before = el.style.stroke;
+    el.style.stroke = getComputedStyle(el).stroke;
+    return () => {
+      el.style.stroke = before;
+    };
+  });
   const common = {
     width: fit.width,
     height: fit.height,
@@ -114,6 +135,7 @@ export async function captureDrawing(
           : await toJpeg(fit.el, { ...common, pixelRatio: scale, quality: 0.94, backgroundColor: opts.background ?? "#0B0D10" });
     return { dataUrl, width: fit.width * scale, height: fit.height * scale };
   } finally {
+    for (const restore of strokes) restore();
     carried?.remove();
   }
 }

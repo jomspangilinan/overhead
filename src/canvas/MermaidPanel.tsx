@@ -59,9 +59,13 @@ export function MermaidPanel() {
     () => ({ nodes, edges, containers, sections, traffic }),
     [nodes, edges, containers, sections, traffic],
   );
-  // No figures in the text: a monthly cost is derived, and a derived number
-  // in an editable box reads as an input you are allowed to change.
-  const live = useMemo(() => exportMermaid(snap, pricing, { cost: false }), [snap, pricing]);
+  // No icons here, and no figures: an editor of 90-character image URLs is
+  // not one you can type in, and a derived cost in an editable box reads as
+  // an input you are allowed to change. The Export dialog writes both.
+  const live = useMemo(
+    () => exportMermaid(snap, pricing, { cost: false, icons: false }),
+    [snap, pricing],
+  );
 
   const box = useRef<HTMLTextAreaElement>(null);
   /** The last text we applied · a store change that matches it is our own. */

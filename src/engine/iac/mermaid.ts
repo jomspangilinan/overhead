@@ -27,6 +27,7 @@ import { migrateSnapshot } from "../migrate";
 import { defaultSettings } from "../defineService";
 import { getService, SERVICES } from "../services";
 import { META_PREFIX, type MermaidMeta } from "../exporters/mermaid";
+import { serviceFromIconUrl } from "../services/iconFiles";
 import type { ImportResult } from "./cloudformation";
 import { placeNewNodes } from "./reconcile";
 
@@ -139,6 +140,8 @@ interface ParsedNode {
   mm: string;
   label?: string;
   shape?: Shape;
+  /** An image node's URL · names the service when nothing else does. */
+  img?: string;
   /** The subgraph it was declared in, if any. */
   scope?: string;
 }
@@ -188,7 +191,26 @@ function cleanLabel(raw: string): string {
     .replace(/#quot;/g, '"')
     .split(/<br\s*\/?>/i)[0]
     .replace(/<[^>]+>/g, "")
+    // The image-node form of the same suffix: `name · $1.20/mo`.
+    .replace(/\s*·\s*\$[\d.,]+\/(mo|yr)\s*$/, "")
     .trim();
+}
+
+/** `@{ img: "…", label: "…", w: 56 }` · Mermaid's node-metadata block, which
+ *  is how an icon travels to a renderer that has never heard of us. Read as
+ *  the flat key/value list it is rather than as YAML: the exporter writes it
+ *  on one line, and one that spans lines is a document for a Mermaid parser
+ *  to complain about, not for us to guess at. */
+function readMeta(block: string): { label?: string; img?: string } {
+  const out: { label?: string; img?: string } = {};
+  for (const [, key, quoted, bare] of block.matchAll(
+    /([A-Za-z_]+)\s*:\s*(?:"([^"]*)"|([^,}\s][^,}]*))/g,
+  )) {
+    const value = (quoted ?? bare ?? "").trim();
+    if (key === "label") out.label = value;
+    if (key === "img") out.img = value;
+  }
+  return out;
 }
 
 /** An id may contain a hyphen (`orders-api`) but must not eat the connector
@@ -202,6 +224,21 @@ function readNode(text: string, i: number): { node: ParsedNode; end: number } | 
   if (!idMatch) return null;
   const mm = idMatch[0];
   const end = i + mm.length;
+  if (text.startsWith("@{", end)) {
+    const close = text.indexOf("}", end);
+    if (close !== -1) {
+      const { label, img } = readMeta(text.slice(end + 2, close));
+      return {
+        node: {
+          mm,
+          label: label !== undefined ? cleanLabel(label) : undefined,
+          shape: "rect",
+          ...(img ? { img } : {}),
+        },
+        end: close + 1,
+      };
+    }
+  }
   for (const b of BRACKETS) {
     if (text.startsWith(b.open, end)) {
       const close = text.indexOf(b.close, end + b.open.length);
@@ -247,6 +284,7 @@ export function parseMermaid(raw: string): Parsed | null {
     if (n.label !== undefined) {
       existing.label = n.label;
       existing.shape = n.shape;
+      if (n.img) existing.img = n.img;
     }
     // Naming a node again inside a subgraph is how Mermaid puts an
     // already-declared node in one · which is how most people write it,
@@ -370,6 +408,10 @@ export function importMermaid(raw: string): ImportResult {
     const fromMeta = meta?.services?.[mm];
     const named =
       (fromMeta && getService(fromMeta) ? (fromMeta as ServiceId) : null) ??
+      // An icon URL names its service outright · which is what lets a
+      // document whose `%% overhead:` line was deleted still come back with
+      // its Lambdas as Lambdas.
+      (n.img ? serviceFromIconUrl(n.img) : null) ??
       serviceFromLabel(n.label ?? mm);
     // The shape is a fallback, not a statement · `[Worker]` says "a box",
     // and a box is what a node becomes only when it did not already exist.

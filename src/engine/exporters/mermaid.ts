@@ -26,6 +26,7 @@ import type { PricingTable } from "../pricing";
 import { allCosts } from "../cost";
 import { toMoney } from "../model";
 import { getService } from "../services";
+import { iconUrl, ICON_BASE } from "../services/iconFiles";
 
 export interface MermaidOpts {
   /** Append `<br/>$x/mo` to each label. Off in the live editor, where the
@@ -35,6 +36,18 @@ export interface MermaidOpts {
   meta?: boolean;
   /** `LR` (default) or `TD`. */
   direction?: "LR" | "TD";
+  /** Draw each AWS service as its official icon, using Mermaid's image node
+   *  (`id@{ img: … }`). On by default: the reason to hand somebody a Mermaid
+   *  document is that they read it somewhere else, and everywhere else the
+   *  icons are the difference between an architecture and four grey boxes.
+   *  The Mermaid **tab** turns it off · a live editor full of 90-character
+   *  URLs is not one you can type in. Needs Mermaid 11.3 or later; older
+   *  renderers draw a plain node, which is what they drew before anyway. */
+  icons?: boolean;
+  /** Where the icon files are served from. The default is the deployed app,
+   *  on purpose: a document exported from localhost would otherwise carry
+   *  links nobody else can resolve. */
+  iconBase?: string;
 }
 
 /** Mermaid ids are `[A-Za-z][\w-]*`; ours usually already are. */
@@ -74,7 +87,7 @@ export function exportMermaid(
   pricing: PricingTable,
   opts: MermaidOpts = {},
 ): string {
-  const { cost = true, meta = true, direction = "LR" } = opts;
+  const { cost = true, meta = true, direction = "LR", icons = true, iconBase = ICON_BASE } = opts;
   const costs = new Map(
     allCosts(snapshot, pricing).map((c) => [c.nodeId, c.monthly]),
   );
@@ -113,8 +126,20 @@ export function exportMermaid(
     const n = snapshot.nodes.find((x) => x.id === id)!;
     const monthly = costs.get(n.id) ?? 0;
     const priced = (getService(n.service)?.family ?? "aws") === "aws";
-    const label = esc(n.name) + (cost && priced ? `<br/>$${toMoney(monthly).toFixed(2)}/mo` : "");
     const mm = nodeId.get(n.id)!;
+    const money = cost && priced ? `$${toMoney(monthly).toFixed(2)}/mo` : "";
+    // An AWS service draws as its own icon. `constraint: "on"` keeps the
+    // square: without it the image stretches to whatever width the label
+    // needs, and a Lambda comes out four times as wide as it is tall.
+    const url = icons && priced ? iconUrl(n.service, iconBase) : null;
+    if (url) {
+      // ` · ` rather than `<br/>` here: an image node's label is not a place
+      // every renderer honours HTML, and this is the form that was checked
+      // against a real one. `cleanLabel` on the way back in strips it.
+      const shown = esc(n.name) + (money ? ` · ${money}` : "");
+      return `${mm}@{ img: "${url}", label: "${shown}", pos: "t", w: 56, h: 56, constraint: "on" }`;
+    }
+    const label = esc(n.name) + (money ? `<br/>${money}` : "");
     // The bracket says what the shape is, so a hand-read of the document
     // (or mermaid.live) shows a decision as a diamond and a store as a
     // cylinder · and it is what an inbound document is read back through.
