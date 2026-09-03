@@ -18,12 +18,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ViewportPortal } from "@xyflow/react";
-import { useStore } from "@/store/useStore";
+import { useStore, TRACE_SPEED } from "@/store/useStore";
 import { traceFrom } from "@/engine/trace";
-
-/** Flow units a second · fast enough to feel like a request, slow enough to
- *  follow with your eye across a wide drawing. */
-const SPEED = 420;
 /** A beat at the end of each branch, so the eye registers where it stopped
  *  before the next one starts. */
 const PAUSE_MS = 320;
@@ -42,7 +38,10 @@ export function TracePulse() {
   useEffect(() => {
     setAt(null);
     if (!origin) return;
+    // `all` is the base behaviour · everything lit, nothing moving.
+    if (tracePlay === "all") return;
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const speed = TRACE_SPEED[tracePlay];
     const { branches } = traceFrom(edges, origin);
     if (!branches.length) return;
 
@@ -67,7 +66,7 @@ export function TracePulse() {
       const route = branches[branch % branches.length];
       // Walk the route as one continuous length, so a dot crossing from one
       // connection to the next does not stall at the join.
-      let remaining = (along += SPEED * dt);
+      let remaining = (along += speed * dt);
       for (const id of route) {
         const path = pathOf(id);
         if (!path) continue;

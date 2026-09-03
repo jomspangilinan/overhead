@@ -4,6 +4,8 @@
 
 import {
   useStore,
+  TRACE_PLAYS,
+  type TracePlay,
   snapshotOf,
   pricingOf,
   PRICING_TABLES,
@@ -602,16 +604,30 @@ export function coreTools(): ToolSpec[] {
     {
       name: "trace_request",
       description:
-        "Light up one request's path from a node, following sync then async edges. The canvas highlights it; returns the step list.",
+        "Light one request's path from a node and return the routes it takes. play: all lights the whole path at once, slow/medium/fast walk one route at a time with a pulse running it.",
       inputSchema: {
         type: "object",
-        properties: { fromNodeId: { type: "string" } },
+        properties: {
+          fromNodeId: { type: "string" },
+          play: {
+            type: "string",
+            enum: [...TRACE_PLAYS],
+            description: "How it plays on the canvas. Default: leave as it is",
+          },
+        },
         required: ["fromNodeId"],
         additionalProperties: false,
       },
-      execute: ({ fromNodeId }) => {
+      execute: ({ fromNodeId, play }) => {
         const start = nodeOr(fromNodeId);
         if (!start) return noNode(fromNodeId);
+        if (play !== undefined) {
+          if (!TRACE_PLAYS.includes(play as TracePlay))
+            return errorResult("invalid_setting", `"${String(play)}" is not a play mode.`, {
+              allowed: [...TRACE_PLAYS],
+            });
+          useStore.getState().setTracePlay(play as TracePlay);
+        }
         const s = useStore.getState();
         // Same walk the T tool runs (`engine/trace.ts`) · it was a BFS
         // written out twice, and the canvas and the agent must light the
@@ -621,6 +637,7 @@ export function coreTools(): ToolSpec[] {
         const nameOf = (id: string) => s.nodes.find((n) => n.id === id)?.name ?? id;
         return text({
           from: start.name,
+          play: useStore.getState().tracePlay,
           nodesLit: nodeIds.length,
           // The routes, named · what the pulse walks one at a time, and the
           // only part of a trace an agent can actually read back.

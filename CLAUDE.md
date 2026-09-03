@@ -486,9 +486,15 @@ carrying its members, `az` dissolves upward, `subnet` → `subnetpub`, `node.gro
     what happens. The dot reads its geometry off the *rendered* `<path>` by edge id
     (`getPointAtLength`), so it already has the waypoints, anchors and shape the user picked rather
     than a second copy of `edgeGeometry` to keep in step. `prefers-reduced-motion` turns it off.
-    The pill carries the toggle · "route 2 of 11" walks them, clicking it lights all of them at once
-    the way it used to (`tracePlay`, presentation state, never the model). `trace_request` returns
-    the routes named, which is the only part of a trace an agent can read back.
+    **How it plays is one setting with four values** · `tracePlay: "all" | "slow" | "medium" | "fast"`
+    (`TRACE_SPEED`: 200 / 430 / 900 flow units a second). **`all` is the base**: the whole path lit at
+    once, no pulse, which is what a trace did before there were routes and is still the right thing
+    when you want the shape rather than the sequence. The pill shows all four as a segmented control
+    with the route counter beside it · the first cut hid the toggle inside the counter's label, where
+    the user could not find it and could not change the pace at all. Presentation state, never the
+    model. `trace_request` takes the same `play` (validated against the same list, structured error
+    with `allowed`) and returns the routes named · the only part of a trace an agent can read back,
+    and the way it drives the animation for a demo.
 10. **Settings never sit on the diagram.** The Inspector shows the schema form; the card shows the three that
     decide price.
 11. **Findings are rings and stripes.** Icon mode: amber/red ring. Card mode: stripe on the left edge.

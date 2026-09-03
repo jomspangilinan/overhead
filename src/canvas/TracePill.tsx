@@ -6,7 +6,7 @@
 // found, how many hops, and what that path costs a month, with a way out.
 
 import { useMemo } from "react";
-import { useStore, pricingOf, snapshotOf } from "@/store/useStore";
+import { useStore, pricingOf, snapshotOf, TRACE_PLAYS } from "@/store/useStore";
 import { nodeCost } from "@/engine/cost";
 import { traceFrom } from "@/engine/trace";
 import { toMoney } from "@/engine/model";
@@ -67,29 +67,34 @@ export function TracePill() {
             <span className="mono" style={{ color: "var(--ink-2)" }}>
               {traced.length} {traced.length === 1 ? "resource" : "resources"} · ${toMoney(monthly).toFixed(2)}/mo on this path
             </span>
-            {/* One route at a time, or the whole reachable set at once. A
-                26-resource trace lit all at once is a highlight; walked one
-                route at a time it is a request. Both are useful, so both
-                are here rather than one being chosen for you. */}
-            {routes.length > 1 ? (
-              <button
-                className="rounded-full px-2 py-0.5 text-[10.5px] hover:bg-[var(--hover-2)]"
-                style={{
-                  border: "1px solid var(--line-2)",
-                  color: tracePlay === "branch" ? "var(--accent-ink)" : "var(--ink-2)",
-                  background: tracePlay === "branch" ? "var(--accent-bg)" : undefined,
-                }}
-                onClick={() => setTracePlay(tracePlay === "branch" ? "all" : "branch")}
-                title={
-                  tracePlay === "branch"
-                    ? "Playing one route at a time · click to light the whole path at once"
-                    : "Lighting the whole path · click to walk it one route at a time"
-                }
-              >
-                {tracePlay === "branch"
-                  ? `route ${(traceBranch ?? 0) + 1} of ${routes.length}`
-                  : `all ${routes.length} routes`}
-              </button>
+            {/* How it plays, spelled out rather than hidden behind a
+                status label. `all` is the base · everything lit, nothing
+                moving. The rest walk one route at a time at a pace, and the
+                route counter sits beside them so you can see where it is. */}
+            <span className="flex items-center gap-px rounded-full p-px" style={{ background: "var(--panel-2)", border: "1px solid var(--line-2)" }}>
+              {TRACE_PLAYS.map((how) => (
+                <button
+                  key={how}
+                  className="rounded-full px-[7px] py-[2px] text-[10px] capitalize hover:bg-[var(--hover-2)]"
+                  style={{
+                    color: tracePlay === how ? "var(--accent-ink)" : "var(--ink-3)",
+                    background: tracePlay === how ? "var(--accent-bg)" : undefined,
+                  }}
+                  onClick={() => setTracePlay(how)}
+                  title={
+                    how === "all"
+                      ? "Light the whole path at once · no pulse"
+                      : `Walk one route at a time, ${how}`
+                  }
+                >
+                  {how === "all" ? "All" : how}
+                </button>
+              ))}
+            </span>
+            {tracePlay !== "all" && routes.length > 1 ? (
+              <span className="mono text-[10.5px]" style={{ color: "var(--accent-ink)" }}>
+                route {(traceBranch ?? 0) + 1}/{routes.length}
+              </span>
             ) : null}
             <button
               className="rounded-full px-2 py-0.5 text-[10.5px] hover:bg-[var(--hover-2)]"

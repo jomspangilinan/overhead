@@ -52,6 +52,16 @@ export const PRICING_TABLES: Record<string, PricingTable> = {
   "ap-southeast-1": aps1 as unknown as PricingTable,
 };
 
+/** `all` is the base: everything lit, nothing moving. The rest are paces
+ *  for the pulse, in flow units a second (`TRACE_SPEED`). */
+export type TracePlay = "all" | "slow" | "medium" | "fast";
+export const TRACE_PLAYS: readonly TracePlay[] = ["all", "slow", "medium", "fast"];
+export const TRACE_SPEED: Record<Exclude<TracePlay, "all">, number> = {
+  slow: 200,
+  medium: 430,
+  fast: 900,
+};
+
 export type Layer =
   | "request"
   | "events"
@@ -102,11 +112,12 @@ export interface OverheadState {
   selectedEdgeId: string | null;
   hoveredId: string | null;
   traceIds: string[] | null;
-  /** How a trace plays · "branch" walks one route at a time and lights only
-   *  that route, "all" lights the whole reachable set at once (what it did
-   *  before there were routes at all). Presentation, never the model. */
-  tracePlay: "branch" | "all";
-  setTracePlay: (how: "branch" | "all") => void;
+  /** How a trace plays. `all` lights the whole reachable set at once with
+   *  no pulse · the base behaviour, and the one to use when you want to see
+   *  the shape rather than the sequence. The other three walk one route at
+   *  a time at a given pace. Presentation, never the model. */
+  tracePlay: TracePlay;
+  setTracePlay: (how: TracePlay) => void;
   /** Which route is up, published by the pulse as it walks · null when the
    *  trace is off or playing all at once. */
   traceBranch: number | null;
@@ -324,7 +335,7 @@ export const useStore = create<OverheadState>((set, get) => ({
   selectedEdgeId: null,
   hoveredId: null,
   traceIds: null,
-  tracePlay: "branch",
+  tracePlay: "medium",
   setTracePlay: (tracePlay) => set({ tracePlay, traceBranch: null }),
   traceBranch: null,
   setTraceBranch: (traceBranch) => set({ traceBranch }),
