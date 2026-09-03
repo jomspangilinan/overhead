@@ -12,7 +12,8 @@
     "synth": "node --experimental-strip-types scripts/synth-samples.ts",
     "layout-samples": "LAYOUT_SAMPLES=1 vitest run tests/sample-layout.test.ts",
     "dev:room": "tsx scripts/dev-room.ts",
-    "dev:live": "NEXT_PUBLIC_ROOM_WS=ws://localhost:3001 next dev"
+    "dev:live": "NEXT_PUBLIC_ROOM_WS=ws://localhost:3001 next dev",
+    "flow-icons": "WRITE_FLOW_ICONS=1 vitest run tests/flow-icons.test.ts"
   },
   "dependencies": {
     "@vercel/functions": "^3.9.5",

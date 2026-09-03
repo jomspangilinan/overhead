@@ -44,9 +44,9 @@ export interface MermaidOpts {
    *  URLs is not one you can type in. Needs Mermaid 11.3 or later; older
    *  renderers draw a plain node, which is what they drew before anyway. */
   icons?: boolean;
-  /** Where the icon files are served from. The default is the deployed app,
-   *  on purpose: a document exported from localhost would otherwise carry
-   *  links nobody else can resolve. */
+  /** The origin the icon files are served from. The default is the deployed
+   *  app, on purpose: a document exported from localhost would otherwise
+   *  carry links nobody else can resolve. */
   iconBase?: string;
 }
 
@@ -128,10 +128,12 @@ export function exportMermaid(
     const priced = (getService(n.service)?.family ?? "aws") === "aws";
     const mm = nodeId.get(n.id)!;
     const money = cost && priced ? `$${toMoney(monthly).toFixed(2)}/mo` : "";
-    // An AWS service draws as its own icon. `constraint: "on"` keeps the
-    // square: without it the image stretches to whatever width the label
-    // needs, and a Lambda comes out four times as wide as it is tall.
-    const url = icons && priced ? iconUrl(n.service, iconBase) : null;
+    // Every node draws as its own icon, and every one of them is a link ·
+    // the official AWS file, or ours from `public/icons/flow/`.
+    // `constraint: "on"` keeps the square: without it the image stretches to
+    // whatever width the label needs, and a Lambda comes out four times as
+    // wide as it is tall.
+    const url = icons ? iconUrl(n.service, iconBase) : null;
     if (url) {
       // ` · ` rather than `<br/>` here: an image node's label is not a place
       // every renderer honours HTML, and this is the form that was checked

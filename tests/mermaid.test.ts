@@ -58,9 +58,10 @@ describe("mermaid export", () => {
     expect(out).toContain("api -->");
     expect(out).toContain("fn ---|\"writes\"| orders");
     expect(out).toContain("fn -.-> approve");
-    // A decision draws as a diamond, so the document reads as a flowchart
-    // in anybody's renderer.
-    expect(out).toMatch(/approve\{"approved\?"\}/);
+    // With icons off · the bracket is what a flow shape falls back to, and
+    // it is what the Mermaid tab shows.
+    const plain = exportMermaid(drawing, pricing, { icons: false });
+    expect(plain).toMatch(/approve\{"approved\?"\}/);
   });
 
   it("carries the price in the label, and can be asked not to", () => {
@@ -76,17 +77,17 @@ describe("mermaid export", () => {
 });
 
 describe("icons travel with the document", () => {
-  it("writes every AWS service as an image node, and never a flow shape", () => {
+  it("writes every node as an image node · AWS linked, flow shapes inline", () => {
     const out = exportMermaid(drawing, pricing);
     expect(out).toContain('img: "https://overhead-ecru.vercel.app/icons/aws/Arch_AWS-Lambda_64.svg"');
     expect(out).toContain('label: "worker · $');
     // The square is the point of constraint: on · without it the image
     // stretches to whatever width the label needs.
     expect(out).toContain('constraint: "on"');
-    // A decision is a diamond in every renderer already · an image would be
-    // a worse drawing, not a better one.
-    expect(out).toMatch(/approve\{"approved\?"\}/);
-    expect(out).not.toMatch(/approve@\{/);
+    // A flow shape is a link too · one format in the document, not two.
+    expect(out).toContain('img: "https://overhead-ecru.vercel.app/icons/flow/decision.svg"');
+    expect(out).not.toContain("data:image/svg");
+    expect(out).not.toMatch(/approve\{"/);
   });
 
   it("can be asked for the plain form, which is what the live tab uses", () => {
@@ -114,6 +115,9 @@ describe("icons travel with the document", () => {
     if (!result.ok) throw new Error(result.message);
     // "orders-api" names no service and the shape says nothing · the icon does.
     expect(result.snapshot.nodes.find((n) => n.id === "api")!.service).toBe("apigateway");
+    // And a flow shape's file names it too, so a decision does not come
+    // back as a plain step.
+    expect(result.snapshot.nodes.find((n) => n.id === "approve")!.service).toBe("decision");
   });
 });
 
