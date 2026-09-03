@@ -26,6 +26,13 @@ export function Keyboard() {
         else undo();
         return;
       }
+      if (mod && e.key.toLowerCase() === "a") {
+        // Without this the browser selects the page's text instead, which
+        // looks like the canvas ignoring the key.
+        e.preventDefault();
+        s.selectAll();
+        return;
+      }
       if (mod && e.key.toLowerCase() === "g") {
         e.preventDefault();
         if (e.shiftKey) {
@@ -39,19 +46,15 @@ export function Keyboard() {
       if (mod) return;
 
       if (e.key === "Delete" || e.key === "Backspace") {
+        // One waypoint, else the whole selection · resources, frames and
+        // sections together, in one undo step. Reading `selectedId` alone is
+        // what made a marquee over five nodes delete one of them.
         if (s.selectedEdgeId && s.selectedWaypoint !== null) {
           e.preventDefault();
           s.removeWaypoint(s.selectedEdgeId, s.selectedWaypoint);
-        } else if (s.selectedEdgeId) {
+        } else if (s.selectedIds.length || s.selectedId || s.selectedEdgeId) {
           e.preventDefault();
-          s.removeEdge(s.selectedEdgeId);
-          s.selectEdge(null);
-        } else if (s.selectedId) {
-          e.preventDefault();
-          if (s.containers.some((c) => c.id === s.selectedId)) s.removeContainer(s.selectedId);
-          else if (s.sections.some((x) => x.id === s.selectedId)) s.removeSection(s.selectedId);
-          else s.removeNode(s.selectedId);
-          s.select(null);
+          s.removeSelection();
         }
         return;
       }

@@ -23,6 +23,10 @@ export function SectionFrames() {
   const draggingId = useStore((s) => s.draggingId);
   const frameDrag = useStore((s) => s.frameDrag);
   const selectedId = useStore((s) => s.selectedId);
+  // A frame is selected when it is the primary object or part of the
+  // multi-selection (⌘A, a marquee) · otherwise "select all" left every
+  // frame looking untouched and Delete then read as a bug.
+  const selectedIds = useStore((st) => st.selectedIds);
   const setSectionBounds = useStore((s) => s.setSectionBounds);
   const renameSection = useStore((s) => s.renameSection);
   const setSectionCollapsed = useStore((s) => s.setSectionCollapsed);
@@ -72,7 +76,7 @@ export function SectionFrames() {
             borderWidth={s.style?.width ?? 1.4}
             fill={s.style?.fill ?? true}
             radius={12}
-            selected={selectedId === s.id}
+            selected={selectedId === s.id || selectedIds.includes(s.id)}
             kindLabel={`Section · ${s.nodeIds.length}`}
             name={s.name}
             collapseTitle={`Collapse ${s.name} to a card`}

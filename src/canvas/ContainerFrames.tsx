@@ -26,6 +26,10 @@ export function ContainerFrames() {
   const draggingId = useStore((s) => s.draggingId);
   const frameDrag = useStore((s) => s.frameDrag);
   const selectedId = useStore((s) => s.selectedId);
+  // A frame is selected when it is the primary object or part of the
+  // multi-selection (⌘A, a marquee) · otherwise "select all" left every
+  // frame looking untouched and Delete then read as a bug.
+  const selectedIds = useStore((st) => st.selectedIds);
   const setContainerBounds = useStore((s) => s.setContainerBounds);
   const setContainerCollapsed = useStore((s) => s.setContainerCollapsed);
   const renameContainer = useStore((s) => s.renameContainer);
@@ -91,7 +95,7 @@ export function ContainerFrames() {
             borderWidth={1.3}
             fill
             radius={10}
-            selected={selectedId === c.id}
+            selected={selectedId === c.id || selectedIds.includes(c.id)}
             icon={meta.icon ?? undefined}
             kindLabel={meta.label}
             name={c.name}
