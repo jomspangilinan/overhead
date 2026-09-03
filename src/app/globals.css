@@ -459,7 +459,7 @@ body {
    side produced overlapping boxes that read as a frame around both rather
    than as two marked nodes. Same element the finding ring uses. */
 .react-flow__node.forked .oh-icon-body,
-.react-flow__node.forked .oh-card-body {
+.react-flow__node.forked .oh-node-card {
   box-shadow: 0 0 0 2px var(--accent), 0 0 14px color-mix(in srgb, var(--accent) 35%, transparent);
   border-radius: 12px;
 }

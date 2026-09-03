@@ -12,6 +12,16 @@ the whole demo lives there — the site open in ChatGPT's in-app browser, the co
 see the request go in and the canvas move, without a cut. If site tools do not appear for a take, stop
 and fix it before rolling — nothing in this video works without them.
 
+**Dry-run result (3 Sep), use these numbers:** the brief produced presigned S3 uploads, EventBridge →
+SQS → Lambda thumbnails, private S3 behind CloudFront OAC, no VPC. **$157.97/mo** in ap-southeast-1 —
+of which **CloudFront is $120.44 (76%)**, Cognito $20, S3 $14.37, and everything else $3.16. That
+split is the best line in the video: the CDN is three quarters of the bill and the Lambda is a
+rounding error. Say it.
+
+**It built it clean — no findings.** So the findings beat is now *you* breaking something on camera,
+not the agent having erred. That is deterministic, and it makes a better point: the rules apply to the
+human too.
+
 **An agent has no cursor.** Cursors belong to people. The agent is visible as tool calls landing, the
 count in the bottom bar, and the canvas changing without my hand on it. Never narrate a cursor as
 though it were the agent — anyone who has used the app will catch it.
@@ -28,15 +38,16 @@ No logo card. No title. No "hi, I'm —". Frame one is the canvas, mid-motion.
 
 | Time | Screen | Said |
 |---|---|---|
-| **0:00–0:07** | Canvas already populated. **My cursor drags a Lambda into a subnet while the agent's `set_property` lands in the strip in the same second.** Both survive. | "That's my hand moving that. The call landing underneath it is ChatGPT, in the same second." |
-| **0:07–0:15** | The monthly total resolves in the top bar. An amber finding ring appears on a node. | "And it knows what this costs — and what's wrong with it." |
+| **0:00–0:07** | Canvas already populated. **My cursor drags a Lambda into a subnet while the agent's `set_property` lands in the strip in the same second.** Both survive. | "This is me and ChatGPT, editing the same AWS architecture at the same time." |
+| **0:07–0:15** | The monthly total resolves in the top bar. An amber finding ring appears on a node. | "It already knows what this costs. And it's just flagged something wrong with it." |
 
 That is the whole pitch, performed, before a judge can bounce. Everything after is evidence.
 
 **Alternates for 0:00** (pick in the booth):
 
-- *"I'm dragging. ChatGPT is calling `set_property`. Same document, same second, neither of us waiting."*
-- *"Nothing here is waiting for the other one to finish."*
+- *"That's my cursor. Those are ChatGPT's edits. One document, and neither of us is waiting."*
+- *"I'm not prompting and waiting. We're both working on this right now."*
+- *"Two of us are editing this. One of us isn't a person."*
 
 ---
 
@@ -45,9 +56,9 @@ That is the whole pitch, performed, before a judge can bounce. Everything after 
 | Time | Screen | Said | Edit |
 |---|---|---|---|
 | **0:00–0:15** | Cold open, above. | see above | — |
-| **0:15–0:42** | Cut to an empty canvas with the prompt **already typed into ChatGPT**, unsent. Hit enter. Resources land inside AWS Cloud › ap-southeast-1, left to right, no crossing edges. Total counts up. | "I ask ChatGPT for it in one sentence. It doesn't drive the interface — it calls the page's own tools. Resources, carrying the settings that decide what they cost, priced from AWS's own list. That number isn't one I typed." | **Never film typing.** Paste the prompt before you roll. Speed the landing 1.5× if it dawdles. |
+| **0:15–0:42** | Cut to an empty canvas with the prompt **already typed into ChatGPT**, unsent. Hit enter. Resources land inside AWS Cloud › ap-southeast-1, left to right, no crossing edges. Total counts up. | "I give it the client's requirements, not a list of services — so it picks the API type, the upload path, whether the thumbnail work needs a queue. And it prices what it chose. A hundred and twenty of that hundred and fifty-eight is CloudFront. The Lambda everyone worries about is three dollars." | **Never film typing.** Paste the prompt before you roll. Speed the landing 1.5× if it dawdles. |
 | **0:42–1:05** | I drag the worker into the private subnet and rename it by hand; the agent's call lands mid-drag. Neither edit is lost. | "I'm not watching it work, I'm working next to it. Most tools hand the agent a copy of your file — so the moment you move something, its copy is wrong and the next thing it writes wins. There's no copy here." | The one place the origin story is told. Over **our** footage. |
-| **1:05–1:32** | Ask ChatGPT: *"check your own work."* → `get_findings` → two amber rings → it switches the Lambda to arm64 and adds a DLQ → total drops. | "Then I ask it to review what we both just did. Nine rules, each citing an AWS doc. It fixed two of them itself." | Jump-cut the agent's thinking time. No spinner on screen. |
+| **1:05–1:32** | **I break it, by hand.** Open the thumbnail Lambda in the Inspector, switch it to **x86**. An amber ring appears the moment I do. Then ask ChatGPT: *"check the design and fix what you find."* → `get_findings` → it puts it back to arm64, citing the AWS doc. | "The rules apply to me too. I change one setting by hand, and the page flags it before I let go of the mouse. Then I ask ChatGPT to check the design — nine rules, each citing an AWS doc — and it puts my mistake back." | **Deterministic — do not rely on the agent building something flawed.** Jump-cut its thinking time. |
 | **1:32–1:58** | **Scenario.** Tool count ticks **39 → 43**. Lambda to 1024 MB: change list reads `memoryMb 512 → 1024`, per-resource delta, total goes **down**. Commit → back to 39. | "A scenario forks the whole design — more memory, lower bill, because it finishes faster. And watch the count: four tools that exist only while this fork is open. The page hands the agent new capability because its state changed." | **The WebMCP money shot.** Count must be legible. Hold two beats on the tick. |
 | **1:58–2:18** | **Live.** URL gains a room id, pill green, link copied. A second ChatGPT window, **already joined**, on the other machine — **two named cursors, both human**. My colleague drags a node while my ChatGPT's call lands and theirs lands after it. Three edits, nothing lost. | "Press Live and the URL is a room. My colleague opens it in their own ChatGPT, and now there are two of us and two agents on one document. The cursors are the people. The agents show up as calls." | Second machine **pre-joined, site tools already working there**. Never film a join or a load. |
 | **2:18–2:38** | **Export** → ChatGPT takes the CDK straight out of the tool result → into a repo → `cdk synth` → green. | "And what we built together compiles. ChatGPT takes the CDK out of the page and into the repo — and it synthesises." | Speed the synth 4×, or cut straight to green. Nobody watches a build. |

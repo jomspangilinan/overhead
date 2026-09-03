@@ -257,22 +257,31 @@ function CardsPopover() {
   const set = useStore((s) => s.setCardShow);
   const cardsForced = useStore((s) => s.cardsForced);
   const setCardsForced = useStore((s) => s.setCardsForced);
-  // Cards have three sources and the checkbox is only one of them, so on its
-  // own it reads as broken: cards on screen, box unticked. It says which
-  // source is live instead of leaving you to work it out from a parenthesis.
+  // Cards have three sources and this box is only one of them. Labelled
+  // "Card view" it read as the *state*, so ticking Cost figures turned cards
+  // on and left the box unticked beside them · which is just wrong. It is a
+  // **pin**, so it says so, and the line underneath carries the state and
+  // which source is holding it.
   const cards = useStore(cardModeOf);
   const zoom = useStore((s) => s.zoom);
   const costOn = useStore((s) => s.layers.cost);
-  const why = cardsForced ? null : costOn ? "the cost layer" : cards ? `${Math.round(zoom * 100)}% zoom` : null;
+  const why = cardsForced ? "this box" : costOn ? "the cost layer" : cards ? `${Math.round(zoom * 100)}% zoom` : null;
   return (
     <div className="flex flex-col gap-2">
       <Check checked={cardsForced} onChange={setCardsForced}>
-        Card view · K
+        Always cards · K
       </Check>
-      <div className="text-[10.5px] leading-snug" style={{ color: why ? "var(--accent-ink)" : "var(--ink-4)" }}>
-        {why
-          ? `Cards are on from ${why} · the box pins them on when that changes.`
-          : "Cards also appear on their own from 130% zoom, or with the cost layer on."}
+      <div
+        className="flex items-center gap-1.5 text-[10.5px] leading-snug"
+        style={{ color: cards ? "var(--accent-ink)" : "var(--ink-4)" }}
+      >
+        <span
+          className="h-[6px] w-[6px] flex-none rounded-full"
+          style={{ background: cards ? "var(--accent)" : "var(--ink-4)", opacity: cards ? 1 : 0.5 }}
+        />
+        {cards
+          ? `Cards are on, from ${why}.`
+          : "Icons. Cards appear on their own from 130% zoom, or with the cost layer on."}
       </div>
       <div className="text-[10px] uppercase tracking-[0.12em]" style={{ color: "var(--ink-4)" }}>
         Every card shows

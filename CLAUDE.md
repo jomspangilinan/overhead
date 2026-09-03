@@ -542,10 +542,13 @@ carrying its members, `az` dissolves upward, `subnet` → `subnetpub`, `node.gro
 10. **Settings never sit on the diagram.** The Inspector shows the schema form; the card shows the three that
     decide price.
 11. **Findings are rings and stripes.** Icon mode: amber/red ring. Card mode: stripe on the left edge.
-    The scenario's `.forked` ring goes on the **same element** (`.oh-icon-body`): it was on
-    `.overhead-node`, the 200×100 hit-box, so in icon mode it drew a rectangle three times the width of
-    a 56 px icon and two touched resources side by side produced overlapping boxes that read as a frame
-    around both rather than as two marked nodes (2026-09-04).
+    The scenario's `.forked` ring goes on the **same elements** · `.oh-icon-body` in icon mode and
+    `.oh-node-card` in card mode. It was on `.overhead-node`, the 200×100 hit-box, so in icon mode it
+    drew a rectangle three times the width of a 56 px icon and two touched resources side by side
+    produced overlapping boxes that read as a frame around both rather than as two marked nodes
+    (2026-09-04). The first fix named `.oh-card-body` for the card half, which is the **frame** card
+    (`FrameCard.tsx`) and not a node's · so card mode had no ring at all until the node's card was
+    given a class of its own.
 
 ### The spine: one schema per service
 

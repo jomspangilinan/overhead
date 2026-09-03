@@ -249,7 +249,7 @@ export const AwsNode = memo(function AwsNode({ data, selected }: NodeProps<AwsNo
       {gear}
       {cardMode ? (
         <div
-          className="absolute overflow-hidden rounded-lg border bg-panel shadow-sm"
+          className="oh-node-card absolute overflow-hidden rounded-lg border bg-panel shadow-sm"
           style={{
             left: 0,
             top: (NODE_H - 76) / 2,
