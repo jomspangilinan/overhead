@@ -77,9 +77,23 @@ export function LayersPanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodes, containers, traffic, region]);
 
-  const rows = useMemo(
+  const all = useMemo(
     () => layerRows({ nodes, edges, containers, sections, traffic }, folded),
     [nodes, edges, containers, sections, traffic, folded],
+  );
+  // One at a time, literally: with Connections open the panel shows the
+  // connections and nothing else. Folding only the *foldable* top-level rows
+  // was not an accordion at all on a drawing with no frames · every resource
+  // is a leaf there, so opening Connections folded nothing and you got both
+  // lists at once, which is what the rule existed to prevent. Clicking
+  // Connections again brings the objects back, and the header line above
+  // keeps counting them either way.
+  const rows = useMemo(
+    () =>
+      folded.has("/connections")
+        ? all
+        : all.filter((r) => r.kind === "connections" || r.kind === "edge"),
+    [all, folded],
   );
   const nameOf = (id: string) => nodes.find((n) => n.id === id)?.name ?? id;
   const isTop = (key: string) => key.split("/").length === 2;
@@ -95,7 +109,7 @@ export function LayersPanel() {
       }
       next.delete(key);
       if (key === "/connections") {
-        for (const r of rows) if (r.depth === 0 && r.key !== key && r.kind !== "node") next.add(r.key);
+        for (const r of all) if (r.depth === 0 && r.key !== key) next.add(r.key);
       } else if (isTop(key)) next.add("/connections");
       return next;
     });

@@ -542,8 +542,12 @@ the palette at bottom-centre, never `display: none`.
   (a spanning section appears under each, showing only the members held there; memberless ones sit at the
   top level), resources under their section or frame, and a trailing collapsible **Connections** group.
   Disclosure triangles fold the tree, not the canvas; the top level is an **accordion**: Connections
-  starts folded, opening it folds every other top-level row, opening any top-level object folds
-  Connections. Click selects the object itself; hover reveals collapse-on-canvas and remove. **Rows
+  starts folded, and **with it open the panel shows the connections and nothing else** · opening any
+  top-level object folds it back. Folding only the *foldable* top-level rows was not an accordion at
+  all on a drawing with no frames (2026-09-03, the user: "I thought we agreed expand one at a time
+  on this one?"): every resource is a leaf there, so opening Connections folded nothing and both
+  lists showed at once, which is the thing the rule exists to prevent. The header line keeps
+  counting the objects either way. Click selects the object itself; hover reveals collapse-on-canvas and remove. **Rows
   drag, Figma-style**: the pointer's height over a row decides (`whereIn`) · the middle third **nests**
   it (a resource into a frame with `moveIntoContainer` or a section with `setSectionNodes`, a frame into
   a frame with `setContainerParent` where only a cycle is refused, a section under a section with
@@ -559,7 +563,12 @@ the palette at bottom-centre, never `display: none`.
   as "Connect from …": the picked service lands beside the source, in its container, already connected.
 - **Right dock** (300 px): the **Inspector** (`Inspector.tsx`) in named, independently collapsible sections
   (state remembered in `localStorage`): node → Position · Settings (schema, `group !== 'security'`) ·
-  **Security** (schema, `group: 'security'`, drives the badge and CDK) · Cost · Findings; container →
+  **Security** (schema, `group: 'security'`, drives the badge and CDK) · Cost · Findings ·
+  **an empty section is not a section** (2026-09-03, the user: "why is it showing security settings
+  costs?" on a decision diamond): each is shown only when it would hold something, so a flow shape
+  gets Position and nothing else. The test is what the section would hold, not the family, so it is
+  right for any service with nothing in one · and the header's `$/mo` needs a **priced** node
+  (`cost.lines.length`), not a total of zero; container →
   Identity · Frame · Contents; section/group → Appearance · Members · Frame; edge → **Connection** (type
   chips = `kind`, volume, label) · **Styling** (`EdgeStylePicker`, anchor sides, bends).
   Three tabs: **Inspector**, **Code** and **Mermaid** (`CodePanel.tsx` / `MermaidPanel.tsx`, the dock

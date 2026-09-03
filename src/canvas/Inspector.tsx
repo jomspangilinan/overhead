@@ -468,6 +468,11 @@ function NodeInspector({ nodeId }: { nodeId: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [node, traffic, region]);
 
+  /** Does this node cost anything at all · not "is its total zero", but "is
+   *  there a SKU behind it". A flow shape has none, so it carries no figure
+   *  in the header and no Cost section (`services/flow.ts`). */
+  const priced = !!cost?.lines.length;
+
   const findings = useMemo(() => {
     if (!node) return [];
     try {
@@ -496,7 +501,7 @@ function NodeInspector({ nodeId }: { nodeId: string }) {
             aria-label="Resource name"
             onChange={(e) => renameNode(node.id, e.target.value)}
           />
-          {cost ? <span className="mono text-[13px] font-semibold">${toMoney(cost.monthly).toFixed(2)}/mo</span> : null}
+          {priced ? <span className="mono text-[13px] font-semibold">${toMoney(cost.monthly).toFixed(2)}/mo</span> : null}
         </div>
       </header>
 
@@ -532,12 +537,22 @@ function NodeInspector({ nodeId }: { nodeId: string }) {
         ) : null}
       </Section>
 
+      {/* An empty section is not a section. A flow shape has no settings, no
+          security and no SKU (`services/flow.ts`), so it is shown Position
+          and nothing else · a "Security" heading explaining that it drives
+          the CDK export, over a form with no fields, on a box labelled
+          "Under $50?", is three claims that are each untrue. The test is
+          what the section would hold rather than the family, so it is right
+          for any service that happens to have nothing in one. */}
+      {settingsInGroup(def, "settings").length ? (
       <Section id="node-settings" title="Settings" aside={`${settingsInGroup(def, "settings").length}`}>
         {settingsInGroup(def, "settings").map(([key, sdef]) => (
           <Field key={key} nodeId={node.id} settingKey={key} def={sdef} value={node.settings[key]} />
         ))}
       </Section>
+      ) : null}
 
+      {settingsInGroup(def, "security").length ? (
       <Section id="node-security" title="Security" aside={def.badge?.({ ...defaultSettings(def), ...node.settings }) ?? undefined}>
         {settingsInGroup(def, "security").map(([key, sdef]) => (
           <Field key={key} nodeId={node.id} settingKey={key} def={sdef} value={node.settings[key]} />
@@ -546,8 +561,9 @@ function NodeInspector({ nodeId }: { nodeId: string }) {
           Drives the badge under the icon (Security layer) and the CDK export.
         </p>
       </Section>
+      ) : null}
 
-      {cost ? (
+      {priced ? (
         <Section id="node-cost" title="Cost" aside={`$${toMoney(cost.monthly).toFixed(2)}`}>
           <table className="w-full text-[11px]">
             <tbody>
