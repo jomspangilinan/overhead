@@ -542,16 +542,16 @@ the palette at bottom-centre, never `display: none`.
   (a spanning section appears under each, showing only the members held there; memberless ones sit at the
   top level), resources under their section or frame, and a trailing collapsible **Connections** group.
   Disclosure triangles fold the tree, not the canvas; the top level is an **accordion**: Connections
-  starts folded, and **with it open the panel shows the connections and nothing else** · opening any
-  top-level object folds it back. Folding only the *foldable* top-level rows was not an accordion at
-  all on a drawing with no frames (2026-09-03, the user: "I thought we agreed expand one at a time
-  on this one?"): every resource is a leaf there, so opening Connections folded nothing and both
-  lists showed at once, which is the thing the rule exists to prevent. The header line keeps
-  counting the objects either way. **The accordion is a view, never an edit of anyone's fold
-  state**: the first cut also folded every top-level row on the way in, so glancing at the
-  connections threw the tree away · fold Connections again on event-driven and all that was left
-  was a shut "AWS Cloud". Hiding is the render filter's job; `folded` only ever holds what the user
-  folded. Click selects the object itself; hover reveals collapse-on-canvas and remove. **Rows
+  starts folded. **Two groups, one open at a time, and each has a header you can click**: the stat
+  line at the top (`8 resources · 4 frames`, a zero count omitted so it fits beside its chevron) is
+  the objects' header, and Connections is the connections'. That symmetry is the whole accordion ·
+  opening one folds the other, and nothing else in `folded` is touched. It took three goes to get there (2026-09-03), and the two wrong ones
+  are worth keeping: folding only the *foldable* top-level rows was not an accordion at all on a
+  drawing with no frames, because every resource is a leaf there · both lists showed at once, which
+  is the thing the rule exists to prevent. Folding them all instead threw the tree away every time
+  you glanced at the connections (fold Connections again on event-driven and all that was left was
+  a shut "AWS Cloud"). The answer was neither: **hiding is a view**, and the missing piece was that
+  the objects had no header to click, so the stat line looked exactly like one and did nothing. Click selects the object itself; hover reveals collapse-on-canvas and remove. **Rows
   drag, Figma-style**: the pointer's height over a row decides (`whereIn`) · the middle third **nests**
   it (a resource into a frame with `moveIntoContainer` or a section with `setSectionNodes`, a frame into
   a frame with `setContainerParent` where only a cycle is refused, a section under a section with

@@ -40,6 +40,9 @@ function Chip({ color, dashed }: { color: string; dashed?: boolean }) {
   );
 }
 
+/** The objects' group · the counterpart of the Connections group's key. */
+const OBJECTS = "/objects";
+
 export function LayersPanel() {
   const nodes = useStore((s) => s.nodes);
   const edges = useStore((s) => s.edges);
@@ -81,19 +84,16 @@ export function LayersPanel() {
     () => layerRows({ nodes, edges, containers, sections, traffic }, folded),
     [nodes, edges, containers, sections, traffic, folded],
   );
-  // One at a time, literally: with Connections open the panel shows the
-  // connections and nothing else. Folding only the *foldable* top-level rows
-  // was not an accordion at all on a drawing with no frames · every resource
-  // is a leaf there, so opening Connections folded nothing and you got both
-  // lists at once, which is what the rule existed to prevent. Clicking
-  // Connections again brings the objects back, and the header line above
-  // keeps counting them either way.
+  // Two groups, one open at a time: the objects and the connections. Each
+  // has a header you can click, which is the part that was missing · the
+  // stat line looked exactly like a group header and did nothing, so with
+  // the connections open there was no way back except the Connections row
+  // itself. Now they are symmetric, and the accordion falls out of that
+  // rather than being enforced by hiding rows nobody asked to hide.
+  const objectsOpen = !folded.has(OBJECTS);
   const rows = useMemo(
-    () =>
-      folded.has("/connections")
-        ? all
-        : all.filter((r) => r.kind === "connections" || r.kind === "edge"),
-    [all, folded],
+    () => (objectsOpen ? all : all.filter((r) => r.kind === "connections" || r.kind === "edge")),
+    [all, objectsOpen],
   );
   const nameOf = (id: string) => nodes.find((n) => n.id === id)?.name ?? id;
   const isTop = (key: string) => key.split("/").length === 2;
@@ -108,13 +108,15 @@ export function LayersPanel() {
         return next;
       }
       next.delete(key);
-      // Opening Connections folds nothing · the render filter above already
-      // hides the objects while it is open. It used to fold every top-level
-      // row as well, which threw your tree away every time you glanced at
-      // the connections: fold Connections again on event-driven and all you
-      // had left was a shut "AWS Cloud". The accordion is a view, not an
-      // edit of everybody's fold state.
-      if (isTop(key) && key !== "/connections") next.add("/connections");
+      // The accordion, and the whole of it: opening one group folds the
+      // other. Nothing else in `folded` is touched · it holds what the user
+      // folded and nothing more. An earlier cut folded every top-level row
+      // on the way in, which threw the tree away every time you glanced at
+      // the connections (fold Connections again on event-driven and all
+      // that was left was a shut "AWS Cloud").
+      if (key === OBJECTS) next.add("/connections");
+      else if (key === "/connections") next.add(OBJECTS);
+      else if (isTop(key)) next.add("/connections");
       return next;
     });
 
@@ -265,10 +267,14 @@ export function LayersPanel() {
 
   return (
     <div>
+      {/* The objects' group header · a real one. It counts them, it folds
+          them, and dropping a row on it still sends that row to the top
+          level, which is what it did before it could be clicked. */}
       <div
-        className="flex items-center justify-between px-[11px] pb-[5px] pt-[9px] text-[9px] uppercase tracking-[0.13em]"
+        className="flex cursor-pointer items-center justify-between px-[11px] pb-[5px] pt-[9px] text-[9px] uppercase tracking-[0.13em] hover:bg-[var(--hover)]"
         style={{ color: over?.key === "/" ? "var(--accent-ink)" : "var(--ink-4)", background: over?.key === "/" ? "var(--accent-bg)" : undefined }}
-        title="Drop a row here to send it to the top level"
+        title={`${objectsOpen ? "Fold" : "Expand"} the objects · drop a row here to send it to the top level`}
+        onClick={() => toggleFold(OBJECTS)}
         onDragOver={(e) => {
           if (!e.dataTransfer.types.includes(MIME)) return;
           e.preventDefault();
@@ -282,8 +288,27 @@ export function LayersPanel() {
           if (d) dropOn(d, null);
         }}
       >
-        <span>
-          {over?.key === "/" ? "Drop here · top level" : `${nodes.length} resources · ${containers.length} frames · ${sections.length} sections`}
+        <span className="flex items-center gap-[5px]">
+          <span
+            className="grid h-3 w-3 flex-none place-items-center"
+            style={{ transform: objectsOpen ? "rotate(90deg)" : undefined }}
+            aria-hidden
+          >
+            <Icon name="chevronRight" size={9} />
+          </span>
+          {over?.key === "/"
+            ? "Drop here · top level"
+            : // A zero is not worth the width · with the chevron in front of
+              // it the full three counts wrapped to two lines, and "0
+              // sections" is the least useful thing on the row. The bottom
+              // bar carries the complete title-block facts.
+              [
+                `${nodes.length} resources`,
+                containers.length ? `${containers.length} frames` : null,
+                sections.length ? `${sections.length} sections` : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
         </span>
       </div>
       {rows.length === 0 ? (
