@@ -547,7 +547,11 @@ the palette at bottom-centre, never `display: none`.
   all on a drawing with no frames (2026-09-03, the user: "I thought we agreed expand one at a time
   on this one?"): every resource is a leaf there, so opening Connections folded nothing and both
   lists showed at once, which is the thing the rule exists to prevent. The header line keeps
-  counting the objects either way. Click selects the object itself; hover reveals collapse-on-canvas and remove. **Rows
+  counting the objects either way. **The accordion is a view, never an edit of anyone's fold
+  state**: the first cut also folded every top-level row on the way in, so glancing at the
+  connections threw the tree away · fold Connections again on event-driven and all that was left
+  was a shut "AWS Cloud". Hiding is the render filter's job; `folded` only ever holds what the user
+  folded. Click selects the object itself; hover reveals collapse-on-canvas and remove. **Rows
   drag, Figma-style**: the pointer's height over a row decides (`whereIn`) · the middle third **nests**
   it (a resource into a frame with `moveIntoContainer` or a section with `setSectionNodes`, a frame into
   a frame with `setContainerParent` where only a cycle is refused, a section under a section with

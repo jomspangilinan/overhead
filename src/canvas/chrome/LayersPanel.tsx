@@ -108,9 +108,13 @@ export function LayersPanel() {
         return next;
       }
       next.delete(key);
-      if (key === "/connections") {
-        for (const r of all) if (r.depth === 0 && r.key !== key) next.add(r.key);
-      } else if (isTop(key)) next.add("/connections");
+      // Opening Connections folds nothing · the render filter above already
+      // hides the objects while it is open. It used to fold every top-level
+      // row as well, which threw your tree away every time you glanced at
+      // the connections: fold Connections again on event-driven and all you
+      // had left was a shut "AWS Cloud". The accordion is a view, not an
+      // edit of everybody's fold state.
+      if (isTop(key) && key !== "/connections") next.add("/connections");
       return next;
     });
 
