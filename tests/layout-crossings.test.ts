@@ -11,10 +11,10 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { autoLayout, COL_GAP } from "../src/engine/layout";
 import { migrateSnapshot } from "../src/engine/migrate";
-import { NODE_W, NODE_H, ICON_DRAW_H } from "../src/canvas/nodeMetrics";
+import { NODE_W, NODE_H, ICON_DRAW_W, ICON_DRAW_H } from "../src/canvas/nodeMetrics";
 import type { ArchEdge, ArchNode, StateSnapshot } from "../src/engine/model";
 
-const OPTS = { nodeW: NODE_W, nodeH: NODE_H, drawH: ICON_DRAW_H };
+const OPTS = { nodeW: NODE_W, nodeH: NODE_H, drawW: ICON_DRAW_W, drawH: ICON_DRAW_H };
 
 const sample = (name: string): StateSnapshot =>
   migrateSnapshot(JSON.parse(readFileSync(join(__dirname, "..", "samples", `${name}.json`), "utf8")));
@@ -115,6 +115,6 @@ describe("the ordering earns it", () => {
     const { positions } = autoLayout(nodes, [edge("api2", "fn1"), edge("api1", "fn2")], [], OPTS);
     expect(positions.fn2.y).toBe(positions.api1.y);
     expect(positions.fn1.y).toBe(positions.api2.y);
-    expect(positions.fn1.x - positions.api1.x).toBe(NODE_W + COL_GAP);
+    expect(positions.fn1.x - positions.api1.x).toBe(ICON_DRAW_W + COL_GAP);
   });
 });

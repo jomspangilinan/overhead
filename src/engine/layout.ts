@@ -45,6 +45,7 @@ export interface LayoutOpts {
   /** What a node *draws*, when that is smaller than its hit-box (icon mode).
    *  Columns and rows are spaced by this. Absent = the hit-box, which is
    *  card mode. */
+  drawW?: number;
   drawH?: number;
 }
 const DEFAULT_OPTS: LayoutOpts = { nodeW: 200, nodeH: 100 };
@@ -466,12 +467,11 @@ function scope(id: string | undefined, nodes: ArchNode[], edges: ArchEdge[], con
   const boxes: Box[] = own.map((n) => ({
     id: n.id,
     // A name is often wider than the icon above it.
-    // A column is pitched by the **hit-box**, never by the icon · the card
-    // is not opt-in (it appears on its own at 130% zoom), so a drawing
-    // spaced for icons overlaps itself the moment anybody zooms in to read
-    // a label. Rows still go by what is drawn (`drawH`), where the two modes
-    // differ by little and a card always fits inside an icon row's pitch.
-    w: Math.max(opts.nodeW, textWidth(n.name) + 16),
+    // Pitched by what the node draws · the icon and the name under it in
+    // icon mode, the card in card mode. Spacing a row of 56px icons as if
+    // each were a 200px card reads as four unrelated things rather than a
+    // chain, which is why the two modes are spaced differently at all.
+    w: Math.max(opts.drawW ?? opts.nodeW, textWidth(n.name) + 16),
     h: drawH,
     hitW: opts.nodeW,
     hitH: opts.nodeH,

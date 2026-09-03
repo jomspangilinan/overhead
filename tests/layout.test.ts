@@ -65,20 +65,20 @@ describe("autoLayout", () => {
     expect(positions.b.x - positions.a.x).toBeGreaterThan(OPTS.nodeW + COL_GAP);
   });
 
-  it("pitches columns for the card even in icon rows", () => {
-    // The card is not opt-in · it appears on its own at 130% zoom. So one
-    // arrangement has to be right in both, and the column pitch is what
-    // decides that: spaced for the 68px icon, three cards 200px wide
-    // overlapped each other the moment anybody zoomed in to read a label.
+  it("spaces icons by the icon, and still reserves the hit-box", () => {
+    // A row of 56px icons pitched as if each were a 200px card reads as four
+    // unrelated things rather than a chain · the drawing you are looking at
+    // is the one it is spaced for, and K re-arranges when you switch.
     const chain = [node("a", "cloudfront"), node("b", "s3"), node("c", "sqs")];
     const edges = [edge("a", "b"), edge("b", "c")];
     const cards = autoLayout(chain, edges, [], OPTS);
-    const icons = autoLayout(chain, edges, [], { ...OPTS, drawH: 80 });
+    const icons = autoLayout(chain, edges, [], { ...OPTS, drawW: 68, drawH: 80 });
     const pitch = (p: Record<string, { x: number }>) => p.b.x - p.a.x;
-    expect(pitch(icons.positions)).toBe(OPTS.nodeW + COL_GAP);
-    expect(pitch(icons.positions)).toBe(pitch(cards.positions));
-    // Rows are the part that still follows what is drawn, and a 76px card
-    // fits inside an icon row's pitch either way.
+    // a one-character name never widens a column past the icon itself
+    expect(pitch(icons.positions)).toBe(68 + COL_GAP);
+    expect(pitch(icons.positions)).toBeLessThan(pitch(cards.positions));
+    // the block still holds every hit-box · the first centre is half a
+    // hit-box in, not half an icon, or a frame around it would clip
     expect(icons.positions.a.x).toBe(cards.positions.a.x);
   });
 
@@ -87,6 +87,7 @@ describe("autoLayout", () => {
     const nodes = [node("a", "lambda", "vpc"), node("b", "sqs", "vpc"), node("c", "s3", "vpc")];
     const { positions, frames } = autoLayout(nodes, [edge("a", "b")], containers, {
       ...OPTS,
+      drawW: 68,
       drawH: 80,
     });
     for (const n of nodes) expect(holds(frames.vpc, positions[n.id]), n.id).toBe(true);

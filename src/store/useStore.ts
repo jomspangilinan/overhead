@@ -43,7 +43,7 @@ import {
   sectionContentBox,
   type Bounds,
 } from "@/engine/frames";
-import { NODE_W, NODE_H, ICON_DRAW_H } from "@/canvas/nodeMetrics";
+import { NODE_W, NODE_H, ICON_DRAW_W, ICON_DRAW_H } from "@/canvas/nodeMetrics";
 import use1 from "../../data/pricing.us-east-1.json";
 import aps1 from "../../data/pricing.ap-southeast-1.json";
 
@@ -481,21 +481,21 @@ export const useStore = create<OverheadState>((set, get) => ({
    *  that used to happen in silence. */
   applyAutoLayout: () =>
     set((s) => {
-      // Columns are pitched by the hit-box whatever mode you are in, so one
-      // arrangement is right at every zoom · only the row pitch follows what
-      // is drawn (an icon is shorter than a card, and a card still fits
-      // inside an icon row's pitch).
+      // Lay out for the mode you are looking at · icons pitch by the icon
+      // and its name, cards by the card. Frames are sized from the hit-box
+      // either way, so nothing overlaps in the mode it was laid out for.
       const cards = cardModeOf(s);
       const { positions, frames, sections } = autoLayoutWithSections(s.nodes, s.edges, s.containers, {
         nodeW: NODE_W,
         nodeH: NODE_H,
+        drawW: cards ? NODE_W : ICON_DRAW_W,
         drawH: cards ? NODE_H : ICON_DRAW_H,
       });
       const droppedAuto = s.sections.filter((x) => x.id.startsWith("auto-")).length;
       const columns = new Set(Object.values(positions).map((p) => p.x)).size;
       const notice = [
         `Arranged ${s.nodes.length} ${s.nodes.length === 1 ? "resource" : "resources"} in ${columns} ${columns === 1 ? "column" : "columns"} by dependency`,
-        cards ? "card rows" : "icon rows",
+        cards ? "card spacing" : "icon spacing",
         sections.length
           ? `${sections.length} ${sections.length === 1 ? "section" : "sections"}`
           : droppedAuto

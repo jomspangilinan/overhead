@@ -18,17 +18,16 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { autoLayoutWithSections } from "../src/engine/layout";
 import { migrateSnapshot } from "../src/engine/migrate";
-import { NODE_W, NODE_H, ICON_DRAW_H } from "../src/canvas/nodeMetrics";
+import { NODE_W, NODE_H, ICON_DRAW_W, ICON_DRAW_H } from "../src/canvas/nodeMetrics";
 import type { StateSnapshot } from "../src/engine/model";
 
 const SAMPLES = ["api-backend", "media-pipeline", "event-driven", "partner-checkout", "refund-approval"];
 const dir = join(__dirname, "..", "samples");
 const write = process.env.LAYOUT_SAMPLES;
 
-/** Icon rows · the view the seed and the Import dialog open in. Columns are
- *  pitched by the hit-box whatever the mode, so this arrangement is also the
- *  right one once cards appear at 130% zoom. */
-const OPTS = { nodeW: NODE_W, nodeH: NODE_H, drawH: ICON_DRAW_H };
+/** Icon spacing · the view the seed and the Import dialog open in. Press K
+ *  and the drawing is re-arranged for cards. */
+const OPTS = { nodeW: NODE_W, nodeH: NODE_H, drawW: ICON_DRAW_W, drawH: ICON_DRAW_H };
 
 describe("the samples are already arranged", () => {
   for (const name of SAMPLES) {

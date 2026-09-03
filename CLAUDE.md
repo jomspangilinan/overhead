@@ -343,16 +343,19 @@ the `ContainerKind` union.
   **Widths and gaps are measured, not constant** (2026-09-03): a column is as wide as the widest thing
   drawn in it, which is often the resource *name* and not the node, and the gap between two columns is
   opened by the widest edge label that has to sit in it (`textWidth`, base `COL_GAP` 44 / `ROW_GAP` 40).
-  **Columns are pitched by the hit-box, rows by what is drawn** (2026-09-03, the user: "we didn't
-  account for when it becomes a card"). It was mode-aware in *both* directions for a day, and that
-  was wrong in one of them: **the card is not opt-in**. It appears on its own at 130% zoom, so a
-  drawing spaced for the 68 px icon overlapped itself the moment anybody zoomed in to read a label ·
-  three 200 px cards where three icons had fitted. There is one set of positions and it has to be
-  right at every zoom, so `LayoutOpts` keeps `nodeH`/`drawH` (rows follow what is drawn, and a 76 px
-  card still fits inside an icon row's 120 px pitch) and the column pitch is always `nodeW`, or the
-  widest name in the column, or the widest edge label that has to sit in the gap. `drawW` and
-  `ICON_DRAW_W` are gone rather than left unread. The cost is a wider icon view; the alternative was
-  a view that breaks, and broken beats airy the wrong way round.
+  It is **mode-aware**: `LayoutOpts` separates the room a node needs (`nodeW`/`nodeH`, always the
+  200×100 hit-box) from what it draws (`drawW`/`drawH`, `ICON_DRAW_W`/`ICON_DRAW_H` in icon mode,
+  the hit-box in card mode, chosen from `cardModeOf`). Columns and rows are spaced by what is drawn,
+  so a row of 56 px icons is not pitched as if each were a 200 px card, while every block's extent is
+  still measured over the centres ± the hit-box, so a frame always contains what it holds and
+  siblings never overlap in the mode they were laid out for.
+  **This was pitched by the hit-box in both modes for an hour** (2026-09-03) and put back at the
+  user's word: cards then never overlapped at any zoom, but the icon view every drawing opens in was
+  the one that got worse · event-driven fit at 47% rather than 67%, and it read as unrelated icons
+  rather than a chain. The trade is named rather than hidden: **an icon layout crowds once cards
+  appear**, and the way out is that toggling cards re-arranges (below). The one path with no answer
+  is reaching card mode by *zooming* past 130% without pressing K · that arrangement was spaced for
+  icons and nothing re-ran.
   **Toggling cards re-arranges** (2026-09-03, the user: "switch off Card and switching on should
   automatically layout"): `setCardsForced` runs `applyAutoLayout` after flipping, so K and the View
   gear's Cards checkbox lay the drawing out for the view you switched to. Rows are the one thing
@@ -362,7 +365,7 @@ the `ContainerKind` union.
   130% zoom, and re-arranging the drawing under a zoom gesture would move the canvas while you are
   reading it. Nothing happens on an empty canvas. ⌘Z brings the positions back; the view stays in
   cards, because the view is not the model.
-  Auto-layout also **says what it did** ("Arranged 13 resources in 5 columns by dependency · icon rows · 1 section"),
+  Auto-layout also **says what it did** ("Arranged 13 resources in 5 columns by dependency · icon spacing · 1 section"),
   including when it removes `auto-` sections a previous run left behind: a four-node chain has no column
   worth a section, so re-running looked like it was deleting them for no reason.
   `tests/layout.test.ts` checks containment, no sibling overlap, edge-driven columns, the ignored back
@@ -422,7 +425,7 @@ carrying its members, `az` dissolves upward, `subnet` → `subnetpub`, `node.gro
 2. **One look, then deep dive.** Default view = icons, names, typed edges, containers, sections.
 3. **The card houses the icon.** Zoom ≥ **130%** (or the Cards tool, K, or the Cost layer) and each icon moves
    inside a 200×76 card: service term, resource name, the 2–3 settings that decide price, security badge,
-   monthly cost. Constant 200×100 hit-box in both modes (`src/canvas/nodeMetrics.ts`), so edges and drops stay stable · `ICON_DRAW_H` beside it is how tall an icon *draws*, which is what auto-layout pitches rows by (§5b · columns go by the hit-box, so one arrangement is right in both modes).
+   monthly cost. Constant 200×100 hit-box in both modes (`src/canvas/nodeMetrics.ts`), so edges and drops stay stable · `ICON_DRAW_W`/`ICON_DRAW_H` beside it are what an icon *draws*, which is what auto-layout spaces by (§5b).
 4. **Three edge kinds, three encodings, nothing else.** `sync` solid + arrowhead · `async` dashed `7 5` +
    arrowhead · `data` dotted `2 5`, no head. Permissions, logging, encryption are **node properties** (security
    badges), never edges.
