@@ -677,6 +677,17 @@ the palette at bottom-centre, never `display: none`.
   cycle always offers a way out and the click after that is the innermost again. Clicking anywhere
   else starts a fresh stack. On event-driven: private-a → orders-vpc → ap-southeast-1 → AWS Cloud →
   nothing → private-a.
+- **A marquee has an Inspector, and a drag is not a click** (2026-09-04, the user: "I can't select
+  region when I am selecting multiple resources"). Two things, one symptom · you drag a selection
+  rectangle and the panel still says "select something". The marquee always filled `selectedIds` and
+  left `selectedId` null on purpose ("these nine" has no primary object), but the Inspector read the
+  primary alone, so a multi-selection showed the empty state · the app telling you it had not heard
+  you. `MultiInspector` names what is in it, sums the cost over the resources, lists them (click one
+  to narrow to it) and offers the two things you do next, Group and Remove. ⌘A lands here too.
+  The other half was mine, from the frame-click cycle above: **a marquee ends with a `click` on the
+  pane**, so `onPaneClick` fired on release and selected whatever frame sat under the release point,
+  throwing the selection away the instant you let go. A press is recorded on
+  `onPointerDownCapture` and a click that travelled more than 4 px is ignored.
 - Inline editing: double-click a node label, a frame name or an edge label on the canvas. **⌘A selects
   everything** (`selectAll`: resources, containers and sections · `selectedId` goes to null because
   "everything" has no primary object) and **Delete removes the whole selection** in one undo step

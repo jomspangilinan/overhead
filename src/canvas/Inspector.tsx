@@ -823,9 +823,110 @@ function SectionInspector({ sectionId }: { sectionId: string }) {
 
 // ---- root ----------------------------------------------------------------
 
+/** What a multi-selection is: how many of each kind, what they cost together,
+ *  and the two things you actually do next (group them, or delete them). The
+ *  cost is the sum over the resources in it · a frame in the selection is not
+ *  counted again through its contents, because the contents are either in the
+ *  selection themselves or not part of what you picked. */
+function MultiInspector({ ids }: { ids: string[] }) {
+  const nodes = useStore((s) => s.nodes);
+  const containers = useStore((s) => s.containers);
+  const sections = useStore((s) => s.sections);
+  const region = useStore((s) => s.region);
+  const addGroup = useStore((s) => s.addGroup);
+  const removeSelection = useStore((s) => s.removeSelection);
+  const select = useStore((s) => s.select);
+
+  const picked = useMemo(() => {
+    const set = new Set(ids);
+    return {
+      nodes: nodes.filter((n) => set.has(n.id)),
+      containers: containers.filter((c) => set.has(c.id)),
+      sections: sections.filter((x) => set.has(x.id)),
+    };
+  }, [ids, nodes, containers, sections]);
+
+  const monthly = useMemo(() => {
+    const s = useStore.getState();
+    const snap = snapshotOf(s);
+    const pricing = pricingOf(s);
+    return picked.nodes.reduce((sum, n) => {
+      try {
+        return sum + nodeCost(snap, n.id, pricing).monthly;
+      } catch {
+        return sum;
+      }
+    }, 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [picked, region]);
+
+  const parts = [
+    picked.nodes.length ? `${picked.nodes.length} ${picked.nodes.length === 1 ? "resource" : "resources"}` : null,
+    picked.containers.length ? `${picked.containers.length} ${picked.containers.length === 1 ? "frame" : "frames"}` : null,
+    picked.sections.length ? `${picked.sections.length} ${picked.sections.length === 1 ? "section" : "sections"}` : null,
+  ].filter(Boolean);
+
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      <header className="border-b border-line p-3.5">
+        <div className="lab">Selection</div>
+        <div className="mt-1 flex items-baseline justify-between gap-2">
+          <span className="text-[13px] font-semibold">{parts.join(" · ")}</span>
+          {monthly > 0 ? (
+            <span className="mono text-[13px] font-semibold">${toMoney(monthly).toFixed(2)}/mo</span>
+          ) : null}
+        </div>
+      </header>
+
+      <Section
+        id="multi-members"
+        title="In the selection"
+        aside={`${picked.nodes.length + picked.containers.length + picked.sections.length}`}
+      >
+        <div className="flex flex-col">
+          {[...picked.nodes, ...picked.containers, ...picked.sections].slice(0, 40).map((o) => (
+            <button
+              key={o.id}
+              className="truncate rounded px-1 py-[3px] text-left text-[11.5px] hover:bg-[var(--hover)]"
+              style={{ color: "var(--ink-2)" }}
+              onClick={() => select(o.id)}
+              title="Select just this one"
+            >
+              {o.name}
+            </button>
+          ))}
+          {picked.nodes.length + picked.containers.length + picked.sections.length > 40 ? (
+            <span className="px-1 pt-1 text-[10.5px]" style={{ color: "var(--ink-4)" }}>
+              and {picked.nodes.length + picked.containers.length + picked.sections.length - 40} more
+            </span>
+          ) : null}
+        </div>
+      </Section>
+
+      <div className="mt-auto flex flex-col gap-2 p-3.5">
+        <button
+          className="w-full rounded border border-line px-3 py-1.5 text-[12px] hover:bg-panel-2"
+          style={{ color: "var(--ink-2)" }}
+          onClick={() => addGroup(picked.nodes.map((n) => n.id))}
+          disabled={picked.nodes.length < 2}
+        >
+          Group · ⌘G
+        </button>
+        <button
+          className="w-full rounded border border-line px-3 py-1.5 text-[12px] text-bad hover:bg-panel-2"
+          onClick={removeSelection}
+        >
+          Remove {parts.join(" · ")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function Inspector() {
   const selectedId = useStore((s) => s.selectedId);
   const selectedEdgeId = useStore((s) => s.selectedEdgeId);
+  const selectedIds = useStore((s) => s.selectedIds);
   const isNode = useStore((s) => s.nodes.some((n) => n.id === selectedId));
   const isContainer = useStore((s) => s.containers.some((c) => c.id === selectedId));
   const isSection = useStore((s) => s.sections.some((x) => x.id === selectedId));
@@ -834,6 +935,12 @@ export function Inspector() {
   if (isContainer && selectedId) return <ContainerInspector containerId={selectedId} />;
   if (isSection && selectedId) return <SectionInspector sectionId={selectedId} />;
   if (selectedEdgeId) return <EdgeInspector edgeId={selectedEdgeId} />;
+  // A marquee (and ⌘A) fills `selectedIds` and leaves `selectedId` null on
+  // purpose · "these five" has no primary object. The Inspector used to read
+  // the primary alone, so dragging a selection region round four resources
+  // still said "select something", which is the app telling you it did not
+  // hear you.
+  if (selectedIds.length > 1) return <MultiInspector ids={selectedIds} />;
   return (
     <p className="p-4 text-[11.5px]" style={{ color: "var(--ink-3)" }}>
       Select a resource, a frame, a section or an edge on the canvas.

@@ -78,6 +78,8 @@ export function Canvas() {
   /** Where the last pane click landed and how deep into the frame stack it
    *  had walked · clicking the same spot again goes one further out. */
   const cycle = useRef<{ x: number; y: number; i: number } | null>(null);
+  /** Where a press on the empty canvas began · a click that moved is a drag. */
+  const pressed = useRef<{ x: number; y: number } | null>(null);
   const selectedId = useStore((s) => s.selectedId);
   const selectedIds = useStore((s) => s.selectedIds);
   const setSelectedIds = useStore((s) => s.setSelectedIds);
@@ -514,7 +516,12 @@ export function Canvas() {
     <div
       ref={wrapper}
       className={`overhead-canvas ${hoveredId || traceIds?.length ? "hovering" : ""} ${cardMode ? "cards" : ""} ${tool === "connect" || connecting ? "connecting" : ""} ${marquee ? "marquee" : ""} ${tool === "section" ? "drawing" : ""} ${tool === "trace" ? "tracing" : ""}`}
-      onPointerDownCapture={onDrawDown}
+      onPointerDownCapture={(e) => {
+        // Where a press began · a click that travelled is a drag, and the
+        // browser fires `click` for it all the same (see onPaneClick).
+        pressed.current = { x: e.clientX, y: e.clientY };
+        onDrawDown(e);
+      }}
       onPointerMove={(e) => {
         onDrawMove(e);
         // In a room, my pointer is worth sending · in canvas coordinates, so
@@ -600,6 +607,13 @@ export function Canvas() {
           selectEdge(edge.id);
         }}
         onPaneClick={(e) => {
+          // A marquee ends with a click on the pane, and this handler would
+          // then select whatever frame is under the release point · which is
+          // to say it threw the marquee's selection away the instant you let
+          // go. Only a press that stayed put is a click.
+          const from = pressed.current;
+          pressed.current = null;
+          if (from && Math.hypot(e.clientX - from.x, e.clientY - from.y) > 4) return;
           selectEdge(null);
           useStore.getState().setTrace(null);
           // Blank space *inside* a frame selects that frame · it used to
