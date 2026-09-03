@@ -525,7 +525,20 @@ export const useStore = create<OverheadState>((set, get) => ({
   setLayer: (layer, on) =>
     set((s) => ({ layers: { ...s.layers, [layer]: on } })),
 
-  setCardsForced: (on) => set({ cardsForced: on }),
+  /** Toggling cards re-arranges the drawing for the view you switched to.
+   *  Rows are the one thing still pitched by what a node draws (§5b), so
+   *  this is the only moment the arrangement can improve · and it is one
+   *  undo step, because history subscribes to the model and the layout is a
+   *  model change like any other.
+   *
+   *  Only the explicit toggle, never the zoom: cards also appear on their
+   *  own past 130%, and re-arranging the drawing under a zoom gesture would
+   *  make the canvas move while you are trying to read it. Nothing to
+   *  arrange on an empty canvas either. */
+  setCardsForced: (on) => {
+    set({ cardsForced: on });
+    if (get().nodes.length) get().applyAutoLayout();
+  },
   setZoom: (zoom) => set({ zoom }),
   select: (id) =>
     set((s) => {

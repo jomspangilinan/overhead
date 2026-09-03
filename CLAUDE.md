@@ -342,6 +342,15 @@ the `ContainerKind` union.
   widest name in the column, or the widest edge label that has to sit in the gap. `drawW` and
   `ICON_DRAW_W` are gone rather than left unread. The cost is a wider icon view; the alternative was
   a view that breaks, and broken beats airy the wrong way round.
+  **Toggling cards re-arranges** (2026-09-03, the user: "switch off Card and switching on should
+  automatically layout"): `setCardsForced` runs `applyAutoLayout` after flipping, so K and the View
+  gear's Cards checkbox lay the drawing out for the view you switched to. Rows are the one thing
+  still pitched by what a node draws, so that is the only thing it changes · which is also why it is
+  cheap. It is **one undo step** (history subscribes to the model and a layout is a model change
+  like any other), and it fires **only on the explicit toggle**: cards also appear on their own past
+  130% zoom, and re-arranging the drawing under a zoom gesture would move the canvas while you are
+  reading it. Nothing happens on an empty canvas. ⌘Z brings the positions back; the view stays in
+  cards, because the view is not the model.
   Auto-layout also **says what it did** ("Arranged 13 resources in 5 columns by dependency · icon rows · 1 section"),
   including when it removes `auto-` sections a previous run left behind: a four-node chain has no column
   worth a section, so re-running looked like it was deleting them for no reason.
