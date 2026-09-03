@@ -67,6 +67,9 @@ describe("crossings in the seeded drawings", () => {
     ["event-driven", 0],
     ["partner-checkout", 0],
     ["refund-approval", 0],
+    // 26 resources over four container levels · a real architecture has
+    // some, and the measured number is the ceiling so it cannot creep.
+    ["saas-platform", 1],
   ] as const) {
     it(`${name}: at most ${ceiling}`, () => {
       const snap = sample(name);

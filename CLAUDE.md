@@ -416,6 +416,18 @@ agent adds one with the tool it already has.
     canvas, the same tools, the same Mermaid tab, nothing to price.
   Nothing in the engine enforces the split · a decision can still sit in a VPC if somebody means
   it. The samples teach the distinction rather than the validator imposing it.
+- **`samples/saas-platform.json` is the showcase** (2026-09-03, the user: "I want a more complicated
+  template · base it on a standard startup"): a Series-A B2B SaaS, **26 resources**, one of **every
+  priced service**, four levels of containment (cloud › region › vpc › private-a, with a
+  VPC-attached `report-runner` in the subnet), three non-AWS components, 27 connections,
+  **$1,224.98/month** with Cognito at 25k MAU the biggest line by far · which is true, and worth
+  saying rather than hiding. It is the drawing the audit loop is demonstrated on: **eight findings
+  on purpose**, one per rule bar `s3_public_no_cdn`, spread over eight nodes so none reads as a
+  pile-up · a REST API that should be HTTP, a table on on-demand past the crossover, an x86 worker
+  with no DLQ (the one critical), an unbounded SNS fan-out, a logs bucket with no lifecycle, a
+  Standard workflow at 150k executions, and a 512 MB / 800 ms Lambda. `tests/saas-platform.test.ts`
+  asserts exactly those eight, because they are load-bearing and a price-list refresh could move a
+  crossover and silently retire one. 1 crossing, measured.
 
 ### Migration (`src/engine/migrate.ts`)
 
@@ -1032,12 +1044,14 @@ src/
 scripts/            fetch-pricing.ts · synth-samples.ts
 data/               pricing.us-east-1.json · pricing.ap-southeast-1.json
 samples/            api-backend · media-pipeline · event-driven · partner-checkout ·
-                    refund-approval (no AWS at all) · all five are **laid out on disk**
+                    refund-approval (no AWS at all) · saas-platform (26 resources, every
+                    service, 8 findings) · all six are **laid out on disk**
                     (`npm run layout-samples`) and framed like a real diagram: cloud › region
                     everywhere, CloudFront in the cloud beside the region because it is global,
                     event-driven adding vpc › private subnet
 public/icons/aws/   sprite.svg (26 symbols) · Arch_*_64.svg · NOTICE.md
-tests/              mermaid (both ways, the live merge, a hand-written chart) ·
+tests/              saas-platform (the showcase's eight findings, the catalogue, the nesting) ·
+                    mermaid (both ways, the live merge, a hand-written chart) ·
                     share (a drawing in a link) · patch (merge by id, refusals) · code-ranges (which object a caret is in) ·
                     sample-layout (the samples are arranged on disk) ·
                     layout-crossings (edges crossing, counted geometrically) · remove (mixed-selection delete) · text-indent · cloudformation (incl.

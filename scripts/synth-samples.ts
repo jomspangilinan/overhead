@@ -30,7 +30,7 @@ execSync("npx vitest run tests/write-cdk-stacks.test.ts", {
 
 // all-services holds one node of every service · the gate that a newly
 // added service ships CDK that actually compiles.
-const samples = ["api-backend", "media-pipeline", "event-driven", "partner-checkout", "all-services"];
+const samples = ["api-backend", "media-pipeline", "event-driven", "partner-checkout", "saas-platform", "all-services"];
 
 writeFileSync(
   join(outDir, "package.json"),

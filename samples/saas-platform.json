@@ -1,0 +1,690 @@
+{
+  "nodes": [
+    {
+      "id": "customer",
+      "service": "actor",
+      "name": "Customer",
+      "settings": {},
+      "position": {
+        "x": 180,
+        "y": 130
+      }
+    },
+    {
+      "id": "web-cdn",
+      "service": "cloudfront",
+      "name": "app-cdn",
+      "settings": {
+        "dataOutGbPerMonth": 900,
+        "requestsPerMonth": 18000000,
+        "priceClass": "all",
+        "originAccess": "oac",
+        "minTls": "TLSv1.2"
+      },
+      "position": {
+        "x": 405,
+        "y": 200
+      },
+      "container": "cloud"
+    },
+    {
+      "id": "web-assets",
+      "service": "s3",
+      "name": "web-assets",
+      "settings": {
+        "storageGb": 40,
+        "putsPerMonth": 20000,
+        "getsPerMonth": 400000,
+        "purpose": "assets",
+        "lifecycleRules": true,
+        "publiclyServed": false,
+        "encryption": "sse-s3",
+        "blockPublicAccess": true,
+        "versioning": true
+      },
+      "position": {
+        "x": 879.5,
+        "y": 258
+      },
+      "container": "region"
+    },
+    {
+      "id": "user-pool",
+      "service": "cognito",
+      "name": "user-pool",
+      "settings": {
+        "monthlyActiveUsers": 25000,
+        "mfa": "optional",
+        "advancedSecurity": false
+      },
+      "position": {
+        "x": 634,
+        "y": 258
+      },
+      "container": "region"
+    },
+    {
+      "id": "public-api",
+      "service": "apigateway",
+      "name": "public-api",
+      "settings": {
+        "apiType": "REST",
+        "requestsPerMonth": 12000000,
+        "usagePlans": false,
+        "requestValidation": false,
+        "wafAttached": false,
+        "auth": "jwt"
+      },
+      "position": {
+        "x": 754,
+        "y": 258
+      },
+      "container": "region"
+    },
+    {
+      "id": "api-handler",
+      "service": "lambda",
+      "name": "api-handler",
+      "settings": {
+        "architecture": "arm64",
+        "memoryMb": 1024,
+        "timeoutSec": 30,
+        "avgDurationMs": 220,
+        "invocationsPerMonth": 12000000,
+        "dlqConfigured": true,
+        "iamRole": "least-privilege",
+        "vpcAttached": false,
+        "envEncryption": "cmk"
+      },
+      "position": {
+        "x": 879.5,
+        "y": 378
+      },
+      "container": "region"
+    },
+    {
+      "id": "tenants",
+      "service": "dynamodb",
+      "name": "tenants",
+      "settings": {
+        "capacityMode": "on-demand",
+        "storageGb": 180,
+        "readsPerMonth": 60000000,
+        "writesPerMonth": 15000000,
+        "encryption": "customer-managed",
+        "pitr": true
+      },
+      "position": {
+        "x": 1638,
+        "y": 258
+      },
+      "container": "region"
+    },
+    {
+      "id": "uploads",
+      "service": "s3",
+      "name": "uploads",
+      "settings": {
+        "storageGb": 900,
+        "putsPerMonth": 400000,
+        "getsPerMonth": 1200000,
+        "purpose": "uploads",
+        "lifecycleRules": true,
+        "publiclyServed": false,
+        "encryption": "sse-kms",
+        "blockPublicAccess": true,
+        "versioning": true
+      },
+      "position": {
+        "x": 1410,
+        "y": 378
+      },
+      "container": "region"
+    },
+    {
+      "id": "jobs-queue",
+      "service": "sqs",
+      "name": "jobs-queue",
+      "settings": {
+        "queueType": "standard",
+        "requestsPerMonth": 3000000,
+        "encryption": "sse-sqs",
+        "dlqConfigured": true
+      },
+      "position": {
+        "x": 1014.5,
+        "y": 498
+      },
+      "container": "region"
+    },
+    {
+      "id": "job-worker",
+      "service": "lambda",
+      "name": "job-worker",
+      "settings": {
+        "architecture": "x86_64",
+        "memoryMb": 1536,
+        "timeoutSec": 120,
+        "avgDurationMs": 1400,
+        "invocationsPerMonth": 3000000,
+        "dlqConfigured": false,
+        "iamRole": "least-privilege",
+        "vpcAttached": false,
+        "envEncryption": "default"
+      },
+      "position": {
+        "x": 1161.5,
+        "y": 498
+      },
+      "container": "region"
+    },
+    {
+      "id": "domain-bus",
+      "service": "eventbridge",
+      "name": "domain-bus",
+      "settings": {
+        "eventsPerMonth": 6000000,
+        "rules": 14,
+        "resourcePolicy": "account"
+      },
+      "position": {
+        "x": 1014.5,
+        "y": 618
+      },
+      "container": "region"
+    },
+    {
+      "id": "onboarding",
+      "service": "stepfunctions",
+      "name": "onboarding-flow",
+      "settings": {
+        "workflowType": "standard",
+        "executionsPerMonth": 150000,
+        "avgTransitionsPerExecution": 6,
+        "hasHumanWaitStep": false,
+        "expressAvgDurationMs": 100,
+        "expressMemoryMb": 64,
+        "iamRole": "least-privilege"
+      },
+      "position": {
+        "x": 1161.5,
+        "y": 618
+      },
+      "container": "region"
+    },
+    {
+      "id": "notify-topic",
+      "service": "sns",
+      "name": "notify-topic",
+      "settings": {
+        "publishesPerMonth": 2400000,
+        "subscriberCount": 2,
+        "encryption": "sse-sns"
+      },
+      "position": {
+        "x": 1161.5,
+        "y": 738
+      },
+      "container": "region"
+    },
+    {
+      "id": "emailer",
+      "service": "lambda",
+      "name": "emailer",
+      "settings": {
+        "architecture": "arm64",
+        "memoryMb": 512,
+        "timeoutSec": 30,
+        "avgDurationMs": 800,
+        "invocationsPerMonth": 2400000,
+        "dlqConfigured": true,
+        "iamRole": "least-privilege",
+        "vpcAttached": false,
+        "envEncryption": "default"
+      },
+      "position": {
+        "x": 1410,
+        "y": 886
+      },
+      "container": "region"
+    },
+    {
+      "id": "webhooks",
+      "service": "lambda",
+      "name": "webhook-sender",
+      "settings": {
+        "architecture": "arm64",
+        "memoryMb": 1024,
+        "timeoutSec": 30,
+        "avgDurationMs": 300,
+        "invocationsPerMonth": 900000,
+        "dlqConfigured": true,
+        "iamRole": "least-privilege",
+        "vpcAttached": false,
+        "envEncryption": "cmk"
+      },
+      "position": {
+        "x": 1410,
+        "y": 1006
+      },
+      "container": "region"
+    },
+    {
+      "id": "events-stream",
+      "service": "kinesis",
+      "name": "events-stream",
+      "settings": {
+        "capacityMode": "on-demand",
+        "shards": 2,
+        "ingestGbPerMonth": 240,
+        "consumers": 1,
+        "putRecordsPerMonth": 12000000,
+        "retentionHours": 24,
+        "encryption": "customer-managed"
+      },
+      "position": {
+        "x": 1014.5,
+        "y": 738
+      },
+      "container": "region"
+    },
+    {
+      "id": "events-firehose",
+      "service": "firehose",
+      "name": "events-firehose",
+      "settings": {
+        "ingestGbPerMonth": 240,
+        "destination": "s3",
+        "formatConversion": true,
+        "transformLambda": false,
+        "encryption": "customer-managed"
+      },
+      "position": {
+        "x": 1161.5,
+        "y": 858
+      },
+      "container": "region"
+    },
+    {
+      "id": "data-lake",
+      "service": "s3",
+      "name": "data-lake",
+      "settings": {
+        "storageGb": 2400,
+        "putsPerMonth": 300000,
+        "getsPerMonth": 120000,
+        "purpose": "data-lake",
+        "lifecycleRules": true,
+        "publiclyServed": false,
+        "encryption": "sse-kms",
+        "blockPublicAccess": true,
+        "versioning": false
+      },
+      "position": {
+        "x": 1410,
+        "y": 1126
+      },
+      "container": "region"
+    },
+    {
+      "id": "audit-logs",
+      "service": "s3",
+      "name": "audit-logs",
+      "settings": {
+        "storageGb": 600,
+        "putsPerMonth": 900000,
+        "getsPerMonth": 20000,
+        "purpose": "logs",
+        "lifecycleRules": false,
+        "publiclyServed": false,
+        "encryption": "sse-s3",
+        "blockPublicAccess": true,
+        "versioning": false
+      },
+      "position": {
+        "x": 1410,
+        "y": 498
+      },
+      "container": "region"
+    },
+    {
+      "id": "tenant-key",
+      "service": "kms",
+      "name": "tenant-key",
+      "settings": {
+        "keyType": "customer-managed",
+        "keys": 1,
+        "keyVersions": 2,
+        "requestsPerMonth": 4000000,
+        "rotation": true,
+        "keyPolicy": "scoped"
+      },
+      "position": {
+        "x": 1755,
+        "y": 258
+      },
+      "container": "region"
+    },
+    {
+      "id": "app-secrets",
+      "service": "secretsmanager",
+      "name": "app-secrets",
+      "settings": {
+        "secrets": 6,
+        "apiRequestsPerMonth": 200000,
+        "cached": true,
+        "rotationDays": 90,
+        "encryption": "customer-managed"
+      },
+      "position": {
+        "x": 1014.5,
+        "y": 858
+      },
+      "container": "region"
+    },
+    {
+      "id": "app-config",
+      "service": "ssmparameter",
+      "name": "app-config",
+      "settings": {
+        "tier": "standard",
+        "parameters": 40,
+        "throughput": "standard",
+        "apiRequestsPerMonth": 150000,
+        "secureString": false
+      },
+      "position": {
+        "x": 1014.5,
+        "y": 978
+      },
+      "container": "region"
+    },
+    {
+      "id": "api-logs",
+      "service": "cloudwatchlogs",
+      "name": "api-logs",
+      "settings": {
+        "ingestGbPerMonth": 90,
+        "logClass": "standard",
+        "retentionDays": 30,
+        "storedGbPerMonth": 90,
+        "insightsScannedGbPerMonth": 20,
+        "encryption": "default"
+      },
+      "position": {
+        "x": 1014.5,
+        "y": 1098
+      },
+      "container": "region"
+    },
+    {
+      "id": "report-runner",
+      "service": "lambda",
+      "name": "report-runner",
+      "settings": {
+        "architecture": "arm64",
+        "memoryMb": 2048,
+        "timeoutSec": 300,
+        "avgDurationMs": 4200,
+        "invocationsPerMonth": 60000,
+        "dlqConfigured": true,
+        "iamRole": "least-privilege",
+        "vpcAttached": true,
+        "envEncryption": "cmk"
+      },
+      "position": {
+        "x": 1410,
+        "y": 706
+      },
+      "container": "priv-a"
+    },
+    {
+      "id": "stripe",
+      "service": "external",
+      "name": "Stripe",
+      "settings": {},
+      "position": {
+        "x": 2063,
+        "y": 130
+      }
+    },
+    {
+      "id": "warehouse",
+      "service": "external",
+      "name": "Analytics warehouse",
+      "settings": {},
+      "position": {
+        "x": 2063,
+        "y": 250
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "from": "customer",
+      "to": "web-cdn",
+      "kind": "sync"
+    },
+    {
+      "id": "e2",
+      "from": "web-cdn",
+      "to": "web-assets",
+      "kind": "sync",
+      "label": "origin"
+    },
+    {
+      "id": "e3",
+      "from": "customer",
+      "to": "public-api",
+      "kind": "sync",
+      "label": "api"
+    },
+    {
+      "id": "e4",
+      "from": "user-pool",
+      "to": "public-api",
+      "kind": "data",
+      "label": "JWT"
+    },
+    {
+      "id": "e5",
+      "from": "public-api",
+      "to": "api-handler",
+      "kind": "sync"
+    },
+    {
+      "id": "e6",
+      "from": "api-handler",
+      "to": "tenants",
+      "kind": "data"
+    },
+    {
+      "id": "e7",
+      "from": "api-handler",
+      "to": "uploads",
+      "kind": "data"
+    },
+    {
+      "id": "e8",
+      "from": "api-handler",
+      "to": "jobs-queue",
+      "kind": "async"
+    },
+    {
+      "id": "e9",
+      "from": "jobs-queue",
+      "to": "job-worker",
+      "kind": "async"
+    },
+    {
+      "id": "e10",
+      "from": "job-worker",
+      "to": "uploads",
+      "kind": "data"
+    },
+    {
+      "id": "e11",
+      "from": "api-handler",
+      "to": "domain-bus",
+      "kind": "async"
+    },
+    {
+      "id": "e12",
+      "from": "domain-bus",
+      "to": "onboarding",
+      "kind": "async"
+    },
+    {
+      "id": "e13",
+      "from": "domain-bus",
+      "to": "notify-topic",
+      "kind": "async"
+    },
+    {
+      "id": "e14",
+      "from": "notify-topic",
+      "to": "emailer",
+      "kind": "async"
+    },
+    {
+      "id": "e15",
+      "from": "notify-topic",
+      "to": "webhooks",
+      "kind": "async"
+    },
+    {
+      "id": "e16",
+      "from": "webhooks",
+      "to": "stripe",
+      "kind": "sync",
+      "label": "charge"
+    },
+    {
+      "id": "e17",
+      "from": "api-handler",
+      "to": "events-stream",
+      "kind": "async"
+    },
+    {
+      "id": "e18",
+      "from": "events-stream",
+      "to": "events-firehose",
+      "kind": "data"
+    },
+    {
+      "id": "e19",
+      "from": "events-firehose",
+      "to": "data-lake",
+      "kind": "data"
+    },
+    {
+      "id": "e20",
+      "from": "data-lake",
+      "to": "warehouse",
+      "kind": "data"
+    },
+    {
+      "id": "e21",
+      "from": "onboarding",
+      "to": "report-runner",
+      "kind": "sync"
+    },
+    {
+      "id": "e22",
+      "from": "report-runner",
+      "to": "tenants",
+      "kind": "data"
+    },
+    {
+      "id": "e23",
+      "from": "api-handler",
+      "to": "app-secrets",
+      "kind": "data"
+    },
+    {
+      "id": "e24",
+      "from": "api-handler",
+      "to": "app-config",
+      "kind": "data"
+    },
+    {
+      "id": "e25",
+      "from": "tenants",
+      "to": "tenant-key",
+      "kind": "data"
+    },
+    {
+      "id": "e26",
+      "from": "api-handler",
+      "to": "api-logs",
+      "kind": "data"
+    },
+    {
+      "id": "e27",
+      "from": "job-worker",
+      "to": "audit-logs",
+      "kind": "data"
+    }
+  ],
+  "traffic": {
+    "requestsPerMonth": 12000000,
+    "avgPayloadKb": 8
+  },
+  "containers": [
+    {
+      "id": "cloud",
+      "kind": "cloud",
+      "name": "AWS Cloud",
+      "collapsed": false,
+      "bounds": {
+        "x": 259,
+        "y": 90,
+        "w": 1676,
+        "h": 1166
+      }
+    },
+    {
+      "id": "region",
+      "kind": "region",
+      "name": "ap-southeast-1",
+      "parent": "cloud",
+      "collapsed": false,
+      "bounds": {
+        "x": 500,
+        "y": 160,
+        "w": 1389,
+        "h": 1050
+      }
+    },
+    {
+      "id": "vpc",
+      "kind": "vpc",
+      "name": "platform-vpc",
+      "cidr": "10.0.0.0/16",
+      "parent": "region",
+      "collapsed": false,
+      "bounds": {
+        "x": 1260,
+        "y": 578,
+        "w": 300,
+        "h": 228
+      }
+    },
+    {
+      "id": "priv-a",
+      "kind": "subnetpri",
+      "name": "private-a",
+      "cidr": "10.0.10.0/24",
+      "parent": "vpc",
+      "collapsed": false,
+      "bounds": {
+        "x": 1288,
+        "y": 620,
+        "w": 244,
+        "h": 158
+      }
+    }
+  ],
+  "sections": []
+}

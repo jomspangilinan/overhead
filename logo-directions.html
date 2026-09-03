@@ -1,0 +1,199 @@
+<title>Overhead · logo directions</title>
+<style>
+  :root{
+    --bg:#0B0D10; --panel:#111620; --panel2:#0D121A;
+    --line:#1D2531; --line2:#222A36;
+    --ink:#E8ECF2; --ink2:#9AA6B7; --ink3:#66738A; --ink4:#4E5A6B;
+    --accent:#3B82F6; --accent-ink:#8FB8FF; --good:#6FE3B0; --warn:#F0B34E;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:'Archivo',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+    font-feature-settings:"tnum";}
+  .wrap{max-width:1080px;margin:0 auto;padding:40px 24px 80px}
+  header{border-bottom:1px solid var(--line);padding-bottom:20px;margin-bottom:32px}
+  h1{font-size:20px;margin:0 0 6px;letter-spacing:-.02em}
+  .sub{color:var(--ink3);font-size:13px;margin:0}
+  h2{font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--ink4);
+     margin:36px 0 12px;font-weight:600}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+        padding:26px 28px;margin-bottom:14px}
+  .row{display:flex;align-items:center;gap:32px;flex-wrap:wrap}
+  .note{color:var(--ink3);font-size:12.5px;line-height:1.55;margin:14px 0 0;max-width:62ch}
+  .tag{display:inline-block;font-size:9.5px;text-transform:uppercase;letter-spacing:.12em;
+       color:var(--accent-ink);background:#1B2534;border-radius:4px;padding:3px 7px;margin-bottom:14px}
+  .light{background:#F3F5F8;border-color:#DFE4EA}
+  .light .swatchlabel{color:#66738A}
+  .swatchlabel{font-size:10px;color:var(--ink4);letter-spacing:.1em;text-transform:uppercase;
+               margin-top:14px;display:block}
+  .tiles{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .tile{border-radius:12px;display:grid;place-items:center;background:var(--panel2);
+        border:1px solid var(--line)}
+  code{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+       font-size:11.5px;color:var(--ink2);background:var(--panel2);padding:2px 6px;border-radius:4px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:760px){.grid2{grid-template-columns:1fr}}
+</style>
+
+<div class="wrap">
+<header>
+  <h1>Overhead — logo directions</h1>
+  <p class="sub">Built from the product's own ideas: the plan view, and the nested container frames. App palette throughout.</p>
+</header>
+
+<!-- ============ A ============ -->
+<h2>A · Plan view — nested frames</h2>
+<div class="card">
+  <span class="tag">the literal idea</span>
+  <div class="row">
+    <svg width="64" height="64" viewBox="0 0 48 48" fill="none" aria-label="Overhead mark A">
+      <rect x="3.25" y="3.25" width="41.5" height="41.5" rx="9" stroke="#3B82F6" stroke-width="2.5"/>
+      <rect x="11.25" y="11.25" width="25.5" height="25.5" rx="5.5" stroke="#00A4A6"
+            stroke-width="1.8" stroke-dasharray="4 3.2"/>
+      <rect x="19.5" y="19.5" width="9" height="9" rx="2.4" fill="#8FB8FF"/>
+    </svg>
+    <svg width="230" height="52" viewBox="0 0 230 52" fill="none" aria-label="Overhead logo A">
+      <rect x="2.1" y="10.1" width="31.8" height="31.8" rx="7" stroke="#3B82F6" stroke-width="2.1"/>
+      <rect x="8.4" y="16.4" width="19.2" height="19.2" rx="4.2" stroke="#00A4A6"
+            stroke-width="1.5" stroke-dasharray="3.2 2.6"/>
+      <rect x="14.9" y="22.9" width="6.2" height="6.2" rx="1.7" fill="#8FB8FF"/>
+      <text x="46" y="34" fill="#E8ECF2" font-size="24" font-weight="600"
+            letter-spacing="-.6" font-family="Archivo,Helvetica,Arial,sans-serif">Overhead</text>
+    </svg>
+  </div>
+  <p class="note">Cloud → region → resource, seen from above. Dashed middle ring is the region frame's own
+  border style, so the mark is a literal miniature of what the canvas draws.</p>
+</div>
+
+<!-- ============ B ============ -->
+<h2>B · Viewfinder — crop marks</h2>
+<div class="card">
+  <span class="tag">looking down at something</span>
+  <div class="row">
+    <svg width="64" height="64" viewBox="0 0 48 48" fill="none" aria-label="Overhead mark B">
+      <path d="M4 15V7a3 3 0 0 1 3-3h8M33 4h8a3 3 0 0 1 3 3v8M44 33v8a3 3 0 0 1-3 3h-8M15 44H7a3 3 0 0 1-3-3v-8"
+            stroke="#3B82F6" stroke-width="2.6" stroke-linecap="round"/>
+      <rect x="19.5" y="19.5" width="9" height="9" rx="2.4" fill="#6FE3B0"/>
+    </svg>
+    <svg width="252" height="52" viewBox="0 0 252 52" fill="none" aria-label="Overhead logo B">
+      <path d="M3 20v-8a3 3 0 0 1 3-3h7M3 32v7a3 3 0 0 0 3 3h7" stroke="#3B82F6"
+            stroke-width="2.2" stroke-linecap="round"/>
+      <text x="26" y="34" fill="#E8ECF2" font-size="24" font-weight="600"
+            letter-spacing="-.6" font-family="Archivo,Helvetica,Arial,sans-serif">Overhead</text>
+      <path d="M249 20v-8a3 3 0 0 0-3-3h-7M249 32v7a3 3 0 0 1-3 3h-7" stroke="#3B82F6"
+            stroke-width="2.2" stroke-linecap="round"/>
+    </svg>
+  </div>
+  <p class="note">Corner brackets frame the word the way a viewfinder frames a shot — and the way a
+  container frames its resources. Reads as "the view from above" without drawing an eye or a camera.</p>
+</div>
+
+<!-- ============ C ============ -->
+<h2>C · Altitude — stacked layers</h2>
+<div class="card">
+  <span class="tag">the cost reading</span>
+  <div class="row">
+    <svg width="64" height="64" viewBox="0 0 48 48" fill="none" aria-label="Overhead mark C">
+      <rect x="7" y="9" width="34" height="7" rx="3.5" fill="#3B82F6"/>
+      <rect x="12" y="20.5" width="24" height="7" rx="3.5" fill="#00A4A6" opacity=".85"/>
+      <rect x="17" y="32" width="14" height="7" rx="3.5" fill="#6FE3B0"/>
+    </svg>
+    <svg width="238" height="52" viewBox="0 0 238 52" fill="none" aria-label="Overhead logo C">
+      <rect x="2" y="12" width="26" height="5.4" rx="2.7" fill="#3B82F6"/>
+      <rect x="5.8" y="21.3" width="18.4" height="5.4" rx="2.7" fill="#00A4A6" opacity=".85"/>
+      <rect x="9.6" y="30.6" width="10.8" height="5.4" rx="2.7" fill="#6FE3B0"/>
+      <text x="40" y="34" fill="#E8ECF2" font-size="24" font-weight="600"
+            letter-spacing="-.6" font-family="Archivo,Helvetica,Arial,sans-serif">Overhead</text>
+    </svg>
+  </div>
+  <p class="note">Layers narrowing as they descend — the containment tree in profile, and a stand-in for
+  a cost bar. The most "product" of the three; the least literal about the name.</p>
+</div>
+
+<!-- ============ D ============ -->
+<h2>D · The O is the frame</h2>
+<div class="card">
+  <span class="tag">wordmark only</span>
+  <div class="row">
+    <svg width="252" height="52" viewBox="0 0 252 52" fill="none" aria-label="Overhead logo D">
+      <rect x="3.2" y="13.2" width="25.6" height="25.6" rx="6" stroke="#3B82F6" stroke-width="2.4"/>
+      <rect x="12.4" y="22.4" width="7.2" height="7.2" rx="2" fill="#6FE3B0"/>
+      <text x="36" y="34" fill="#E8ECF2" font-size="24" font-weight="600"
+            letter-spacing="-.6" font-family="Archivo,Helvetica,Arial,sans-serif">verhead</text>
+    </svg>
+  </div>
+  <p class="note">The O becomes a container with one resource inside it. Cheapest to reproduce, and the
+  mark and the word are the same object — but only works at wordmark size, so it still needs A or B as
+  the square avatar.</p>
+</div>
+
+<!-- ============ light ============ -->
+<h2>On light</h2>
+<div class="card light">
+  <div class="row">
+    <svg width="56" height="56" viewBox="0 0 48 48" fill="none">
+      <rect x="3.25" y="3.25" width="41.5" height="41.5" rx="9" stroke="#2563EB" stroke-width="2.5"/>
+      <rect x="11.25" y="11.25" width="25.5" height="25.5" rx="5.5" stroke="#00A4A6"
+            stroke-width="1.8" stroke-dasharray="4 3.2"/>
+      <rect x="19.5" y="19.5" width="9" height="9" rx="2.4" fill="#2563EB"/>
+    </svg>
+    <svg width="56" height="56" viewBox="0 0 48 48" fill="none">
+      <path d="M4 15V7a3 3 0 0 1 3-3h8M33 4h8a3 3 0 0 1 3 3v8M44 33v8a3 3 0 0 1-3 3h-8M15 44H7a3 3 0 0 1-3-3v-8"
+            stroke="#2563EB" stroke-width="2.6" stroke-linecap="round"/>
+      <rect x="19.5" y="19.5" width="9" height="9" rx="2.4" fill="#0F9D74"/>
+    </svg>
+    <svg width="220" height="52" viewBox="0 0 230 52" fill="none">
+      <rect x="2.1" y="10.1" width="31.8" height="31.8" rx="7" stroke="#2563EB" stroke-width="2.1"/>
+      <rect x="8.4" y="16.4" width="19.2" height="19.2" rx="4.2" stroke="#00A4A6"
+            stroke-width="1.5" stroke-dasharray="3.2 2.6"/>
+      <rect x="14.9" y="22.9" width="6.2" height="6.2" rx="1.7" fill="#2563EB"/>
+      <text x="46" y="34" fill="#0B0D10" font-size="24" font-weight="600"
+            letter-spacing="-.6" font-family="Archivo,Helvetica,Arial,sans-serif">Overhead</text>
+    </svg>
+  </div>
+</div>
+
+<!-- ============ favicon ============ -->
+<h2>Favicon / avatar — small sizes</h2>
+<div class="card">
+  <div class="tiles">
+    <div class="tile" style="width:64px;height:64px">
+      <svg width="40" height="40" viewBox="0 0 48 48" fill="none">
+        <rect x="3.25" y="3.25" width="41.5" height="41.5" rx="9" stroke="#3B82F6" stroke-width="3"/>
+        <rect x="19.5" y="19.5" width="9" height="9" rx="2.4" fill="#8FB8FF"/>
+      </svg>
+    </div>
+    <div class="tile" style="width:44px;height:44px">
+      <svg width="28" height="28" viewBox="0 0 48 48" fill="none">
+        <rect x="3.25" y="3.25" width="41.5" height="41.5" rx="9" stroke="#3B82F6" stroke-width="3.4"/>
+        <rect x="19" y="19" width="10" height="10" rx="2.6" fill="#8FB8FF"/>
+      </svg>
+    </div>
+    <div class="tile" style="width:32px;height:32px">
+      <svg width="20" height="20" viewBox="0 0 48 48" fill="none">
+        <rect x="3.25" y="3.25" width="41.5" height="41.5" rx="9" stroke="#3B82F6" stroke-width="4"/>
+        <rect x="18.5" y="18.5" width="11" height="11" rx="2.8" fill="#8FB8FF"/>
+      </svg>
+    </div>
+    <div class="tile" style="width:24px;height:24px">
+      <svg width="16" height="16" viewBox="0 0 48 48" fill="none">
+        <rect x="3.5" y="3.5" width="41" height="41" rx="9" stroke="#3B82F6" stroke-width="5"/>
+        <rect x="18" y="18" width="12" height="12" rx="3" fill="#8FB8FF"/>
+      </svg>
+    </div>
+    <span class="swatchlabel">64 · 44 · 32 · 24 px — dashed ring dropped below 44, stroke thickened</span>
+  </div>
+</div>
+
+<h2>Notes</h2>
+<div class="card">
+  <p class="note" style="margin-top:0">
+  Type is <code>Archivo 600</code> at <code>-0.6</code> tracking — the font already in the app, so the
+  logo and the top bar match. For a final asset the wordmark should be converted to outlines so it
+  renders identically without the font installed.<br><br>
+  Colours are the app's tokens exactly: <code>#3B82F6</code> accent, <code>#00A4A6</code> region teal,
+  <code>#6FE3B0</code> good, <code>#8FB8FF</code> accent-ink. On light backgrounds the blue steps down
+  to <code>#2563EB</code> for contrast.
+  </p>
+</div>
+</div>

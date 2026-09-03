@@ -65,6 +65,7 @@ const BLURB: Record<string, string> = {
   "event-driven": "Cognito, EventBridge, Step Functions, SNS fan-out, VPC-attached workers.",
   "partner-checkout": "An architecture whose edges are not AWS: a shopper, a payment provider, a warehouse.",
   "refund-approval": "No AWS at all · a plain flowchart, on the same canvas, priced at nothing.",
+  "saas-platform": "A Series-A SaaS · all sixteen services, four levels of containment, eight findings.",
 };
 
 const FILE_SOURCES: FileSource[] = [

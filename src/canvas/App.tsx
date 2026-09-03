@@ -35,6 +35,7 @@ import mediaPipeline from "../../samples/media-pipeline.json";
 import eventDriven from "../../samples/event-driven.json";
 import partnerCheckout from "../../samples/partner-checkout.json";
 import refundApproval from "../../samples/refund-approval.json";
+import saasPlatform from "../../samples/saas-platform.json";
 
 export const SAMPLES: Record<string, StateSnapshot> = {
   "api-backend": apiBackend as unknown as StateSnapshot,
@@ -42,6 +43,7 @@ export const SAMPLES: Record<string, StateSnapshot> = {
   "event-driven": eventDriven as unknown as StateSnapshot,
   "partner-checkout": partnerCheckout as unknown as StateSnapshot,
   "refund-approval": refundApproval as unknown as StateSnapshot,
+  "saas-platform": saasPlatform as unknown as StateSnapshot,
 };
 
 const AUTOSAVE_KEY = "overhead-state-v2";

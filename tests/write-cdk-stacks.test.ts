@@ -16,7 +16,7 @@ const pricing = JSON.parse(
   readFileSync(join(__dirname, "..", "data", "pricing.us-east-1.json"), "utf8"),
 ) as PricingTable;
 
-const SAMPLES = ["api-backend", "media-pipeline", "event-driven", "partner-checkout"];
+const SAMPLES = ["api-backend", "media-pipeline", "event-driven", "partner-checkout", "saas-platform"];
 
 /** One node per service, at its defaults · the fixture that keeps a newly
  *  added service from shipping CDK that does not compile. */
