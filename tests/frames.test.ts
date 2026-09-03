@@ -11,6 +11,7 @@ import {
   contentBoxes,
   frameBoxes,
   hitContainer,
+  framesAt,
   placeNewFrame,
   translateContainer,
 } from "../src/engine/frames";
@@ -175,5 +176,34 @@ describe("placeNewFrame", () => {
     const clear = placeNewFrame("cloud", null, [{ l: 0, t: 0, r: 600, b: 400 }], []);
     expect(clear.x).toBeGreaterThan(600);
     expect(placeNewFrame("cloud", null, [], [])).toMatchObject({ x: 80, y: 80 });
+  });
+});
+
+describe("framesAt", () => {
+  const box = (l: number, t: number, r: number, b: number) => ({ l, t, r, b });
+  const at = (x: number, y: number) =>
+    framesAt({ x, y }, [
+      { kind: "container" as const, id: "cloud", box: box(0, 0, 1000, 800) },
+      { kind: "container" as const, id: "region", box: box(50, 50, 900, 700) },
+      { kind: "section" as const, id: "ingest", box: box(100, 100, 400, 300) },
+      { kind: "section" as const, id: "elsewhere", box: box(600, 600, 700, 650) },
+    ]);
+
+  it("lists what is under the point, innermost first", () => {
+    // Innermost is smallest area · a section inside a VPC comes before it,
+    // which is what the eye reads as "on top" and what a click should take.
+    expect(at(200, 200).map((f) => f.id)).toEqual(["ingest", "region", "cloud"]);
+    expect(at(500, 500).map((f) => f.id)).toEqual(["region", "cloud"]);
+    expect(at(10, 10).map((f) => f.id)).toEqual(["cloud"]);
+  });
+
+  it("is empty on open canvas, so a click there still clears", () => {
+    expect(at(2000, 2000)).toEqual([]);
+  });
+
+  it("keeps sections and containers in one list, ordered by area alone", () => {
+    // Sections do not nest and containers nest by ownership · area is the
+    // only thing the two share at a point.
+    expect(at(650, 620).map((f) => f.id)).toEqual(["elsewhere", "region", "cloud"]);
   });
 });

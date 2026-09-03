@@ -23,7 +23,7 @@ import { TypedEdge } from "./TypedEdge";
 import { ContainerFrames } from "./ContainerFrames";
 import { SectionFrames } from "./SectionFrames";
 import { outermostCollapsedAncestor } from "@/engine/containers";
-import { frameBoxes, hitContainer, movedNodeIds, sectionsAfterDrop } from "@/engine/frames";
+import { frameBoxes, framesAt, hitContainer, movedNodeIds, sectionBoxes, sectionsAfterDrop } from "@/engine/frames";
 import { useFitDrawing } from "./fitDrawing";
 import { PeerCursors } from "./PeerCursors";
 import { sendCursor } from "@/net/room";
@@ -70,6 +70,9 @@ export function Canvas() {
   const setPalette = useStore((s) => s.setPalette);
   const setLabelEditing = useStore((s) => s.setLabelEditing);
   const { screenToFlowPosition, getInternalNode } = useReactFlow();
+  /** Where the last pane click landed and how deep into the frame stack it
+   *  had walked · clicking the same spot again goes one further out. */
+  const cycle = useRef<{ x: number; y: number; i: number } | null>(null);
   const selectedId = useStore((s) => s.selectedId);
   const selectedIds = useStore((s) => s.selectedIds);
   const setSelectedIds = useStore((s) => s.setSelectedIds);
@@ -574,10 +577,45 @@ export function Canvas() {
           e.stopPropagation();
           selectEdge(edge.id);
         }}
-        onPaneClick={() => {
-          select(null);
+        onPaneClick={(e) => {
           selectEdge(null);
           useStore.getState().setTrace(null);
+          // Blank space *inside* a frame selects that frame · it used to
+          // clear the selection, which meant a container could only be
+          // selected by its header band, and its resize grip only shows
+          // once it is selected. So an empty VPC was a box you could not
+          // get hold of.
+          //
+          // Clicking the same spot again walks outward: section, then the
+          // VPC around it, then the region, then nothing, then round again.
+          // With three frames over one point there is no other way to reach
+          // the middle one.
+          const st = useStore.getState();
+          const p = screenToFlowPosition({ x: e.clientX, y: e.clientY });
+          const opts = { nodeW: NODE_W, nodeH: NODE_H };
+          const hidden = collapsedByNode.size ? new Set(collapsedByNode.keys()) : undefined;
+          const stack = framesAt(p, [
+            ...[...frameBoxes(st.nodes, st.containers, opts)].map(([id, box]) => ({ kind: "container" as const, id, box })),
+            ...[...sectionBoxes(st.nodes, st.sections, { ...opts, hidden })].map(([id, box]) => ({ kind: "section" as const, id, box })),
+          ]);
+          if (!stack.length) {
+            cycle.current = null;
+            select(null);
+            return;
+          }
+          const near = cycle.current && Math.hypot(p.x - cycle.current.x, p.y - cycle.current.y) < 8;
+          const i = near ? cycle.current!.i + 1 : 0;
+          // One past the outermost is "nothing selected", so the cycle
+          // always offers a way out rather than trapping you in the frames ·
+          // and the counter goes back to the start there, so the click after
+          // that is the innermost again rather than a second empty one.
+          if (i >= stack.length) {
+            cycle.current = { x: p.x, y: p.y, i: -1 };
+            select(null);
+            return;
+          }
+          cycle.current = { x: p.x, y: p.y, i };
+          select(stack[i].id);
         }}
         onConnect={(c) => {
           if (!c.source || !c.target) return;

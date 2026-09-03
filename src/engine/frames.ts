@@ -174,6 +174,31 @@ export function hitContainer(
 }
 
 /**
+ * Every frame whose box contains the point, innermost first.
+ *
+ * "Innermost" is **smallest area**, not tree depth · containers nest by
+ * ownership and sections do not nest at all, so the only thing the two have
+ * in common at a point on the canvas is how much of it they cover. A section
+ * drawn inside a VPC comes before the VPC because it is smaller, which is
+ * also what the eye reads as "on top".
+ *
+ * This is what clicking blank space inside a frame selects, and clicking the
+ * same spot again walks outward through the list · with three frames over
+ * one point there is otherwise no way to reach the middle one at all.
+ */
+export function framesAt(
+  point: { x: number; y: number },
+  boxes: { kind: "container" | "section"; id: string; box: Box }[],
+): { kind: "container" | "section"; id: string }[] {
+  return boxes
+    .filter((f) => inside(f.box, point))
+    .sort((a, b) => area(a.box) - area(b.box))
+    .map(({ kind, id }) => ({ kind, id }));
+}
+
+const area = (b: Box) => Math.max(0, b.r - b.l) * Math.max(0, b.b - b.t);
+
+/**
  * Translate a container by (dx, dy): its stored bounds, every descendant
  * frame's stored bounds, and every node inside at any depth. One patch so
  * undo captures it as a single step.

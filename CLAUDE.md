@@ -616,6 +616,19 @@ the palette at bottom-centre, never `display: none`.
   palette when open, the edge styling toolbar on a selected edge, one popover at a time, the notice chip
   while it shows. React Flow's attribution sits bottom-left.
 - Canvas: radial stage lift; React Flow `<Background>` dots (26 px, `#2A3441`) that pan and zoom; ⇧G toggles.
+- **Blank space inside a frame selects that frame, and clicking again walks outward** (2026-09-03,
+  the user: "clicking on blank space inside a section/container doesn't select it? … shouldn't I be
+  able to cycle through easily?"). `onPaneClick` used to clear the selection, so a frame could only
+  be selected by its header band · and since the resize grip only appears once a frame is selected
+  or its header hovered, an empty VPC was a box you could not get hold of. Now `framesAt`
+  (`engine/frames.ts`, pure and tested) lists every container **and** section whose box holds the
+  point, **innermost first**, where innermost is *smallest area* rather than tree depth: containers
+  nest by ownership, sections do not nest at all, and area is the only thing the two share at a
+  point on the canvas · it is also what the eye reads as "on top". Clicking the same spot (within
+  8 px) walks one step out each time, and one past the outermost is **nothing selected**, so the
+  cycle always offers a way out and the click after that is the innermost again. Clicking anywhere
+  else starts a fresh stack. On event-driven: private-a → orders-vpc → ap-southeast-1 → AWS Cloud →
+  nothing → private-a.
 - Inline editing: double-click a node label, a frame name or an edge label on the canvas. **⌘A selects
   everything** (`selectAll`: resources, containers and sections · `selectedId` goes to null because
   "everything" has no primary object) and **Delete removes the whole selection** in one undo step
