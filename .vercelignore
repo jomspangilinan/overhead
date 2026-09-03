@@ -1,0 +1,6 @@
+# build artefacts and test output · never part of a deployment
+out
+cdk-out-test
+.next
+node_modules
+reference
