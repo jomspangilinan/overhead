@@ -15,9 +15,11 @@ import { formatCost } from "@/engine/model";
 import { NODE_W, NODE_H } from "./nodeMetrics";
 import { FrameChrome } from "./frames/FrameChrome";
 import { useFrameGesture } from "./frames/useFrameGesture";
+import { useLit, frameDim } from "./isolation";
 
 export function ContainerFrames() {
   const nodes = useStore((s) => s.nodes);
+  const lit = useLit();
   const containers = useStore((s) => s.containers);
   const costOn = useStore((s) => s.layers.cost);
   const costDisplay = useStore((s) => s.costDisplay);
@@ -84,6 +86,11 @@ export function ContainerFrames() {
         const box: Box | undefined = boxes.get(c.id);
         if (!box) return null;
         const meta = KIND_META[c.kind];
+        // A frame holding something lit stays legible · that is how you see
+        // where the lit thing is. One that holds nothing fades with the
+        // resources around it.
+        const inside = new Set([c.id, ...descendantIds(containers, c.id)]);
+        const holds = nodes.filter((n) => n.container && inside.has(n.container)).map((n) => n.id);
         const stat = stats.get(c.id);
         return (
           <FrameChrome
@@ -96,6 +103,7 @@ export function ContainerFrames() {
             fill
             radius={10}
             selected={selectedId === c.id || selectedIds.includes(c.id)}
+            dim={frameDim(lit, holds)}
             icon={meta.icon ?? undefined}
             kindLabel={meta.label}
             name={c.name}

@@ -13,10 +13,12 @@ import { sectionBoxes, movedSectionIds, type Box } from "@/engine/frames";
 import { outermostCollapsedAncestor } from "@/engine/containers";
 import { NODE_W, NODE_H } from "./nodeMetrics";
 import { FrameChrome } from "./frames/FrameChrome";
+import { useLit, frameDim } from "./isolation";
 import { useFrameGesture } from "./frames/useFrameGesture";
 
 export function SectionFrames() {
   const sections = useStore((s) => s.sections);
+  const lit = useLit();
   const nodes = useStore((s) => s.nodes);
   const containers = useStore((s) => s.containers);
   const on = useStore((s) => s.layers.sections);
@@ -77,6 +79,7 @@ export function SectionFrames() {
             fill={s.style?.fill ?? true}
             radius={12}
             selected={selectedId === s.id || selectedIds.includes(s.id)}
+            dim={frameDim(lit, s.nodeIds)}
             kindLabel={`Section · ${s.nodeIds.length}`}
             name={s.name}
             collapseTitle={`Collapse ${s.name} to a card`}

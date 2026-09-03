@@ -24,6 +24,9 @@ export interface FrameChromeProps {
   fill: boolean;
   radius?: number;
   selected: boolean;
+  /** Faded because the hover or the trace has passed this frame by · it
+   *  holds nothing that is lit (`canvas/isolation.tsx`). */
+  dim?: boolean;
   icon?: string;
   kindLabel: string;
   name: string;
@@ -86,7 +89,7 @@ export function FrameChrome(p: FrameChromeProps) {
     },
   };
   return (
-    <div className="oh-frame" data-selected={p.selected ? "true" : "false"}>
+    <div className="oh-frame" data-selected={p.selected ? "true" : "false"} data-dim={p.dim ? "true" : undefined}>
       <div
         className="pointer-events-none absolute"
         style={{

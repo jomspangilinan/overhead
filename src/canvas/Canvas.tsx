@@ -26,6 +26,7 @@ import { outermostCollapsedAncestor } from "@/engine/containers";
 import { frameBoxes, framesAt, hitContainer, movedNodeIds, sectionBoxes, sectionsAfterDrop } from "@/engine/frames";
 import { traceFrom } from "@/engine/trace";
 import { TracePulse } from "./TracePulse";
+import { LitProvider } from "./isolation";
 import { useFitDrawing } from "./fitDrawing";
 import { PeerCursors } from "./PeerCursors";
 import { sendCursor } from "@/net/room";
@@ -711,8 +712,10 @@ export function Canvas() {
             color="#2A3441"
           />
         ) : null}
-        <ContainerFrames />
-        <SectionFrames />
+        <LitProvider value={litIds}>
+          <ContainerFrames />
+          <SectionFrames />
+        </LitProvider>
         <TracePulse />
         <PeerCursors />
       </ReactFlow>

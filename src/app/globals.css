@@ -440,6 +440,18 @@ body {
   opacity: 0.16;
 }
 
+/* Frames fade with everything else. They are painted through a
+   ViewportPortal rather than as React Flow nodes, so the rule above never
+   reached them: hovering a resource dimmed the whole drawing and left a VPC
+   holding nothing relevant at full strength, which read as the answer. A
+   frame that *holds* something lit keeps its opacity · that is how you see
+   where the lit thing is (`canvas/isolation.tsx`). Slightly stronger than
+   0.16 because a frame is a thin outline, not a filled icon. */
+.oh-frame[data-dim="true"],
+.oh-frame-card[data-dim="true"] {
+  opacity: 0.22;
+}
+
 /* A resource the open fork touched · the delta on the drawing itself */
 .react-flow__node.forked .overhead-node,
 .react-flow__node.forked .oh-card-body {

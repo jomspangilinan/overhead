@@ -468,7 +468,16 @@ carrying its members, `az` dissolves upward, `subnet` → `subnetpub`, `node.gro
 6. **Layers:** `request` · `events` · `data` · `security` · `cost` · `sections`. Default on: request, events,
    data, sections.
 7. **Volume on edges.** Stroke width follows `volumePerMonth` on a log scale (1.2 → 3.5 px).
-8. **Hover isolates.** A node's edges brighten, the rest dims to 16%. It works on the graph **as drawn**:
+8. **Hover isolates, frames included.** A node's edges brighten, the rest dims to 16% · and a frame
+    dims to 22% unless it **holds** something lit (2026-09-03, the user: "when I hover an object the
+    containers/sections don't dim"). They were never part of it: the dimming is a CSS rule on
+    `.react-flow__node` / `.react-flow__edge`, and a frame is painted through a `ViewportPortal`, so
+    hovering one resource faded the whole drawing and left a VPC holding nothing relevant at full
+    strength · which read as the answer. The lit set is computed once in `Canvas` and handed to the
+    frames through `canvas/isolation.tsx` (`LitProvider` / `useLit` / `frameDim`) rather than
+    recomputed, so the frames and the resources can never disagree. A frame around the lit resource
+    keeps its opacity on purpose: it is how you see *where* the lit thing is. 22% rather than 16%
+    because a frame is a thin outline, not a filled icon. It works on the graph **as drawn**:
    `hoverSeeds` turns a hovered collapsed-frame card into every member hidden inside it (so its edges
    light), and `litKeys` maps the lit model ids onto what is rendered (a hidden member → the card that
    stands in for it). Without that the card you were pointing at was the one thing that dimmed, and the
