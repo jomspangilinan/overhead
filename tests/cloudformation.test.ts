@@ -5,7 +5,8 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { exportCloudFormation, exportJson } from "../src/engine/exporters";
+import { exportCdk, exportCloudFormation, exportJson } from "../src/engine/exporters";
+import { CDK_STATE_BEGIN } from "../src/engine/exporters/overheadState";
 import { cloudFormationTemplate } from "../src/engine/exporters/cloudformation";
 import { parseYaml } from "../src/engine/iac/yaml";
 import { importCloudFormation } from "../src/engine/iac/cloudformation";
@@ -210,6 +211,74 @@ describe("importing somebody else's template", () => {
     const r = importCloudFormation('{"hello":"world"}');
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.code).toBe("not_a_template");
+  });
+});
+
+// Export writes a stack, so Import reads one back · ours, through the block
+// it carries, and never by parsing anybody's TypeScript.
+describe("a generated CDK stack, back", () => {
+  for (const name of ["api-backend", "media-pipeline", "event-driven"]) {
+    it(`${name}: the stack carries the drawing`, () => {
+      const snap = sample(name);
+      const stack = exportCdk(snap, pricing, name);
+      expect(detectFormat(stack)).toBe("cdk");
+      const back = ok(importAny(stack));
+      expect(back.format).toBe("cdk");
+      expect(back.report.source).toBe("overhead");
+      expect(back.snapshot.nodes.map((n) => n.id)).toEqual(snap.nodes.map((n) => n.id));
+      expect(back.snapshot.nodes.map((n) => n.position)).toEqual(snap.nodes.map((n) => n.position));
+      expect(back.snapshot.nodes.map((n) => n.settings)).toEqual(snap.nodes.map((n) => n.settings));
+      expect(back.snapshot.containers).toEqual(snap.containers);
+      expect(back.snapshot.sections).toEqual(snap.sections);
+      expect(back.snapshot.traffic).toEqual(snap.traffic);
+      expect(monthlyTotal(back.snapshot, pricing)).toBeCloseTo(monthlyTotal(snap, pricing), 6);
+    });
+  }
+
+  it("the block is comments only · the stack itself is unchanged", () => {
+    const snap = sample("api-backend");
+    const stack = exportCdk(snap, pricing, "api-backend");
+    const code = stack.slice(stack.indexOf("export class"), stack.indexOf(CDK_STATE_BEGIN));
+    expect(code).not.toMatch(/overhead/i);
+    for (const line of stack.slice(stack.indexOf(CDK_STATE_BEGIN)).trim().split("\n")) {
+      expect(line.trim().startsWith("//")).toBe(true);
+    }
+  });
+
+  it("says to synthesise when the stack is somebody else's", () => {
+    const foreign = [
+      'import * as cdk from "aws-cdk-lib";',
+      'import * as lambda from "aws-cdk-lib/aws-lambda";',
+      "export class TheirStack extends cdk.Stack {}",
+    ].join("\n");
+    expect(detectFormat(foreign)).toBe("cdk");
+    const r = importAny(foreign);
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.code).toBe("cdk_source");
+      expect(r.message).toMatch(/cdk synth/);
+    }
+  });
+
+  // A stack exported before the block existed, or one whose block was cut
+  // in half, still labels every construct · that much comes back.
+  it("falls back to the construct labels, and says what it could not know", () => {
+    const snap = sample("media-pipeline");
+    const stack = exportCdk(snap, pricing, "media-pipeline");
+    const cut = stack.slice(0, stack.indexOf(CDK_STATE_BEGIN) + 400);
+    const back = ok(importAny(cut));
+    expect(back.report.source).toBe("foreign");
+    expect(back.snapshot.nodes.map((n) => n.name).sort()).toEqual(snap.nodes.map((n) => n.name).sort());
+    expect(back.snapshot.nodes.map((n) => n.service).sort()).toEqual(snap.nodes.map((n) => n.service).sort());
+    // the code states neither wiring nor the settings that drive price
+    expect(back.snapshot.edges).toEqual([]);
+    expect(back.report.notes.join(" ")).toMatch(/Re-export/);
+  });
+
+  it("a stack with no Overhead constructs in it is still just a program", () => {
+    const r = importAny('import * as cdk from "aws-cdk-lib";\nexport class X extends cdk.Stack {}');
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.code).toBe("cdk_source");
   });
 });
 

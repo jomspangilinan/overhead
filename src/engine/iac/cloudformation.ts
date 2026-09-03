@@ -51,7 +51,7 @@ export type ImportResult =
        *  has no CloudFormation home and must not be reset to a default. */
       stated: Record<string, string[]>;
     }
-  | { ok: false; code: "invalid_json" | "not_a_template"; message: string };
+  | { ok: false; code: "invalid_json" | "not_a_template" | "cdk_source"; message: string };
 
 /** Every CloudFormation type the ten services answer to. */
 export function serviceByCfnType(): Map<string, ServiceId> {
@@ -93,13 +93,13 @@ export function importCloudFormation(raw: string, opts: { region?: string } = {}
   const template = parsed;
 
   const own = (template.Metadata?.[OVERHEAD_METADATA_KEY] ?? null) as OverheadBlock | null;
-  if (own && Array.isArray(own.nodes)) return fromOwnTemplate(own);
+  if (own && Array.isArray(own.nodes)) return fromOverheadBlock(own, "template");
   return fromForeignTemplate(template, opts.region ?? "ap-southeast-1");
 }
 
 // ── Our own template ──────────────────────────────────────────────────────
 
-interface OverheadBlock {
+export interface OverheadBlock {
   version?: number;
   drawing?: string;
   region?: string;
@@ -110,7 +110,10 @@ interface OverheadBlock {
   edges?: unknown[];
 }
 
-function fromOwnTemplate(block: OverheadBlock): ImportResult {
+/** Our own state block, however it arrived · in a template's Metadata or in
+ *  a comment at the foot of a generated stack. One reader, because the block
+ *  is one thing (`exporters/overheadState.ts`). */
+export function fromOverheadBlock(block: OverheadBlock, carrier: "template" | "stack"): ImportResult {
   const nodes = (block.nodes ?? []).filter((n) => n.service && getService(String(n.service)));
   const dropped = (block.nodes ?? []).length - nodes.length;
   const snapshot = migrateSnapshot({
@@ -132,7 +135,7 @@ function fromOwnTemplate(block: OverheadBlock): ImportResult {
       containers: snapshot.containers.length,
       skipped: [],
       notes: [
-        `Written by Overhead${block.drawing ? ` from "${block.drawing}"` : ""} · positions, containers, sections and settings came back exactly.`,
+        `Written by Overhead${block.drawing ? ` from "${block.drawing}"` : ""} · the ${carrier} carried the drawing, so positions, containers, sections and settings came back exactly.`,
         ...(dropped ? [`${dropped} resource(s) named a service this build does not have.`] : []),
       ],
     },
