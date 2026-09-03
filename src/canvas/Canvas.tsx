@@ -24,6 +24,8 @@ import { ContainerFrames } from "./ContainerFrames";
 import { SectionFrames } from "./SectionFrames";
 import { outermostCollapsedAncestor } from "@/engine/containers";
 import { frameBoxes, framesAt, hitContainer, movedNodeIds, sectionBoxes, sectionsAfterDrop } from "@/engine/frames";
+import { traceFrom } from "@/engine/trace";
+import { TracePulse } from "./TracePulse";
 import { useFitDrawing } from "./fitDrawing";
 import { PeerCursors } from "./PeerCursors";
 import { sendCursor } from "@/net/room";
@@ -56,6 +58,8 @@ export function Canvas() {
   const cardMode = useStore(cardModeOf);
 
   const traceIds = useStore((s) => s.traceIds);
+  const tracePlay = useStore((s) => s.tracePlay);
+  const traceBranch = useStore((s) => s.traceBranch);
   const scenario = useStore((s) => s.scenario);
   const traffic = useStore((s) => s.traffic);
   const region = useStore((s) => s.region);
@@ -166,7 +170,33 @@ export function Canvas() {
     return out;
   }, [hoveredId, collapsedByNode]);
 
+  /** The routes of the current trace · the pulse walks these and, in branch
+   *  mode, they are also what lights. Recomputed here rather than stored:
+   *  it is a pure function of the edges and the origin (`engine/trace.ts`). */
+  const traceRoutes = useMemo(
+    () => (traceIds?.length ? traceFrom(edges, traceIds[0]).branches : []),
+    [traceIds, edges],
+  );
+  /** The edge ids lit right now · one route in branch mode, all of them in
+   *  "all". Null when nothing is traced. */
+  const tracedEdgeIds = useMemo(() => {
+    if (!traceIds?.length) return null;
+    if (tracePlay === "all" || !traceRoutes.length) return null;
+    return new Set(traceRoutes[(traceBranch ?? 0) % traceRoutes.length]);
+  }, [traceIds, tracePlay, traceRoutes, traceBranch]);
+
   const litIds = useMemo(() => {
+    if (tracedEdgeIds) {
+      // Only what this route touches · the origin plus both ends of each of
+      // its connections, so a fan-out reads one arm at a time.
+      const lit = new Set<string>([traceIds![0]]);
+      for (const e of edges) {
+        if (!tracedEdgeIds.has(e.id)) continue;
+        lit.add(e.from);
+        lit.add(e.to);
+      }
+      return lit;
+    }
     if (traceIds?.length) return new Set(traceIds);
     if (!hoverSeeds) return null;
     const seeds = hoverSeeds;
@@ -176,7 +206,7 @@ export function Canvas() {
       if (seeds.has(e.to)) lit.add(e.from);
     }
     return lit;
-  }, [hoverSeeds, edges, traceIds]);
+  }, [hoverSeeds, edges, traceIds, tracedEdgeIds]);
 
   const litKeys = useMemo(() => {
     if (!litIds) return null;
@@ -357,7 +387,9 @@ export function Canvas() {
         className:
           litIds &&
           (traceIds?.length
-            ? litIds.has(e.from) && litIds.has(e.to)
+            ? tracedEdgeIds
+              ? tracedEdgeIds.has(e.id)
+              : litIds.has(e.from) && litIds.has(e.to)
             : !!hoverSeeds && (hoverSeeds.has(e.from) || hoverSeeds.has(e.to)))
             ? traceIds?.length
               ? "lit traced"
@@ -368,7 +400,7 @@ export function Canvas() {
       });
     }
     return out;
-  }, [edges, layers, litIds, hoverSeeds, traceIds, collapsedByNode, selectedEdgeId, rfNodes, nodes, cardMode]);
+  }, [edges, layers, litIds, hoverSeeds, traceIds, tracedEdgeIds, collapsedByNode, selectedEdgeId, rfNodes, nodes, cardMode]);
 
   const onMove = useCallback(
     (_evt: unknown, viewport: { zoom: number }) => setZoom(viewport.zoom),
@@ -552,18 +584,7 @@ export function Canvas() {
           }
           if (tool === "trace" && !isFrameCard(n.id)) {
             const st = useStore.getState();
-            const visited = new Set<string>([n.id]);
-            const queue = [n.id];
-            while (queue.length) {
-              const cur = queue.shift()!;
-              for (const e of st.edges) {
-                if (e.from === cur && !visited.has(e.to)) {
-                  visited.add(e.to);
-                  queue.push(e.to);
-                }
-              }
-            }
-            st.setTrace([...visited]);
+            st.setTrace(traceFrom(st.edges, n.id).nodeIds);
             // one click, one trace · the tool disarms so the next click
             // inspects a node again (the pill keeps the trace on screen)
             st.setTool("select");
@@ -692,6 +713,7 @@ export function Canvas() {
         ) : null}
         <ContainerFrames />
         <SectionFrames />
+        <TracePulse />
         <PeerCursors />
       </ReactFlow>
     </div>

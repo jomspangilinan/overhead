@@ -475,7 +475,20 @@ carrying its members, `az` dissolves upward, `subnet` → `subnetpub`, `node.gro
    frame around it looked active instead. The card's border goes to the accent on hover and while
    selected, which needs the frame colour to ride on the wrapper as `--frame-color`: an inline
    `border-color` beats every stylesheet rule.
-9. **Trace, don't number.** `trace_request` (or the T tool + a click) lights the path from a node.
+9. **Trace, don't number.** `trace_request` (or the T tool + a click) lights the path from a node ·
+    **one route at a time** (2026-09-03, the user: "I want it to go one by one per branch"). One walk
+    (`engine/trace.ts` `traceFrom`, pure and tested) returns both the set reached and the **routes**:
+    every origin→leaf path as an ordered list of edge ids, longest first. It replaced the same BFS
+    written twice, in `Canvas.tsx` and in `tools.ts`, which is why the canvas and the agent could
+    have disagreed.
+    `TracePulse.tsx` runs a dot along one route at a time, and **the lighting follows it** · a
+    26-resource trace lit all at once says "these are highlighted", walked route by route it says
+    what happens. The dot reads its geometry off the *rendered* `<path>` by edge id
+    (`getPointAtLength`), so it already has the waypoints, anchors and shape the user picked rather
+    than a second copy of `edgeGeometry` to keep in step. `prefers-reduced-motion` turns it off.
+    The pill carries the toggle · "route 2 of 11" walks them, clicking it lights all of them at once
+    the way it used to (`tracePlay`, presentation state, never the model). `trace_request` returns
+    the routes named, which is the only part of a trace an agent can read back.
 10. **Settings never sit on the diagram.** The Inspector shows the schema form; the card shows the three that
     decide price.
 11. **Findings are rings and stripes.** Icon mode: amber/red ring. Card mode: stripe on the left edge.

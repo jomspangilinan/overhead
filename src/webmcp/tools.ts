@@ -31,6 +31,7 @@ import {
 } from "@/engine/containers";
 import { importCloudFormation } from "@/engine/iac/cloudformation";
 import { importMermaid } from "@/engine/iac/mermaid";
+import { traceFrom } from "@/engine/trace";
 import { importOverheadState } from "@/engine/iac/import";
 import { packedLinkFor } from "@/engine/iac/share";
 import {
@@ -612,22 +613,23 @@ export function coreTools(): ToolSpec[] {
         const start = nodeOr(fromNodeId);
         if (!start) return noNode(fromNodeId);
         const s = useStore.getState();
-        const visited = new Set<string>([start.id]);
-        const steps: string[] = [];
-        const queue = [start.id];
-        while (queue.length) {
-          const cur = queue.shift()!;
-          for (const e of s.edges) {
-            if (e.from !== cur || visited.has(e.to)) continue;
-            visited.add(e.to);
-            const a = nodeOr(cur)!;
-            const b = nodeOr(e.to)!;
-            steps.push(`${a.name} ·${e.kind}→ ${b.name}`);
-            queue.push(e.to);
-          }
-        }
-        s.setTrace([...visited]);
-        return text({ from: start.name, steps, nodesLit: visited.size });
+        // Same walk the T tool runs (`engine/trace.ts`) · it was a BFS
+        // written out twice, and the canvas and the agent must light the
+        // same path.
+        const { nodeIds, branches } = traceFrom(s.edges, start.id);
+        s.setTrace(nodeIds);
+        const nameOf = (id: string) => s.nodes.find((n) => n.id === id)?.name ?? id;
+        return text({
+          from: start.name,
+          nodesLit: nodeIds.length,
+          // The routes, named · what the pulse walks one at a time, and the
+          // only part of a trace an agent can actually read back.
+          routes: branches.slice(0, 4).map((route) =>
+            [start.id, ...route.map((eid) => s.edges.find((e) => e.id === eid)!.to)]
+              .map(nameOf)
+              .join(" → "),
+          ),
+        });
       },
     },
     {

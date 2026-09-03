@@ -1,0 +1,176 @@
+<title>Overhead · A+B hybrid</title>
+<style>
+  :root{
+    --bg:#0B0D10; --panel:#111620; --panel2:#0D121A;
+    --line:#1D2531; --ink:#E8ECF2; --ink2:#9AA6B7; --ink3:#66738A; --ink4:#4E5A6B;
+    --accent:#3B82F6; --accent-ink:#8FB8FF; --good:#6FE3B0; --teal:#00A4A6;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:'Archivo',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:40px 24px 80px}
+  header{border-bottom:1px solid var(--line);padding-bottom:20px;margin-bottom:30px}
+  h1{font-size:20px;margin:0 0 6px;letter-spacing:-.02em}
+  .sub{color:var(--ink3);font-size:13px;margin:0;max-width:60ch;line-height:1.5}
+  h2{font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--ink4);
+     margin:34px 0 12px;font-weight:600}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:26px 28px;margin-bottom:14px}
+  .hero{padding:44px 28px;display:grid;place-items:center;gap:26px}
+  .row{display:flex;align-items:center;gap:30px;flex-wrap:wrap}
+  .opt{display:flex;flex-direction:column;align-items:center;gap:10px}
+  .lab{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink4)}
+  .note{color:var(--ink3);font-size:12.5px;line-height:1.55;margin:14px 0 0;max-width:64ch}
+  .tag{display:inline-block;font-size:9.5px;text-transform:uppercase;letter-spacing:.12em;
+       color:var(--accent-ink);background:#1B2534;border-radius:4px;padding:3px 7px;margin-bottom:16px}
+  .light{background:#F3F5F8;border-color:#DFE4EA}
+  .tile{border-radius:12px;display:grid;place-items:center;background:var(--panel2);border:1px solid var(--line)}
+  code{font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;font-size:11.5px;color:var(--ink2);
+       background:var(--panel2);padding:2px 6px;border-radius:4px}
+</style>
+
+<div class="wrap">
+<header>
+  <h1>A + B — the bracket frames it, the ring contains it</h1>
+  <p class="sub">Corner brackets from B carry the “view from above”. The dashed ring and the node from A
+  carry the containment model. Together they read as one thing: a frame looking down on a resource.</p>
+</header>
+
+<h2>The hybrid</h2>
+<div class="card hero">
+  <svg width="132" height="132" viewBox="0 0 48 48" fill="none" aria-label="Overhead mark">
+    <path d="M4 16V7.5A3.5 3.5 0 0 1 7.5 4H16M32 4h8.5A3.5 3.5 0 0 1 44 7.5V16M44 32v8.5a3.5 3.5 0 0 1-3.5 3.5H32M16 44H7.5A3.5 3.5 0 0 1 4 40.5V32"
+          stroke="#3B82F6" stroke-width="2.6" stroke-linecap="round"/>
+    <rect x="12.6" y="12.6" width="22.8" height="22.8" rx="5" stroke="#00A4A6"
+          stroke-width="1.7" stroke-dasharray="3.8 3"/>
+    <rect x="19.6" y="19.6" width="8.8" height="8.8" rx="2.4" fill="#8FB8FF"/>
+  </svg>
+  <svg width="290" height="56" viewBox="0 0 290 56" fill="none" aria-label="Overhead logo">
+    <g transform="translate(2,10) scale(0.75)">
+      <path d="M4 16V7.5A3.5 3.5 0 0 1 7.5 4H16M32 4h8.5A3.5 3.5 0 0 1 44 7.5V16M44 32v8.5a3.5 3.5 0 0 1-3.5 3.5H32M16 44H7.5A3.5 3.5 0 0 1 4 40.5V32"
+            stroke="#3B82F6" stroke-width="3.1" stroke-linecap="round"/>
+      <rect x="12.6" y="12.6" width="22.8" height="22.8" rx="5" stroke="#00A4A6"
+            stroke-width="2" stroke-dasharray="3.8 3"/>
+      <rect x="19.6" y="19.6" width="8.8" height="8.8" rx="2.4" fill="#8FB8FF"/>
+    </g>
+    <text x="48" y="37" fill="#E8ECF2" font-size="26" font-weight="600"
+          letter-spacing="-.7" font-family="Archivo,Helvetica,Arial,sans-serif">Overhead</text>
+  </svg>
+</div>
+
+<h2>Tuning — pick an arm length and an inner ring</h2>
+<div class="card">
+  <span class="tag">same idea, four dials</span>
+  <div class="row">
+
+    <div class="opt">
+      <svg width="72" height="72" viewBox="0 0 48 48" fill="none">
+        <path d="M4 16V7.5A3.5 3.5 0 0 1 7.5 4H16M32 4h8.5A3.5 3.5 0 0 1 44 7.5V16M44 32v8.5a3.5 3.5 0 0 1-3.5 3.5H32M16 44H7.5A3.5 3.5 0 0 1 4 40.5V32"
+              stroke="#3B82F6" stroke-width="2.6" stroke-linecap="round"/>
+        <rect x="12.6" y="12.6" width="22.8" height="22.8" rx="5" stroke="#00A4A6"
+              stroke-width="1.7" stroke-dasharray="3.8 3"/>
+        <rect x="19.6" y="19.6" width="8.8" height="8.8" rx="2.4" fill="#8FB8FF"/>
+      </svg>
+      <span class="lab">1 · medium + dashed</span>
+    </div>
+
+    <div class="opt">
+      <svg width="72" height="72" viewBox="0 0 48 48" fill="none">
+        <path d="M4 21V7.5A3.5 3.5 0 0 1 7.5 4H21M27 4h13.5A3.5 3.5 0 0 1 44 7.5V21M44 27v13.5a3.5 3.5 0 0 1-3.5 3.5H27M21 44H7.5A3.5 3.5 0 0 1 4 40.5V27"
+              stroke="#3B82F6" stroke-width="2.6" stroke-linecap="round"/>
+        <rect x="12.6" y="12.6" width="22.8" height="22.8" rx="5" stroke="#00A4A6"
+              stroke-width="1.7" stroke-dasharray="3.8 3"/>
+        <rect x="19.6" y="19.6" width="8.8" height="8.8" rx="2.4" fill="#8FB8FF"/>
+      </svg>
+      <span class="lab">2 · long arms</span>
+    </div>
+
+    <div class="opt">
+      <svg width="72" height="72" viewBox="0 0 48 48" fill="none">
+        <path d="M4 16V7.5A3.5 3.5 0 0 1 7.5 4H16M32 4h8.5A3.5 3.5 0 0 1 44 7.5V16M44 32v8.5a3.5 3.5 0 0 1-3.5 3.5H32M16 44H7.5A3.5 3.5 0 0 1 4 40.5V32"
+              stroke="#3B82F6" stroke-width="2.6" stroke-linecap="round"/>
+        <rect x="12.6" y="12.6" width="22.8" height="22.8" rx="5" stroke="#00A4A6" stroke-width="1.7"/>
+        <rect x="19.6" y="19.6" width="8.8" height="8.8" rx="2.4" fill="#8FB8FF"/>
+      </svg>
+      <span class="lab">3 · solid ring</span>
+    </div>
+
+    <div class="opt">
+      <svg width="72" height="72" viewBox="0 0 48 48" fill="none">
+        <path d="M4 16V7.5A3.5 3.5 0 0 1 7.5 4H16M32 4h8.5A3.5 3.5 0 0 1 44 7.5V16M44 32v8.5a3.5 3.5 0 0 1-3.5 3.5H32M16 44H7.5A3.5 3.5 0 0 1 4 40.5V32"
+              stroke="#3B82F6" stroke-width="2.6" stroke-linecap="round"/>
+        <rect x="12.6" y="12.6" width="22.8" height="22.8" rx="5" stroke="#00A4A6"
+              stroke-width="1.7" stroke-dasharray="3.8 3"/>
+        <rect x="19.6" y="19.6" width="8.8" height="8.8" rx="2.4" fill="#6FE3B0"/>
+      </svg>
+      <span class="lab">4 · green node</span>
+    </div>
+
+  </div>
+  <p class="note"><strong>1</strong> is the balanced one. <strong>2</strong> encloses more and reads
+  calmer at large sizes. <strong>3</strong> loses the “region is dashed” nod but survives small sizes
+  better. <strong>4</strong> swaps the node to <code>--good</code>, tying the mark to the cost figure,
+  which is also green in the title block.</p>
+</div>
+
+<h2>On light</h2>
+<div class="card light">
+  <div class="row">
+    <svg width="64" height="64" viewBox="0 0 48 48" fill="none">
+      <path d="M4 16V7.5A3.5 3.5 0 0 1 7.5 4H16M32 4h8.5A3.5 3.5 0 0 1 44 7.5V16M44 32v8.5a3.5 3.5 0 0 1-3.5 3.5H32M16 44H7.5A3.5 3.5 0 0 1 4 40.5V32"
+            stroke="#2563EB" stroke-width="2.6" stroke-linecap="round"/>
+      <rect x="12.6" y="12.6" width="22.8" height="22.8" rx="5" stroke="#0E8E90"
+            stroke-width="1.7" stroke-dasharray="3.8 3"/>
+      <rect x="19.6" y="19.6" width="8.8" height="8.8" rx="2.4" fill="#2563EB"/>
+    </svg>
+    <svg width="266" height="56" viewBox="0 0 290 56" fill="none">
+      <g transform="translate(2,10) scale(0.75)">
+        <path d="M4 16V7.5A3.5 3.5 0 0 1 7.5 4H16M32 4h8.5A3.5 3.5 0 0 1 44 7.5V16M44 32v8.5a3.5 3.5 0 0 1-3.5 3.5H32M16 44H7.5A3.5 3.5 0 0 1 4 40.5V32"
+              stroke="#2563EB" stroke-width="3.1" stroke-linecap="round"/>
+        <rect x="12.6" y="12.6" width="22.8" height="22.8" rx="5" stroke="#0E8E90"
+              stroke-width="2" stroke-dasharray="3.8 3"/>
+        <rect x="19.6" y="19.6" width="8.8" height="8.8" rx="2.4" fill="#2563EB"/>
+      </g>
+      <text x="48" y="37" fill="#0B0D10" font-size="26" font-weight="600"
+            letter-spacing="-.7" font-family="Archivo,Helvetica,Arial,sans-serif">Overhead</text>
+    </svg>
+  </div>
+</div>
+
+<h2>Small sizes — the ring drops out, the brackets hold</h2>
+<div class="card">
+  <div class="row">
+    <div class="tile" style="width:72px;height:72px">
+      <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+        <path d="M4 16V7.5A3.5 3.5 0 0 1 7.5 4H16M32 4h8.5A3.5 3.5 0 0 1 44 7.5V16M44 32v8.5a3.5 3.5 0 0 1-3.5 3.5H32M16 44H7.5A3.5 3.5 0 0 1 4 40.5V32"
+              stroke="#3B82F6" stroke-width="2.8" stroke-linecap="round"/>
+        <rect x="12.6" y="12.6" width="22.8" height="22.8" rx="5" stroke="#00A4A6"
+              stroke-width="1.8" stroke-dasharray="3.8 3"/>
+        <rect x="19.6" y="19.6" width="8.8" height="8.8" rx="2.4" fill="#8FB8FF"/>
+      </svg>
+    </div>
+    <div class="tile" style="width:48px;height:48px">
+      <svg width="32" height="32" viewBox="0 0 48 48" fill="none">
+        <path d="M4 16V7.5A3.5 3.5 0 0 1 7.5 4H16M32 4h8.5A3.5 3.5 0 0 1 44 7.5V16M44 32v8.5a3.5 3.5 0 0 1-3.5 3.5H32M16 44H7.5A3.5 3.5 0 0 1 4 40.5V32"
+              stroke="#3B82F6" stroke-width="3.4" stroke-linecap="round"/>
+        <rect x="19" y="19" width="10" height="10" rx="2.6" fill="#8FB8FF"/>
+      </svg>
+    </div>
+    <div class="tile" style="width:36px;height:36px">
+      <svg width="24" height="24" viewBox="0 0 48 48" fill="none">
+        <path d="M4 16V7.5A3.5 3.5 0 0 1 7.5 4H16M32 4h8.5A3.5 3.5 0 0 1 44 7.5V16M44 32v8.5a3.5 3.5 0 0 1-3.5 3.5H32M16 44H7.5A3.5 3.5 0 0 1 4 40.5V32"
+              stroke="#3B82F6" stroke-width="4.2" stroke-linecap="round"/>
+        <rect x="18.5" y="18.5" width="11" height="11" rx="2.8" fill="#8FB8FF"/>
+      </svg>
+    </div>
+    <div class="tile" style="width:28px;height:28px">
+      <svg width="18" height="18" viewBox="0 0 48 48" fill="none">
+        <path d="M4 17V8a4 4 0 0 1 4-4h9M31 4h9a4 4 0 0 1 4 4v9M44 31v9a4 4 0 0 1-4 4h-9M17 44H8a4 4 0 0 1-4-4v-9"
+              stroke="#3B82F6" stroke-width="5" stroke-linecap="round"/>
+        <rect x="18" y="18" width="12" height="12" rx="3" fill="#8FB8FF"/>
+      </svg>
+    </div>
+  </div>
+  <p class="note">72 px keeps everything. At 48 and below the dashed ring goes and the brackets thicken —
+  the silhouette stays recognisable, which is the whole reason brackets beat a full outer square here.</p>
+</div>
+</div>

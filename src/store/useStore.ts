@@ -102,6 +102,15 @@ export interface OverheadState {
   selectedEdgeId: string | null;
   hoveredId: string | null;
   traceIds: string[] | null;
+  /** How a trace plays · "branch" walks one route at a time and lights only
+   *  that route, "all" lights the whole reachable set at once (what it did
+   *  before there were routes at all). Presentation, never the model. */
+  tracePlay: "branch" | "all";
+  setTracePlay: (how: "branch" | "all") => void;
+  /** Which route is up, published by the pulse as it walks · null when the
+   *  trace is off or playing all at once. */
+  traceBranch: number | null;
+  setTraceBranch: (i: number | null) => void;
   scenario: { name: string; base: StateSnapshot } | null;
   exportPanel: "json" | "markdown" | "mermaid" | "cdk" | "cloudformation" | "png" | "svg" | "pdf" | null;
   /** A file waiting to be reconciled with the drawing. The diff itself is
@@ -315,6 +324,10 @@ export const useStore = create<OverheadState>((set, get) => ({
   selectedEdgeId: null,
   hoveredId: null,
   traceIds: null,
+  tracePlay: "branch",
+  setTracePlay: (tracePlay) => set({ tracePlay, traceBranch: null }),
+  traceBranch: null,
+  setTraceBranch: (traceBranch) => set({ traceBranch }),
   scenario: null,
   exportPanel: null,
   importPanel: null,
@@ -641,7 +654,8 @@ export const useStore = create<OverheadState>((set, get) => ({
   pendingConnection: null,
   setPendingConnection: (p) => set({ pendingConnection: p }),
   hover: (id) => set({ hoveredId: id }),
-  setTrace: (ids) => set({ traceIds: ids }),
+  // A new trace always starts at the first route.
+  setTrace: (ids) => set({ traceIds: ids, traceBranch: null }),
   setExportPanel: (format) => set({ exportPanel: format }),
   setImportPanel: (panel) => set({ importPanel: panel }),
   setBill: (bill) => set({ bill }),

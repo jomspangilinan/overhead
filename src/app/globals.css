@@ -470,6 +470,18 @@ body {
   }
 }
 
+/* The pulse · one dot running the traced route, drawn in the viewport so it
+   sits in flow coordinates and pans and zooms with the drawing
+   (`canvas/TracePulse.tsx`). The glow is what makes a 10px dot readable over
+   a lit edge of the same colour. */
+.oh-trace-pulse {
+  border-radius: 999px;
+  background: var(--accent-ink);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent),
+    0 0 10px 3px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
 /* The node card's gear appears on hover or selection */
 .overhead-node .gear {
   opacity: 0;
