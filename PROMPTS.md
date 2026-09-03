@@ -151,10 +151,30 @@ cdk synth
 
 ---
 
-## The one thing to rehearse
+## Agent latency — you never film the wait
 
-Shot 1 at 0:00 has no prompt — it's you dragging while a call lands. To set it up: send a slow-ish
-edit from ChatGPT (`Set the API to an HTTP API and rename it "checkout-api"`), and start your drag
-about a second after you hit Enter, so both land in the same second on camera.
+ChatGPT takes as long as it takes. That is an editing problem, not a shooting problem.
 
-That overlap is the whole thesis of the video. Rehearse it until it's clean.
+- **Every shot except the cold open:** press Enter, keep rolling, let it think. In the edit, cut
+  straight from your Enter to the first thing moving on the canvas. Or shoot it as two clips — one of
+  you pressing Enter, one of the canvas filling — and butt them together. The wait never existed.
+- **Never leave a spinner on screen.** If a beat has more than a second of nothing happening, that
+  second does not survive the cut.
+
+## The cold open — sync to the response, not to Enter
+
+Shot 1 at 0:00 has no prompt of its own. It is you dragging while a call lands, and both have to be
+visible in the same second.
+
+Do **not** try to time it off your Enter — you cannot predict the latency. Instead:
+
+1. Send a small edit off-camera-ish: `Set the API to an HTTP API and rename it "checkout-api"`.
+2. Rest your hand on the node you are about to drag.
+3. **The moment the first change lands, start dragging.** You are reacting to it, not guessing.
+
+Alternative if that feels twitchy: just keep moving things continuously for the whole window — nudge a
+node, drag it back, nudge it again — so wherever the call lands, your hand is already in motion. Then
+pick the take where the overlap reads cleanly.
+
+Shoot this one six or seven times. It is fifteen seconds of work and it is the entire thesis of the
+video; everything after it is evidence for a claim this shot has to make first.
