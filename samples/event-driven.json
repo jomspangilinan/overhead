@@ -8,8 +8,8 @@
         "monthlyActiveUsers": 25000
       },
       "position": {
-        "x": 60,
-        "y": 60
+        "x": 260,
+        "y": 238
       },
       "container": "region"
     },
@@ -21,8 +21,8 @@
         "apiType": "HTTP"
       },
       "position": {
-        "x": 60,
-        "y": 220
+        "x": 380,
+        "y": 238
       },
       "container": "region"
     },
@@ -36,8 +36,8 @@
         "avgDurationMs": 120
       },
       "position": {
-        "x": 320,
-        "y": 220
+        "x": 613,
+        "y": 326
       },
       "container": "priv-a"
     },
@@ -47,8 +47,8 @@
       "name": "domain-bus",
       "settings": {},
       "position": {
-        "x": 560,
-        "y": 220
+        "x": 846,
+        "y": 238
       },
       "container": "region"
     },
@@ -63,8 +63,8 @@
         "expressMemoryMb": 128
       },
       "position": {
-        "x": 800,
-        "y": 140
+        "x": 974.5,
+        "y": 238
       },
       "container": "region"
     },
@@ -76,8 +76,8 @@
         "subscriberCount": 2
       },
       "position": {
-        "x": 800,
-        "y": 320
+        "x": 974.5,
+        "y": 358
       },
       "container": "region"
     },
@@ -93,8 +93,8 @@
         "dlqConfigured": true
       },
       "position": {
-        "x": 1040,
-        "y": 320
+        "x": 613,
+        "y": 446
       },
       "container": "priv-a"
     },
@@ -107,8 +107,8 @@
         "storageGb": 25
       },
       "position": {
-        "x": 1040,
-        "y": 140
+        "x": 1106.5,
+        "y": 238
       },
       "container": "region"
     }
@@ -167,14 +167,26 @@
       "id": "cloud",
       "kind": "cloud",
       "name": "AWS Cloud",
-      "collapsed": false
+      "collapsed": false,
+      "bounds": {
+        "x": 80,
+        "y": 80,
+        "w": 1206.5,
+        "h": 546
+      }
     },
     {
       "id": "region",
       "kind": "region",
       "name": "ap-southeast-1",
       "parent": "cloud",
-      "collapsed": false
+      "collapsed": false,
+      "bounds": {
+        "x": 126,
+        "y": 140,
+        "w": 1114.5,
+        "h": 440
+      }
     },
     {
       "id": "vpc",
@@ -182,7 +194,13 @@
       "name": "orders-vpc",
       "cidr": "10.0.0.0/16",
       "parent": "region",
-      "collapsed": false
+      "collapsed": false,
+      "bounds": {
+        "x": 463,
+        "y": 198,
+        "w": 300,
+        "h": 348
+      }
     },
     {
       "id": "priv-a",
@@ -190,7 +208,13 @@
       "name": "private-a",
       "cidr": "10.0.10.0/24",
       "parent": "vpc",
-      "collapsed": false
+      "collapsed": false,
+      "bounds": {
+        "x": 491,
+        "y": 240,
+        "w": 244,
+        "h": 278
+      }
     }
   ],
   "sections": []

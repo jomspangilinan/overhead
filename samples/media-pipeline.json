@@ -6,9 +6,10 @@
       "name": "asset-cdn",
       "settings": {},
       "position": {
-        "x": 60,
-        "y": 140
-      }
+        "x": 226,
+        "y": 190
+      },
+      "container": "cloud"
     },
     {
       "id": "assets",
@@ -20,9 +21,10 @@
         "publiclyServed": false
       },
       "position": {
-        "x": 580,
-        "y": 140
-      }
+        "x": 489,
+        "y": 248
+      },
+      "container": "region"
     },
     {
       "id": "thumb-queue",
@@ -33,9 +35,10 @@
         "dlqConfigured": true
       },
       "position": {
-        "x": 320,
-        "y": 300
-      }
+        "x": 685,
+        "y": 248
+      },
+      "container": "region"
     },
     {
       "id": "thumb-worker",
@@ -49,9 +52,10 @@
         "dlqConfigured": true
       },
       "position": {
-        "x": 460,
-        "y": 300
-      }
+        "x": 861,
+        "y": 248
+      },
+      "container": "region"
     }
   ],
   "edges": [
@@ -87,6 +91,32 @@
     "requestsPerMonth": 2000000,
     "avgPayloadKb": 128
   },
-  "containers": [],
+  "containers": [
+    {
+      "id": "cloud",
+      "kind": "cloud",
+      "name": "AWS Cloud",
+      "collapsed": false,
+      "bounds": {
+        "x": 80,
+        "y": 80,
+        "w": 961,
+        "h": 298
+      }
+    },
+    {
+      "id": "region",
+      "kind": "region",
+      "name": "ap-southeast-1",
+      "parent": "cloud",
+      "collapsed": false,
+      "bounds": {
+        "x": 355,
+        "y": 150,
+        "w": 640,
+        "h": 182
+      }
+    }
+  ],
   "sections": []
 }

@@ -5,6 +5,7 @@
 
 import { useReactFlow } from "@xyflow/react";
 import { useStore } from "@/store/useStore";
+import { useFitDrawing } from "../fitDrawing";
 import { Icon } from "../Icon";
 
 function Shell({
@@ -72,7 +73,8 @@ export function GearGlyph({ size = 12 }: { size?: number }) {
 
 export function ZoomPill() {
   const zoom = useStore((s) => s.zoom);
-  const { zoomTo, fitView } = useReactFlow();
+  const { zoomTo } = useReactFlow();
+  const fitDrawing = useFitDrawing();
   const applyZoom = (z: number) =>
     zoomTo(Math.max(0.5, Math.min(1.8, Math.round(z * 20) / 20)), {
       duration: 120,
@@ -100,7 +102,7 @@ export function ZoomPill() {
         square
         tipPos="top"
         title="Fit to view"
-        onClick={() => fitView({ duration: 150, maxZoom: 1, padding: 0.15 })}
+        onClick={() => fitDrawing({ duration: 150 })}
       >
         <Icon name="fit" size={14} />
       </FloatButton>
