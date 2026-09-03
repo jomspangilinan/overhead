@@ -19,6 +19,7 @@ import { findingsForNode } from "@/engine/findings";
 import { formatCost, type Severity } from "@/engine/model";
 import { defaultSettings } from "@/engine/defineService";
 import { shapeOf, anchorPoint, type Side4 } from "./edgeGeometry";
+import { LABEL_MAX_W } from "@/engine/layout";
 
 import { NODE_W, NODE_H, ICON } from "./nodeMetrics";
 export { NODE_W, NODE_H, ICON };
@@ -353,7 +354,8 @@ export const AwsNode = memo(function AwsNode({ data, selected }: NodeProps<AwsNo
             />
           ) : (
             <div
-              className="mt-1 max-w-[190px] truncate text-center text-[12px] font-medium"
+              className="mt-1 truncate text-center text-[12px] font-medium"
+              style={{ maxWidth: LABEL_MAX_W }}
               title="Double-click to rename"
               onDoubleClick={(e) => { e.stopPropagation(); setEditing(true); }}
             >

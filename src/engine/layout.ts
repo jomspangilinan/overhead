@@ -127,6 +127,13 @@ function ranks(nodes: ArchNode[], edges: ArchEdge[]): Map<string, number> {
  *  this scale. */
 const CHAR_W = 6.2;
 const EDGE_CHAR_W = 5.4;
+/** How wide a resource name is allowed to draw under its icon before the
+ *  canvas truncates it (`AwsNode`). The layout has to know: measuring the
+ *  full string reserved a column for text that is never drawn · a flowchart
+ *  whose steps are sentences came out with 450px between columns and a
+ *  truncated label in each of them. One number, both places. */
+export const LABEL_MAX_W = 190;
+
 export function textWidth(text: string, charW = CHAR_W): number {
   return Math.ceil(text.trim().length * charW);
 }
@@ -538,7 +545,7 @@ function scope(id: string | undefined, nodes: ArchNode[], edges: ArchEdge[], con
     // icon mode, the card in card mode. Spacing a row of 56px icons as if
     // each were a 200px card reads as four unrelated things rather than a
     // chain, which is why the two modes are spaced differently at all.
-    w: Math.max(opts.drawW ?? opts.nodeW, textWidth(n.name) + 16),
+    w: Math.max(opts.drawW ?? opts.nodeW, Math.min(textWidth(n.name), LABEL_MAX_W) + 16),
     h: drawH,
     hitW: opts.nodeW,
     hitH: opts.nodeH,

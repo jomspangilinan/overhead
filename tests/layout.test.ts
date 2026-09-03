@@ -5,7 +5,7 @@
 import { describe, expect, it } from "vitest";
 import type { Container } from "../src/engine/containers";
 import type { ArchNode, ArchEdge } from "../src/engine/model";
-import { autoLayout, autoLayoutWithSections, COL_GAP, ROW_GAP, textWidth, crossingsOf } from "../src/engine/layout";
+import { autoLayout, autoLayoutWithSections, COL_GAP, ROW_GAP, textWidth, crossingsOf, LABEL_MAX_W } from "../src/engine/layout";
 import type { Bounds } from "../src/engine/frames";
 
 const OPTS = { nodeW: 200, nodeH: 100 };
@@ -58,11 +58,20 @@ describe("autoLayout", () => {
     expect(gapOf(wide.positions)).toBeGreaterThanOrEqual(textWidth(labelled.label!, 5.4));
   });
 
-  it("widens a column for a name longer than the node", () => {
+  it("widens a column for a name longer than the node, up to what is drawn", () => {
     const long = node("a", "lambda");
     long.name = "checkout-order-fulfilment-notification-handler";
     const { positions } = autoLayout([long, node("b", "sqs")], [edge("a", "b")], [], OPTS);
     expect(positions.b.x - positions.a.x).toBeGreaterThan(OPTS.nodeW + COL_GAP);
+
+    // …and no further. The canvas truncates a label at LABEL_MAX_W, so
+    // measuring the whole string reserved a column for text nobody sees: a
+    // flowchart whose steps are sentences came out with 450px between
+    // columns, each holding a truncated label.
+    const sentence = node("c", "lambda");
+    sentence.name = "Sketch it — you and the agent, same canvas, and it prices itself as you go";
+    const wide = autoLayout([sentence, node("d", "sqs")], [edge("c", "d")], [], OPTS);
+    expect(wide.positions.d.x - wide.positions.c.x).toBeLessThanOrEqual(LABEL_MAX_W + 16 + COL_GAP);
   });
 
   it("spaces icons by the icon, and still reserves the hit-box", () => {

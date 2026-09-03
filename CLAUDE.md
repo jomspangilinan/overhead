@@ -356,7 +356,12 @@ the `ContainerKind` union.
   column holds two or more** (`auto-*` ids, replaced on re-run, user sections untouched): a dashed box
   around one icon says nothing, and a four-node chain used to come back wearing four of them.
   **Widths and gaps are measured, not constant** (2026-09-03): a column is as wide as the widest thing
-  drawn in it, which is often the resource *name* and not the node, and the gap between two columns is
+  drawn in it, which is often the resource *name* and not the node · **capped at `LABEL_MAX_W`**
+  (190 px), because that is where `AwsNode` truncates the label and measuring the whole string
+  reserved a column for text nobody sees (2026-09-04, the user: "flowchart are too apart") · a
+  flowchart whose steps are sentences came out with 450 px between columns and a truncated label in
+  each of them. One constant, exported from `layout.ts` and used by the canvas, so the two cannot
+  disagree about where a name stops, and the gap between two columns is
   opened by the widest edge label that has to sit in it (`textWidth`, base `COL_GAP` 44 / `ROW_GAP` 40).
   It is **mode-aware**: `LayoutOpts` separates the room a node needs (`nodeW`/`nodeH`, always the
   200×100 hit-box) from what it draws (`drawW`/`drawH`, `ICON_DRAW_W`/`ICON_DRAW_H` in icon mode,
