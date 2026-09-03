@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { edgeGeometry, shapeOf } from "../src/canvas/edgeGeometry";
+import { edgeGeometry, shapeOf, pickSides } from "../src/canvas/edgeGeometry";
 
 const icon = (x: number, y: number) => shapeOf({ x, y }, 200, 100, false);
 const card = (x: number, y: number) => shapeOf({ x, y }, 200, 100, true);
@@ -109,6 +109,23 @@ describe("edge geometry", () => {
     const [p0, , , p3] = points(geo.d);
     expect(Number.isFinite(p0[0])).toBe(true);
     expect(p3[1]).not.toBe(p0[1]); // tangent nudge applied
+  });
+});
+
+describe("which side an edge leaves and enters", () => {
+  it("routes a steep run vertically, so it does not land on a busy side", () => {
+    // domain-bus → order-events in event-driven: dx 129, dy -120. On the
+    // horizontal branch it entered order-events on the *left* · the side
+    // order-events → notifier leaves from, so the two lay on top of each
+    // other at the node. A run that climbs about as far as it travels is a
+    // vertical move and should read as one.
+    expect(pickSides(icon(0, 0), icon(129, -120))).toMatchObject({ from: "top", to: "bottom" });
+  });
+
+  it("leaves a shallow run horizontal · this is a bias, not a rewrite", () => {
+    // order-flow → order-state: dx 132, dy -60.
+    expect(pickSides(icon(0, 0), icon(132, -60))).toMatchObject({ from: "right", to: "left" });
+    expect(pickSides(icon(0, 0), icon(363, 46))).toMatchObject({ from: "right", to: "left" });
   });
 });
 

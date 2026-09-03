@@ -325,7 +325,7 @@ export const AwsNode = memo(function AwsNode({ data, selected }: NodeProps<AwsNo
       ) : (
         <div className="absolute inset-0 flex flex-col items-center">
           <div
-            className="rounded-[11px]"
+            className="oh-icon-body rounded-[11px]"
             style={{
               marginTop: (NODE_H - ICON - 22) / 2 - 4,
               padding: 4,

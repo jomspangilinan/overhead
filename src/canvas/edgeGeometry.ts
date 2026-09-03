@@ -110,7 +110,15 @@ export function pickSides(
 
   let from: Side4, to: Side4, caseKind: CaseKind;
   const sameRow = Math.abs(dy) < s.hh + t.hh;
-  if (hGap >= tol && hGap * 1.15 >= vGap) {
+  // A run that climbs about as much as it travels is a vertical move, and
+  // routing it out of the side reads wrong twice over: the line leaves at a
+  // shallow angle and then bends hard, and it lands on a side that is very
+  // often already carrying an edge in the other direction. In event-driven,
+  // `domain-bus → order-events` is dx 129 / dy -120 and came in on the left
+  // of order-events, the same side `order-events → notifier` leaves from ·
+  // the two lay on top of each other at the node.
+  const steep = Math.abs(dy) > Math.abs(dx) * 0.75;
+  if (hGap >= tol && hGap * 1.15 >= vGap && !(steep && vGap >= tol)) {
     if (dx >= 0) [from, to, caseKind] = ["right", "left", "forward"];
     else if (sameRow && backGap >= RETURN_SPAN) [from, to, caseKind] = ["bottom", "bottom", "return"];
     else [from, to, caseKind] = ["left", "right", "back"];

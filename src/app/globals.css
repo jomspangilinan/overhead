@@ -453,7 +453,12 @@ body {
 }
 
 /* A resource the open fork touched · the delta on the drawing itself */
-.react-flow__node.forked .overhead-node,
+/* A resource the open fork touched · the ring goes on what the node
+   *draws*, not on its 200×100 hit-box. On the hit-box it was a rectangle
+   three times the width of a 56px icon, so two touched resources side by
+   side produced overlapping boxes that read as a frame around both rather
+   than as two marked nodes. Same element the finding ring uses. */
+.react-flow__node.forked .oh-icon-body,
 .react-flow__node.forked .oh-card-body {
   box-shadow: 0 0 0 2px var(--accent), 0 0 14px color-mix(in srgb, var(--accent) 35%, transparent);
   border-radius: 12px;
