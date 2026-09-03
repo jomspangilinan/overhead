@@ -1,13 +1,15 @@
 # Overhead
 
-**The view from above your AWS architecture — and what it costs to run.**
+**A web page that turns any agent into a cloud architect — and lets you draw alongside it, live.**
 
-An entry for the [WebMCP Challenge](https://webmcp.devpost.com/). Sketch a
-serverless AWS architecture *with your agent* on a live canvas: every node
-carries its real price from the AWS Price List, findings flag what's wrong
-(with the AWS doc to prove it), scenarios fork the design and draw the
-delta, and the whole thing exports as CDK, Markdown, Mermaid, SVG, or a
-reloadable JSON state.
+An entry for the [WebMCP Challenge](https://webmcp.devpost.com/). Your agent can
+estimate an architecture's cost from memory, in a chat, and lose it the moment you
+change anything. Open this page and it works from AWS's own price list instead —
+on a canvas you're drawing at the same time it is. Findings flag what's wrong (with
+the AWS doc to prove it), scenarios fork the design and draw the delta, and the whole
+thing exports as CDK, CloudFormation, Markdown, Mermaid, SVG, or reloadable JSON.
+
+No install, no API key, no backend.
 
 **Live:** https://overhead-ecru.vercel.app · no login, no backend — everything runs in the tab.
 
@@ -16,7 +18,7 @@ reloadable JSON state.
 1. Open the live URL in the **ChatGPT desktop app's built-in browser**
    (site tools work out of the box) — or in **Chrome** with
    `chrome://flags/#enable-webmcp-testing` enabled.
-2. Check the tool pill (bottom right): it should read **“35 tools live”**.
+2. Check the tool pill (bottom right): it should read **“39 tools live”**.
 3. Tell the agent:
 
    > HTTP API → Lambda → DynamoDB, S3 uploads behind CloudFront, SQS for
@@ -24,8 +26,13 @@ reloadable JSON state.
    > you flagged.
 
 4. Fork it: *“What if the thumbnail Lambda runs on ARM at 1024 MB?”* —
-   watch the tool count tick up by four while the scenario is open.
-5. Drop a Cost Explorer CSV on the canvas — parsed locally, never uploaded
+   watch the tool count tick **39 → 43** while the scenario is open.
+5. Paste a Mermaid flowchart into **Import** — any one, from a README or
+   mermaid.live. Labels are matched against the service vocabulary, so
+   `[Lambda worker]` arrives as a priced Lambda and `{approved?}` stays a
+   decision; a subgraph titled VPC becomes a VPC. A picture goes in, a
+   priced design comes out.
+6. Drop a Cost Explorer CSV on the canvas — parsed locally, never uploaded
    — and let the agent reconstruct the bill as a diagram.
 
 ## Why this fits WebMCP
@@ -33,9 +40,10 @@ reloadable JSON state.
 Before WebMCP, only platforms big enough to ship an API and an official
 MCP server could expose capability to agents. Now any web page can, to
 whatever agent the visitor brought — no platform's permission, no
-partnership, no backend. Overhead leans into exactly that: 35 semantic
-tools in eight families (read, write, findings, scenarios, bill, export,
-import, reconcile) — not draw-primitives. A draw.io MCP lets an agent *draw* an AWS diagram;
+partnership, no backend. Overhead leans into exactly that: 39 semantic
+tools in nine families (read, write, frames and sections, findings,
+scenarios, bill, export, import and reconcile, whole-document state) —
+not draw-primitives. A draw.io MCP lets an agent *draw* an AWS diagram;
 Overhead lets an agent *design* an AWS architecture — the diagram is just
 the view.
 
@@ -70,8 +78,8 @@ becomes a diagram both of you can point at.
   nothing is hardcoded.
 - Findings are unit-tested rules citing AWS docs, with savings computed
   from the same pricing table.
-- The CDK exporter's output passes `cdk synth` on the three bundled
-  samples plus a fixture holding one node of every service
+- The CDK exporter's output passes `cdk synth` on every bundled AWS
+  sample plus a fixture holding one node of every service — five stacks
   (`npm run synth`).
 - **CloudFormation goes both ways.** Export writes deployable YAML;
   Import reads YAML or JSON — ours round-trips exactly, anyone else's is
@@ -79,6 +87,23 @@ becomes a diagram both of you can point at.
   settings, VPCs and subnets become containers, and `Ref` / `Fn::GetAtt`
   become the arrows). When the drawing is not empty you get a diff first,
   then Replace or Merge.
+- **Mermaid goes both ways too**, which is what makes a diagram somebody
+  else drew worth importing. Ours comes back exactly, through a trailing
+  `%% overhead:` comment carrying what Mermaid has no syntax for; anyone
+  else's is read for what it says (a label matched against the service
+  vocabulary, a bracket read as a shape, a subgraph titled VPC read as a
+  VPC). On the way out every AWS service draws as its official icon
+  through Mermaid's image node, so the document renders as an architecture
+  in mermaid.live rather than as grey boxes.
+- **The canvas is not only AWS.** Six flow shapes — step, decision,
+  start/end, actor, store, external system — go through the same
+  `defineService()` spine as the sixteen services, so the palette, the
+  Inspector, the agent's tools, containers, undo and every export treat
+  them identically. What they do not have is a price: they carry no
+  figure and move no total, because Overhead prices AWS SKUs and a box
+  labelled "billing team approves" is not one. Two of the five samples
+  show the split — `partner-checkout` is an architecture whose edges are
+  not AWS, `refund-approval` is a flowchart with no AWS in it at all.
 
 ## Develop
 
@@ -86,7 +111,7 @@ becomes a diagram both of you can point at.
 npm install
 npm run dev          # local dev
 npm test             # vitest: rules, exporters, golden costs
-npm run synth        # cdk synth on the three sample exports
+npm run synth        # cdk synth on every AWS sample · five stacks
 npm run fetch-pricing  # refresh data/pricing.<region>.json from AWS
 ```
 
