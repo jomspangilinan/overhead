@@ -39,17 +39,6 @@
       "container": "region"
     },
     {
-      "id": "in-stock",
-      "service": "decision",
-      "name": "In stock?",
-      "settings": {},
-      "position": {
-        "x": 732.5,
-        "y": 248
-      },
-      "container": "region"
-    },
-    {
       "id": "carts",
       "service": "dynamodb",
       "name": "carts",
@@ -59,20 +48,10 @@
         "storageGb": 12
       },
       "position": {
-        "x": 732.5,
-        "y": 368
+        "x": 742,
+        "y": 248
       },
       "container": "region"
-    },
-    {
-      "id": "psp",
-      "service": "external",
-      "name": "Payment provider",
-      "settings": {},
-      "position": {
-        "x": 1300.5,
-        "y": 130
-      }
     },
     {
       "id": "orders-queue",
@@ -83,8 +62,8 @@
         "batchSize": 10
       },
       "position": {
-        "x": 858,
-        "y": 248
+        "x": 742,
+        "y": 368
       },
       "container": "region"
     },
@@ -98,39 +77,39 @@
         "avgDurationMs": 420
       },
       "position": {
-        "x": 993,
+        "x": 877,
         "y": 248
       },
       "container": "region"
     },
     {
-      "id": "warehouse",
-      "service": "store",
-      "name": "Warehouse ledger",
+      "id": "psp",
+      "service": "external",
+      "name": "Payment provider",
       "settings": {},
       "position": {
-        "x": 1485,
+        "x": 1187,
         "y": 130
       }
     },
     {
-      "id": "backorder",
-      "service": "step",
-      "name": "Email a backorder notice",
+      "id": "wms",
+      "service": "external",
+      "name": "Warehouse WMS",
       "settings": {},
       "position": {
-        "x": 1300.5,
+        "x": 1187,
         "y": 250
       }
     },
     {
-      "id": "done",
-      "service": "terminal",
-      "name": "Order placed",
+      "id": "ledger",
+      "service": "store",
+      "name": "Finance ledger",
       "settings": {},
       "position": {
-        "x": 1485,
-        "y": 250
+        "x": 1187,
+        "y": 370
       }
     }
   ],
@@ -157,46 +136,34 @@
     {
       "id": "e4",
       "from": "validate",
-      "to": "in-stock",
-      "kind": "sync"
-    },
-    {
-      "id": "e5",
-      "from": "in-stock",
-      "to": "psp",
-      "kind": "sync",
-      "label": "yes"
-    },
-    {
-      "id": "e6",
-      "from": "in-stock",
-      "to": "backorder",
-      "kind": "sync",
-      "label": "no"
-    },
-    {
-      "id": "e7",
-      "from": "psp",
       "to": "orders-queue",
       "kind": "async"
     },
     {
-      "id": "e8",
+      "id": "e5",
       "from": "orders-queue",
       "to": "fulfil",
       "kind": "async"
     },
     {
-      "id": "e9",
+      "id": "e6",
       "from": "fulfil",
-      "to": "warehouse",
-      "kind": "data"
+      "to": "psp",
+      "kind": "sync",
+      "label": "charge"
     },
     {
-      "id": "e10",
+      "id": "e7",
       "from": "fulfil",
-      "to": "done",
-      "kind": "sync"
+      "to": "wms",
+      "kind": "sync",
+      "label": "dispatch"
+    },
+    {
+      "id": "e8",
+      "from": "fulfil",
+      "to": "ledger",
+      "kind": "data"
     }
   ],
   "traffic": {
@@ -212,7 +179,7 @@
       "bounds": {
         "x": 286,
         "y": 90,
-        "w": 887,
+        "w": 771,
         "h": 408
       }
     },
@@ -225,7 +192,7 @@
       "bounds": {
         "x": 332,
         "y": 150,
-        "w": 795,
+        "w": 679,
         "h": 302
       }
     }

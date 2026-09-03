@@ -65,7 +65,8 @@ describe("crossings in the seeded drawings", () => {
     ["api-backend", 0],
     ["media-pipeline", 0],
     ["event-driven", 0],
-    ["checkout-flow", 0],
+    ["partner-checkout", 0],
+    ["refund-approval", 0],
   ] as const) {
     it(`${name}: at most ${ceiling}`, () => {
       const snap = sample(name);

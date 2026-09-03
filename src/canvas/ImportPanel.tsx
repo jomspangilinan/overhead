@@ -63,7 +63,8 @@ const BLURB: Record<string, string> = {
   "api-backend": "HTTP API → Lambda → DynamoDB. The smallest thing that's real.",
   "media-pipeline": "CloudFront in front of S3, SQS-fed thumbnail worker.",
   "event-driven": "Cognito, EventBridge, Step Functions, SNS fan-out, VPC-attached workers.",
-  "checkout-flow": "A business flow and the AWS behind it, on one canvas · the shapes carry no price.",
+  "partner-checkout": "An architecture whose edges are not AWS: a shopper, a payment provider, a warehouse.",
+  "refund-approval": "No AWS at all · a plain flowchart, on the same canvas, priced at nothing.",
 };
 
 const FILE_SOURCES: FileSource[] = [

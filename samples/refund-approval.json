@@ -1,0 +1,198 @@
+{
+  "nodes": [
+    {
+      "id": "start",
+      "service": "terminal",
+      "name": "Refund requested",
+      "settings": {},
+      "position": {
+        "x": 180,
+        "y": 130
+      }
+    },
+    {
+      "id": "agent",
+      "service": "actor",
+      "name": "Support agent",
+      "settings": {},
+      "position": {
+        "x": 330.5,
+        "y": 130
+      }
+    },
+    {
+      "id": "check",
+      "service": "step",
+      "name": "Check order history",
+      "settings": {},
+      "position": {
+        "x": 490,
+        "y": 130
+      }
+    },
+    {
+      "id": "under50",
+      "service": "decision",
+      "name": "Under $50?",
+      "settings": {},
+      "position": {
+        "x": 640,
+        "y": 130
+      }
+    },
+    {
+      "id": "auto",
+      "service": "step",
+      "name": "Approve automatically",
+      "settings": {},
+      "position": {
+        "x": 800.5,
+        "y": 130
+      }
+    },
+    {
+      "id": "review",
+      "service": "step",
+      "name": "Send to finance review",
+      "settings": {},
+      "position": {
+        "x": 800.5,
+        "y": 250
+      }
+    },
+    {
+      "id": "approved",
+      "service": "decision",
+      "name": "Approved?",
+      "settings": {},
+      "position": {
+        "x": 957,
+        "y": 130
+      }
+    },
+    {
+      "id": "refund",
+      "service": "step",
+      "name": "Issue the refund",
+      "settings": {},
+      "position": {
+        "x": 1111.5,
+        "y": 130
+      }
+    },
+    {
+      "id": "decline",
+      "service": "step",
+      "name": "Write to the customer",
+      "settings": {},
+      "position": {
+        "x": 1111.5,
+        "y": 250
+      }
+    },
+    {
+      "id": "log",
+      "service": "store",
+      "name": "Refund log",
+      "settings": {},
+      "position": {
+        "x": 1271.5,
+        "y": 130
+      }
+    },
+    {
+      "id": "done",
+      "service": "terminal",
+      "name": "Case closed",
+      "settings": {},
+      "position": {
+        "x": 1271.5,
+        "y": 250
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "from": "start",
+      "to": "agent",
+      "kind": "sync"
+    },
+    {
+      "id": "e2",
+      "from": "agent",
+      "to": "check",
+      "kind": "sync"
+    },
+    {
+      "id": "e3",
+      "from": "check",
+      "to": "under50",
+      "kind": "sync"
+    },
+    {
+      "id": "e4",
+      "from": "under50",
+      "to": "auto",
+      "kind": "sync",
+      "label": "yes"
+    },
+    {
+      "id": "e5",
+      "from": "under50",
+      "to": "review",
+      "kind": "sync",
+      "label": "no"
+    },
+    {
+      "id": "e6",
+      "from": "review",
+      "to": "approved",
+      "kind": "sync"
+    },
+    {
+      "id": "e7",
+      "from": "auto",
+      "to": "refund",
+      "kind": "sync"
+    },
+    {
+      "id": "e8",
+      "from": "approved",
+      "to": "refund",
+      "kind": "sync",
+      "label": "yes"
+    },
+    {
+      "id": "e9",
+      "from": "approved",
+      "to": "decline",
+      "kind": "sync",
+      "label": "no"
+    },
+    {
+      "id": "e10",
+      "from": "refund",
+      "to": "log",
+      "kind": "data"
+    },
+    {
+      "id": "e11",
+      "from": "refund",
+      "to": "done",
+      "kind": "sync"
+    },
+    {
+      "id": "e12",
+      "from": "decline",
+      "to": "done",
+      "kind": "sync"
+    }
+  ],
+  "traffic": {
+    "requestsPerMonth": 0,
+    "avgPayloadKb": 0
+  },
+  "containers": [],
+  "sections": []
+}

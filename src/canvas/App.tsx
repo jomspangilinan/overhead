@@ -33,13 +33,15 @@ import { LayersPanel } from "./chrome/LayersPanel";
 import apiBackend from "../../samples/api-backend.json";
 import mediaPipeline from "../../samples/media-pipeline.json";
 import eventDriven from "../../samples/event-driven.json";
-import checkoutFlow from "../../samples/checkout-flow.json";
+import partnerCheckout from "../../samples/partner-checkout.json";
+import refundApproval from "../../samples/refund-approval.json";
 
 export const SAMPLES: Record<string, StateSnapshot> = {
   "api-backend": apiBackend as unknown as StateSnapshot,
   "media-pipeline": mediaPipeline as unknown as StateSnapshot,
   "event-driven": eventDriven as unknown as StateSnapshot,
-  "checkout-flow": checkoutFlow as unknown as StateSnapshot,
+  "partner-checkout": partnerCheckout as unknown as StateSnapshot,
+  "refund-approval": refundApproval as unknown as StateSnapshot,
 };
 
 const AUTOSAVE_KEY = "overhead-state-v2";

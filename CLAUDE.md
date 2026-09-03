@@ -302,8 +302,8 @@ the `ContainerKind` union.
   **A scope's columns are seeded by depth in the *whole* drawing** (2026-09-03, the user: "I think
   the auto layout didn't involve our added stuff?"). A scope ranks what it holds and a frame is one
   box in it, so **every path that leaves a frame and comes back collapses to one rank**: in
-  checkout-flow the payment provider (fed by a decision inside the region) and the warehouse ledger
-  (written by a Lambda two steps later) came out in the same column, four boxes stacked in a line
+  an early cut of `partner-checkout` the payment provider (called from inside the region) and the
+  finance ledger (written by a Lambda two steps later) came out in the same column, four boxes stacked in a line
   with the arrows crossing between them · **4 crossings**. So each box now *starts* at its depth in
   the whole drawing (a frame at the shallowest depth it holds · where the path feeding it arrives),
   and the scope's own edges relax over that seed the way a longest path does. Both constraints hold:
@@ -313,7 +313,7 @@ the `ContainerKind` union.
   inside each local rank the same drawing put the orders queue (five steps deep) in the column
   *before* the validator (two), because both are local roots · the queue is only fed from outside
   the region. `tests/layout.test.ts` holds the rule with two nodes a frame feeds and no edge between
-  them, and `checkout-flow` is in the crossing ceilings.
+  them, and both new samples are in the crossing ceilings.
   **Crossing reduction** (`reduceCrossings`): the row order inside each column is what decides how many
   edges cross, so an edge that skips a column gets a **placeholder vertex** in every column it passes
   (it had no say at all before, and it is the one crossing everything), and the order is swept **down
@@ -369,9 +369,22 @@ agent adds one with the tool it already has.
   ("Ingress", "Data"), and a role is an AWS idea · a decision and a start marker sharing a column
   are not "Data". They keep every other part of the layout (`layout.ts`, asserted in
   `tests/layout.test.ts`).
-- `samples/checkout-flow.json` is the showcase: a shopper, a decision, a payment provider and a
-  warehouse ledger around an HTTP API, two Lambdas, a queue and a table. One canvas, one total, and
-  the total counts only the parts AWS bills for.
+- **One grammar per drawing** (2026-09-03, the user: "I don't get how you mixed architecture and
+  also a flow chart? Does that work that way?"). It does not, and the first sample proved it. An
+  architecture diagram says *what exists and what talks to what* · every node is a component. A
+  flowchart says *what happens in what order* · nodes are steps and branches in time. A decision
+  diamond next to a Lambda asserts both at once, and no amount of layout rescues it. So the six
+  shapes split by grammar, and there is a sample for each:
+  - `actor` · `external` · `store` are **components**, and belong on an architecture canvas · a
+    real architecture routinely contains things AWS does not bill for (the user, a payment
+    provider, an on-prem system, a partner's API). `samples/partner-checkout.json`: a shopper, a
+    payment provider, a warehouse WMS and a finance ledger around an HTTP API, two Lambdas, a queue
+    and a table. $21.76, counting only the parts AWS bills for.
+  - `step` · `decision` · `terminal` are **control flow**, and belong on a flowchart of their own.
+    `samples/refund-approval.json`: eleven shapes, no AWS, no containers, **$0.00** · the same
+    canvas, the same tools, the same Mermaid tab, nothing to price.
+  Nothing in the engine enforces the split · a decision can still sit in a VPC if somebody means
+  it. The samples teach the distinction rather than the validator imposing it.
 
 ### Migration (`src/engine/migrate.ts`)
 
@@ -945,7 +958,8 @@ src/
   app/              layout.tsx (fonts, provider) · page.tsx · globals.css (tokens, shell grid)
 scripts/            fetch-pricing.ts · synth-samples.ts
 data/               pricing.us-east-1.json · pricing.ap-southeast-1.json
-samples/            api-backend · media-pipeline · event-driven · checkout-flow · all four are **laid out on disk**
+samples/            api-backend · media-pipeline · event-driven · partner-checkout ·
+                    refund-approval (no AWS at all) · all five are **laid out on disk**
                     (`npm run layout-samples`) and framed like a real diagram: cloud › region
                     everywhere, CloudFront in the cloud beside the region because it is global,
                     event-driven adding vpc › private subnet
