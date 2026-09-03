@@ -9,7 +9,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { autoLayout, COL_GAP } from "../src/engine/layout";
+import { autoLayout, COL_GAP, crossingsOf } from "../src/engine/layout";
 import { migrateSnapshot } from "../src/engine/migrate";
 import { NODE_W, NODE_H, ICON_DRAW_W, ICON_DRAW_H } from "../src/canvas/nodeMetrics";
 import type { ArchEdge, ArchNode, StateSnapshot } from "../src/engine/model";
@@ -19,36 +19,10 @@ const OPTS = { nodeW: NODE_W, nodeH: NODE_H, drawW: ICON_DRAW_W, drawH: ICON_DRA
 const sample = (name: string): StateSnapshot =>
   migrateSnapshot(JSON.parse(readFileSync(join(__dirname, "..", "samples", `${name}.json`), "utf8")));
 
-type P = { x: number; y: number };
-const side = (a: P, b: P, c: P) => Math.sign((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x));
-
-/** Do the two open segments cross? Shared endpoints do not count · two edges
- *  out of one resource meet at that resource, which is not a crossing. */
-function crosses(a1: P, a2: P, b1: P, b2: P): boolean {
-  const d1 = side(b1, b2, a1);
-  const d2 = side(b1, b2, a2);
-  const d3 = side(a1, a2, b1);
-  const d4 = side(a1, a2, b2);
-  return d1 !== d2 && d3 !== d4 && d1 !== 0 && d2 !== 0 && d3 !== 0 && d4 !== 0;
-}
-
-/** Pairs of connections whose straight lines cross. */
-export function countCrossings(
-  edges: ArchEdge[],
-  positions: Record<string, { x: number; y: number }>,
-): number {
-  const drawn = edges.filter((e) => e.from !== e.to && positions[e.from] && positions[e.to]);
-  let n = 0;
-  for (let i = 0; i < drawn.length; i++) {
-    for (let j = i + 1; j < drawn.length; j++) {
-      const a = drawn[i];
-      const b = drawn[j];
-      if (a.from === b.from || a.from === b.to || a.to === b.from || a.to === b.to) continue;
-      if (crosses(positions[a.from], positions[a.to], positions[b.from], positions[b.to])) n++;
-    }
-  }
-  return n;
-}
+// The counter lives in the engine now · `autoLayout` uses it to choose
+// between two arrangements (centred columns vs top-aligned), so the measure
+// the tests hold it to and the measure it optimises against are the same one.
+export const countCrossings = crossingsOf;
 
 const node = (id: string, container?: string): ArchNode => ({
   id,

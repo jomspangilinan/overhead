@@ -243,6 +243,43 @@ function reduceCrossings(layers: string[][], segsBetween: Seg[][], boxIds: Set<s
   return bestCount;
 }
 
+/** Do two open segments cross? A shared endpoint does not count · two edges
+ *  out of one box meet at that box, which is not a crossing. */
+function segmentsCross(
+  a1: { x: number; y: number },
+  a2: { x: number; y: number },
+  b1: { x: number; y: number },
+  b2: { x: number; y: number },
+): boolean {
+  const side = (p: { x: number; y: number }, q: { x: number; y: number }, r: { x: number; y: number }) =>
+    Math.sign((q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x));
+  const d1 = side(b1, b2, a1);
+  const d2 = side(b1, b2, a2);
+  const d3 = side(a1, a2, b1);
+  const d4 = side(a1, a2, b2);
+  return d1 !== d2 && d3 !== d4 && d1 !== 0 && d2 !== 0 && d3 !== 0 && d4 !== 0;
+}
+
+/** How many pairs of connections cross, on straight lines between centres.
+ *  The same measure `tests/layout-crossings.test.ts` applies to the finished
+ *  drawing · the layout uses it to choose between two arrangements. */
+export function crossingsOf(
+  links: { from: string; to: string }[],
+  centres: Record<string, { x: number; y: number }>,
+): number {
+  const drawn = links.filter((e) => e.from !== e.to && centres[e.from] && centres[e.to]);
+  let n = 0;
+  for (let i = 0; i < drawn.length; i++) {
+    for (let j = i + 1; j < drawn.length; j++) {
+      const a = drawn[i];
+      const b = drawn[j];
+      if (a.from === b.from || a.from === b.to || a.to === b.from || a.to === b.to) continue;
+      if (segmentsCross(centres[a.from], centres[a.to], centres[b.from], centres[b.to])) n++;
+    }
+  }
+  return n;
+}
+
 /** One thing to place: a resource, or a child frame with its contents
  *  already laid out inside it. A frame is a box like any other · that is the
  *  whole point of doing it this way. */
@@ -390,23 +427,53 @@ function place(
     return Math.max(COL_GAP, widest);
   });
 
-  // Columns stack their own boxes · a frame is taller than an icon, so rows
-  // line up across columns only while the boxes are the same height, which
-  // is the ordinary case and the one the tests pin.
-  const centres: Record<string, { x: number; y: number }> = {};
-  let x = 0;
-  let w = 0;
-  let h = 0;
-  columns.forEach((col, ci) => {
-    let y = 0;
-    for (const b of col) {
-      centres[b.id] = { x: x + widths[ci] / 2, y: y + b.h / 2 };
-      w = Math.max(w, x + widths[ci] / 2 + b.hitW / 2);
-      h = Math.max(h, y + b.h / 2 + b.hitH / 2);
-      y += b.h + ROW_GAP;
-    }
-    x += widths[ci] + (gaps[ci] ?? 0);
-  });
+  // **Every column is centred on the drawing** — when that is not worse.
+  //
+  // Top-aligning is what made a fan-in read badly: three sources in column 0
+  // and one target in column 1 put the target level with the *first* source,
+  // so the other two arrived as long diagonals climbing to it. Centred, the
+  // target sits in the middle of the three and the arrows converge on it —
+  // which is how anybody draws a fan-in by hand, and the same for a fan-out
+  // on the other side.
+  //
+  // For an edge between adjacent columns only the row *order* decides
+  // whether it crosses, and that is settled above · but an edge that skips a
+  // column is a straight line over the top of one, and moving a column up or
+  // down does change what it cuts through. On saas-platform, centring took
+  // the crossings from 1 to 7. So both arrangements are built and **counted**
+  // (`crossingsOf`, the same geometric test `tests/layout-crossings` runs on
+  // the finished drawing), and centring is kept unless it made the drawing
+  // worse. Readability first, measured rather than assumed.
+  const heights = columns.map(
+    (col) => col.reduce((sum, b) => sum + b.h, 0) + Math.max(0, col.length - 1) * ROW_GAP,
+  );
+  const tallest = Math.max(0, ...heights);
+
+  const lay = (centred: boolean) => {
+    const out: Record<string, { x: number; y: number }> = {};
+    let cx = 0;
+    let cw = 0;
+    let ch = 0;
+    columns.forEach((col, ci) => {
+      let y = centred ? (tallest - heights[ci]) / 2 : 0;
+      for (const b of col) {
+        out[b.id] = { x: cx + widths[ci] / 2, y: y + b.h / 2 };
+        cw = Math.max(cw, cx + widths[ci] / 2 + b.hitW / 2);
+        ch = Math.max(ch, y + b.h / 2 + b.hitH / 2);
+        y += b.h + ROW_GAP;
+      }
+      cx += widths[ci] + (gaps[ci] ?? 0);
+    });
+    return { centres: out, w: cw, h: ch };
+  };
+
+  const middled = lay(true);
+  const topped = lay(false);
+  const best =
+    crossingsOf(within, middled.centres) <= crossingsOf(within, topped.centres) ? middled : topped;
+  const centres = best.centres;
+  let w = best.w;
+  let h = best.h;
   // Spacing follows what is drawn; the block still has to hold every box's
   // room, or a frame sized from this block would not contain what is in it
   // and two siblings could overlap. So the extent is measured over the

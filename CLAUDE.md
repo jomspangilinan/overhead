@@ -325,6 +325,21 @@ the `ContainerKind` union.
   of edges, and the lane is the one that has to be where its line runs), and **one ordering pass now
   always runs** · the sweeps used to exit before ordering anything when a drawing already crossed
   nothing, which is exactly the case the lane is for.
+  **Every column is centred on the drawing, when that is not worse** (2026-09-04, the user showing
+  two pictures of the same graph: "the auto layout should prioritise readability · we can't avoid
+  intersecting stuff, we can minimise, but still prioritise readability"). Columns were stacked from
+  the top, so three sources into one target put the target level with the **first** source and the
+  other two arrived as long diagonals climbing to it. Centred, the target sits in the middle of the
+  three and the arrows converge · which is how anybody draws a fan-in by hand, and the same for a
+  fan-out on the other side.
+  It is **not free**, which is why it is chosen rather than applied: for an edge between adjacent
+  columns only the row order decides whether it crosses, but an edge that **skips** a column is a
+  straight line over the top of one, and moving a column changes what it cuts through. Centring took
+  saas-platform from 1 crossing to 7. So `place()` builds both arrangements and counts them
+  (`crossingsOf`, exported from `layout.ts` and the same measure `tests/layout-crossings.test.ts`
+  applies to the finished drawing · one implementation, so the layout optimises against exactly what
+  the tests hold it to), and keeps the centred one unless it made the drawing worse. All six samples
+  are back at their previous counts, and the small ones now read symmetrically.
   **Crossing reduction** (`reduceCrossings`): the row order inside each column is what decides how many
   edges cross, so an edge that skips a column gets a **placeholder vertex** in every column it passes
   (it had no say at all before, and it is the one crossing everything), and the order is swept **down

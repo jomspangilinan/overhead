@@ -5,7 +5,7 @@
 import { describe, expect, it } from "vitest";
 import type { Container } from "../src/engine/containers";
 import type { ArchNode, ArchEdge } from "../src/engine/model";
-import { autoLayout, autoLayoutWithSections, COL_GAP, ROW_GAP, textWidth } from "../src/engine/layout";
+import { autoLayout, autoLayoutWithSections, COL_GAP, ROW_GAP, textWidth, crossingsOf } from "../src/engine/layout";
 import type { Bounds } from "../src/engine/frames";
 
 const OPTS = { nodeW: 200, nodeH: 100 };
@@ -136,6 +136,29 @@ describe("autoLayout", () => {
     const nodes = [node("fn", "lambda", "region"), node("db", "dynamodb"), node("db2", "dynamodb")];
     const { sections } = autoLayoutWithSections(nodes, [], containers, OPTS);
     expect(sections.map((s) => s.nodeIds)).toEqual([["db", "db2"]]);
+  });
+
+  it("centres a column on the drawing, so a fan converges", () => {
+    // Three sources into one target: top-aligned, the target sits level with
+    // the *first* source and the other two arrive as long diagonals climbing
+    // to it. Centred, it sits in the middle of the three · which is how
+    // anybody draws a fan-in by hand, and what the user asked for.
+    const nodes = ["a", "b", "c", "hub"].map((id) => node(id, "lambda"));
+    const edges = [edge("a", "hub"), edge("b", "hub"), edge("c", "hub")];
+    const { positions } = autoLayout(nodes, edges, [], OPTS);
+    expect(positions.hub.y).toBe(positions.b.y);
+    expect(positions.a.y).toBeLessThan(positions.hub.y);
+    expect(positions.c.y).toBeGreaterThan(positions.hub.y);
+  });
+
+  it("keeps the top-aligned arrangement when centring would cross more", () => {
+    // Centring is readability, not a rule · it is chosen only when the
+    // measured crossings do not get worse (`crossingsOf`). Whichever wins,
+    // the drawing must never come out worse than top-aligning would be.
+    const nodes = ["a", "b", "c", "d", "e", "f"].map((id) => node(id, "lambda"));
+    const edges = [edge("a", "d"), edge("b", "e"), edge("c", "f"), edge("a", "f")];
+    const { positions } = autoLayout(nodes, edges, [], OPTS);
+    expect(crossingsOf(edges, positions)).toBeLessThanOrEqual(1);
   });
 
   it("opens a lane for an edge that skips a column", () => {

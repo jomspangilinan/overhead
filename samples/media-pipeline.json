@@ -7,7 +7,7 @@
       "settings": {},
       "position": {
         "x": 226,
-        "y": 190
+        "y": 286
       },
       "container": "cloud"
     },
@@ -22,7 +22,7 @@
       },
       "position": {
         "x": 489,
-        "y": 248
+        "y": 288
       },
       "container": "region"
     },
@@ -36,7 +36,7 @@
       },
       "position": {
         "x": 685,
-        "y": 368
+        "y": 348
       },
       "container": "region"
     },
@@ -53,7 +53,7 @@
       },
       "position": {
         "x": 861,
-        "y": 248
+        "y": 288
       },
       "container": "region"
     }
@@ -101,7 +101,7 @@
         "x": 80,
         "y": 80,
         "w": 961,
-        "h": 418
+        "h": 398
       }
     },
     {
@@ -112,9 +112,9 @@
       "collapsed": false,
       "bounds": {
         "x": 355,
-        "y": 150,
+        "y": 140,
         "w": 640,
-        "h": 302
+        "h": 292
       }
     }
   ],
