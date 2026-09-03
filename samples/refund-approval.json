@@ -16,7 +16,7 @@
       "name": "Support agent",
       "settings": {},
       "position": {
-        "x": 330.5,
+        "x": 424,
         "y": 130
       }
     },
@@ -26,7 +26,7 @@
       "name": "Check order history",
       "settings": {},
       "position": {
-        "x": 490,
+        "x": 668,
         "y": 130
       }
     },
@@ -36,7 +36,7 @@
       "name": "Under $50?",
       "settings": {},
       "position": {
-        "x": 640,
+        "x": 912,
         "y": 130
       }
     },
@@ -46,7 +46,7 @@
       "name": "Approve automatically",
       "settings": {},
       "position": {
-        "x": 800.5,
+        "x": 1157,
         "y": 130
       }
     },
@@ -56,7 +56,7 @@
       "name": "Send to finance review",
       "settings": {},
       "position": {
-        "x": 800.5,
+        "x": 1157,
         "y": 250
       }
     },
@@ -66,7 +66,7 @@
       "name": "Approved?",
       "settings": {},
       "position": {
-        "x": 957,
+        "x": 1401,
         "y": 130
       }
     },
@@ -76,7 +76,7 @@
       "name": "Issue the refund",
       "settings": {},
       "position": {
-        "x": 1111.5,
+        "x": 1646,
         "y": 130
       }
     },
@@ -86,7 +86,7 @@
       "name": "Write to the customer",
       "settings": {},
       "position": {
-        "x": 1111.5,
+        "x": 1646,
         "y": 250
       }
     },
@@ -96,7 +96,7 @@
       "name": "Refund log",
       "settings": {},
       "position": {
-        "x": 1271.5,
+        "x": 1890,
         "y": 130
       }
     },
@@ -106,7 +106,7 @@
       "name": "Case closed",
       "settings": {},
       "position": {
-        "x": 1271.5,
+        "x": 1890,
         "y": 250
       }
     }

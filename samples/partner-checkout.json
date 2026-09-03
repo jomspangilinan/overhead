@@ -18,7 +18,7 @@
         "apiType": "HTTP"
       },
       "position": {
-        "x": 466,
+        "x": 532,
         "y": 248
       },
       "container": "region"
@@ -33,7 +33,7 @@
         "avgDurationMs": 180
       },
       "position": {
-        "x": 604,
+        "x": 776,
         "y": 248
       },
       "container": "region"
@@ -48,7 +48,7 @@
         "storageGb": 12
       },
       "position": {
-        "x": 742,
+        "x": 1020,
         "y": 248
       },
       "container": "region"
@@ -62,7 +62,7 @@
         "batchSize": 10
       },
       "position": {
-        "x": 742,
+        "x": 1020,
         "y": 368
       },
       "container": "region"
@@ -77,7 +77,7 @@
         "avgDurationMs": 420
       },
       "position": {
-        "x": 877,
+        "x": 1264,
         "y": 248
       },
       "container": "region"
@@ -88,7 +88,7 @@
       "name": "Payment provider",
       "settings": {},
       "position": {
-        "x": 1187,
+        "x": 1616,
         "y": 130
       }
     },
@@ -98,7 +98,7 @@
       "name": "Warehouse WMS",
       "settings": {},
       "position": {
-        "x": 1187,
+        "x": 1616,
         "y": 250
       }
     },
@@ -108,7 +108,7 @@
       "name": "Finance ledger",
       "settings": {},
       "position": {
-        "x": 1187,
+        "x": 1616,
         "y": 370
       }
     }
@@ -177,9 +177,9 @@
       "name": "AWS Cloud",
       "collapsed": false,
       "bounds": {
-        "x": 286,
+        "x": 352,
         "y": 90,
-        "w": 771,
+        "w": 1092,
         "h": 408
       }
     },
@@ -190,9 +190,9 @@
       "parent": "cloud",
       "collapsed": false,
       "bounds": {
-        "x": 332,
+        "x": 398,
         "y": 150,
-        "w": 679,
+        "w": 1000,
         "h": 302
       }
     }

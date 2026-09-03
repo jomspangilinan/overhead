@@ -21,7 +21,7 @@
         "apiType": "HTTP"
       },
       "position": {
-        "x": 380,
+        "x": 505,
         "y": 238
       },
       "container": "region"
@@ -36,7 +36,7 @@
         "avgDurationMs": 120
       },
       "position": {
-        "x": 613,
+        "x": 799,
         "y": 326
       },
       "container": "priv-a"
@@ -47,7 +47,7 @@
       "name": "domain-bus",
       "settings": {},
       "position": {
-        "x": 975.5,
+        "x": 1337,
         "y": 238
       },
       "container": "region"
@@ -63,7 +63,7 @@
         "expressMemoryMb": 128
       },
       "position": {
-        "x": 1104,
+        "x": 1581,
         "y": 238
       },
       "container": "region"
@@ -76,7 +76,7 @@
         "subscriberCount": 2
       },
       "position": {
-        "x": 1104,
+        "x": 1581,
         "y": 358
       },
       "container": "region"
@@ -93,7 +93,7 @@
         "dlqConfigured": true
       },
       "position": {
-        "x": 742.5,
+        "x": 1043,
         "y": 326
       },
       "container": "priv-a"
@@ -107,7 +107,7 @@
         "storageGb": 25
       },
       "position": {
-        "x": 1236,
+        "x": 1825,
         "y": 238
       },
       "container": "region"
@@ -171,7 +171,7 @@
       "bounds": {
         "x": 80,
         "y": 80,
-        "w": 1336,
+        "w": 1925,
         "h": 426
       }
     },
@@ -184,7 +184,7 @@
       "bounds": {
         "x": 126,
         "y": 140,
-        "w": 1244,
+        "w": 1833,
         "h": 320
       }
     },
@@ -196,9 +196,9 @@
       "parent": "region",
       "collapsed": false,
       "bounds": {
-        "x": 463,
+        "x": 649,
         "y": 198,
-        "w": 429.5,
+        "w": 544,
         "h": 228
       }
     },
@@ -210,9 +210,9 @@
       "parent": "vpc",
       "collapsed": false,
       "bounds": {
-        "x": 491,
+        "x": 677,
         "y": 240,
-        "w": 373.5,
+        "w": 488,
         "h": 158
       }
     }

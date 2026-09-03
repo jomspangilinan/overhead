@@ -7,10 +7,11 @@ export const NODE_H = 100;
 /** The official icon size in icon mode. */
 export const ICON = 56;
 
-/** What a node actually *draws* in icon mode: the icon plus its rim, and the
- *  icon plus the name underneath. Much smaller than the hit-box, which is why
- *  auto-layout spaces icons by these and reserves room by NODE_W/NODE_H · a
- *  row of 56px icons pitched as if each were a 200px card reads as four
- *  unrelated things rather than a chain. */
-export const ICON_DRAW_W = ICON + 12;
+/** What a node actually *draws* in icon mode, top to bottom: the icon plus
+ *  the name underneath. Auto-layout pitches **rows** by this, so a column of
+ *  icons is not spaced as if each were a 100px card · a 76px card still fits
+ *  inside the row pitch it produces, which is what lets one arrangement be
+ *  right in both modes. **Columns** are pitched by NODE_W whatever the mode:
+ *  the card is not opt-in (it appears at 130% zoom), so a drawing spaced for
+ *  the icon's width overlaps itself the moment anybody zooms in to read. */
 export const ICON_DRAW_H = ICON + 24;

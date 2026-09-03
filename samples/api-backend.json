@@ -23,7 +23,7 @@
         "avgDurationMs": 200
       },
       "position": {
-        "x": 385.5,
+        "x": 504,
         "y": 238
       },
       "container": "region"
@@ -37,7 +37,7 @@
         "storageGb": 10
       },
       "position": {
-        "x": 506,
+        "x": 748,
         "y": 238
       },
       "container": "region"
@@ -70,7 +70,7 @@
       "bounds": {
         "x": 80,
         "y": 80,
-        "w": 606,
+        "w": 848,
         "h": 288
       }
     },
@@ -83,7 +83,7 @@
       "bounds": {
         "x": 126,
         "y": 140,
-        "w": 514,
+        "w": 756,
         "h": 182
       }
     }

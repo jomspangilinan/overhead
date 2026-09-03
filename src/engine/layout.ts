@@ -45,7 +45,6 @@ export interface LayoutOpts {
   /** What a node *draws*, when that is smaller than its hit-box (icon mode).
    *  Columns and rows are spaced by this. Absent = the hit-box, which is
    *  card mode. */
-  drawW?: number;
   drawH?: number;
 }
 const DEFAULT_OPTS: LayoutOpts = { nodeW: 200, nodeH: 100 };
@@ -270,7 +269,6 @@ function place(
     boxes.map((b) => ({ id: b.id }) as ArchNode),
     within as ArchEdge[],
   );
-  const depth = Math.max(-1, ...boxes.map((b) => rank.get(b.id)!));
   // A scope ranks what it holds, and a frame is one box in it · so every
   // path that leaves a frame and comes back collapses to the same rank. In
   // checkout-flow the whole flow outside AWS did: the payment provider (fed
@@ -425,14 +423,18 @@ function depthOf(
 function scope(id: string | undefined, nodes: ArchNode[], edges: ArchEdge[], containers: Container[], opts: LayoutOpts, depth = 0, globalDepth: Map<string, number> = new Map()): Block {
   const own = nodes.filter((n) => (n.container ?? undefined) === id);
   const kids = depth < 12 ? containers.filter((c) => (c.parent ?? undefined) === id) : [];
-  const drawW = opts.drawW ?? opts.nodeW;
   const drawH = opts.drawH ?? opts.nodeH;
 
   const block: Block = { w: 0, h: 0, nodes: {}, frames: {} };
   const boxes: Box[] = own.map((n) => ({
     id: n.id,
     // A name is often wider than the icon above it.
-    w: Math.max(drawW, textWidth(n.name) + 16),
+    // A column is pitched by the **hit-box**, never by the icon · the card
+    // is not opt-in (it appears on its own at 130% zoom), so a drawing
+    // spaced for icons overlaps itself the moment anybody zooms in to read
+    // a label. Rows still go by what is drawn (`drawH`), where the two modes
+    // differ by little and a card always fits inside an icon row's pitch.
+    w: Math.max(opts.nodeW, textWidth(n.name) + 16),
     h: drawH,
     hitW: opts.nodeW,
     hitH: opts.nodeH,

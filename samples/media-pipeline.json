@@ -21,7 +21,7 @@
         "publiclyServed": false
       },
       "position": {
-        "x": 489,
+        "x": 553,
         "y": 248
       },
       "container": "region"
@@ -35,7 +35,7 @@
         "dlqConfigured": true
       },
       "position": {
-        "x": 685,
+        "x": 852,
         "y": 248
       },
       "container": "region"
@@ -52,7 +52,7 @@
         "dlqConfigured": true
       },
       "position": {
-        "x": 861,
+        "x": 1134,
         "y": 248
       },
       "container": "region"
@@ -100,7 +100,7 @@
       "bounds": {
         "x": 80,
         "y": 80,
-        "w": 961,
+        "w": 1234,
         "h": 298
       }
     },
@@ -111,9 +111,9 @@
       "parent": "cloud",
       "collapsed": false,
       "bounds": {
-        "x": 355,
+        "x": 419,
         "y": 150,
-        "w": 640,
+        "w": 849,
         "h": 182
       }
     }
