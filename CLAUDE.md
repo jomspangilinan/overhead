@@ -314,6 +314,17 @@ the `ContainerKind` union.
   *before* the validator (two), because both are local roots · the queue is only fed from outside
   the region. `tests/layout.test.ts` holds the rule with two nodes a frame feeds and no edge between
   them, and both new samples are in the crossing ceilings.
+  **A placeholder takes a row** (2026-09-03, the user pointing at two edges arriving at one node as
+  one thick line): a column-skipping edge's placeholder used to decide the order and then be
+  dropped, which left the edge with no lane · the line was still drawn straight from source to
+  target, so in `refund-approval` the edge from "Approve automatically" to "Issue the refund" ran
+  clean **through** the "Approved?" diamond between them. Ordering was never the whole job; the
+  point of a dummy vertex is that the real nodes move out of the way. It is a box one node tall
+  (zero height does not line up with the rows its edge leaves and enters, and the node below lands
+  back under the line), it **wins an ordering tie** (a tie means both orders cross the same number
+  of edges, and the lane is the one that has to be where its line runs), and **one ordering pass now
+  always runs** · the sweeps used to exit before ordering anything when a drawing already crossed
+  nothing, which is exactly the case the lane is for.
   **Crossing reduction** (`reduceCrossings`): the row order inside each column is what decides how many
   edges cross, so an edge that skips a column gets a **placeholder vertex** in every column it passes
   (it had no say at all before, and it is the one crossing everything), and the order is swept **down
@@ -623,6 +634,14 @@ render (when the ref is still null) fell back to a guessed 800px height and open
 toolbar. The UI slice (`cardShow`,
 `costDisplay`) autosaves under `ui`. **Tooltip CSS lives in `@layer components`** so Tailwind's `absolute`
 still wins on the element.
+
+**A flowchart is shown no money** (2026-09-03, the user: "if it's a flowchart I think cost doesn't
+need to be there"). `pricedOf(s)` in the store is false when the drawing has resources and **none**
+of them is an AWS service, and it hides the top bar's price-list pill and monthly total and the
+bottom bar's Region, Findings and Est. monthly · three pieces of chrome about money on a drawing
+that has none, and a findings count no rule can ever move. An **empty** canvas still counts as
+priced: that is where an AWS drawing starts, and hiding the price list before the first node would
+read as a missing feature rather than an honest zero.
 
 **Tokens** (`src/app/globals.css`; legacy aliases `--ground/--surface/--rule/--saving/--finding/--critical`
 still resolve pending cleanup):

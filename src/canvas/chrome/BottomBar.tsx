@@ -5,7 +5,7 @@
 // right · live tool count and the last three calls.
 
 import { useEffect, useMemo, useState } from "react";
-import { useStore, pricingOf, snapshotOf } from "@/store/useStore";
+import { useStore, pricingOf, pricedOf, snapshotOf } from "@/store/useStore";
 import { monthlyTotal } from "@/engine/cost";
 import { allFindings } from "@/engine/findings";
 import { toMoney } from "@/engine/model";
@@ -40,6 +40,7 @@ export function BottomBar() {
   const containers = useStore((s) => s.containers);
   const traffic = useStore((s) => s.traffic);
   const region = useStore((s) => s.region);
+  const priced = useStore(pricedOf);
   const drawingName = useStore((s) => s.drawingName);
   const outcome = useStore((s) => s.webmcpOutcome);
 
@@ -76,11 +77,12 @@ export function BottomBar() {
     >
       <div className="flex items-center gap-4">
         <Fact k="Drawing" v={drawingName} />
-        <Fact k="Region" v={region} />
+        {priced ? <Fact k="Region" v={region} /> : null}
         <Fact k="Containers" v={String(containers.length)} />
         <Fact k="Resources" v={String(nodes.length)} />
-        <Fact k="Findings" v={String(findings)} />
-        <Fact k="Est. monthly" v={`$${toMoney(total).toFixed(2)}`} good />
+        {priced ? <Fact k="Findings" v={String(findings)} /> : null}
+        {/* Nothing here is priced and no rule can fire on it · see pricedOf. */}
+        {priced ? <Fact k="Est. monthly" v={`$${toMoney(total).toFixed(2)}`} good /> : null}
       </div>
 
       <div className="ml-auto flex min-w-0 items-center gap-[11px]">

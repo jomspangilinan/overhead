@@ -8,6 +8,7 @@ import { useMemo } from "react";
 import {
   useStore,
   pricingOf,
+  pricedOf,
   snapshotOf,
   PRICING_TABLES,
 } from "@/store/useStore";
@@ -22,6 +23,7 @@ export function TopBar() {
   const edges = useStore((s) => s.edges);
   const traffic = useStore((s) => s.traffic);
   const region = useStore((s) => s.region);
+  const priced = useStore(pricedOf);
   const setRegion = useStore((s) => s.setRegion);
   const scenario = useStore((s) => s.scenario);
   const setExportPanel = useStore((s) => s.setExportPanel);
@@ -65,6 +67,11 @@ export function TopBar() {
         ) : null}
       </span>
 
+      {/* A flowchart has nothing to price, so it is shown no price list, no
+          region and no total · three pieces of chrome about money on a
+          drawing that has none (`pricedOf`). An empty canvas still shows
+          them: that is where an AWS drawing starts. */}
+      {priced ? (
       <label
         className="flex items-center gap-[7px] rounded-[7px] px-2.5 py-[5px] text-[11px] text-ink-3"
         style={{ background: "var(--panel)", border: "1px solid var(--line-2)" }}
@@ -90,17 +97,22 @@ export function TopBar() {
         </select>
         · {generatedAt}
       </label>
+      ) : null}
 
-      <div className="ml-auto flex items-baseline gap-2">
-        <span className="lab">Monthly</span>
-        <span
-          className="text-[23px] font-semibold tracking-[-0.03em]"
-          style={{ fontFamily: "var(--font-mono-jb)" }}
-        >
-          ${toMoney(total).toFixed(2)}
-        </span>
-        <span className="text-[11px] text-ink-3">estimate</span>
-      </div>
+      {priced ? (
+        <div className="ml-auto flex items-baseline gap-2">
+          <span className="lab">Monthly</span>
+          <span
+            className="text-[23px] font-semibold tracking-[-0.03em]"
+            style={{ fontFamily: "var(--font-mono-jb)" }}
+          >
+            ${toMoney(total).toFixed(2)}
+          </span>
+          <span className="text-[11px] text-ink-3">estimate</span>
+        </div>
+      ) : (
+        <div className="ml-auto" />
+      )}
 
       {/* Forks on the spot · no dialog to answer first. The name is
           editable in the banner over the canvas, the way the drawing name

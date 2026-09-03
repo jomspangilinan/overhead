@@ -912,6 +912,21 @@ export function pricingOf(s: OverheadState): PricingTable {
   return PRICING_TABLES[s.region];
 }
 
+/** Does this drawing price anything?
+ *
+ *  A flowchart does not · every one of its shapes is unpriced by definition
+ *  (`services/flow.ts`), so a monthly total, a price-list pill and a pricing
+ *  region are three pieces of chrome about money on a drawing that has none.
+ *  An **empty** canvas still counts as priced: that is where an AWS drawing
+ *  starts, and hiding the price list before the first node would read as a
+ *  missing feature rather than an honest zero. */
+export function pricedOf(s: OverheadState): boolean {
+  return (
+    !s.nodes.length ||
+    s.nodes.some((n) => (getService(n.service)?.family ?? "aws") === "aws")
+  );
+}
+
 /** Card mode when zoomed past 125%, forced, or the cost layer is on. */
 export function cardModeOf(s: OverheadState): boolean {
   return s.cardsForced || s.zoom >= 1.3 || s.layers.cost;

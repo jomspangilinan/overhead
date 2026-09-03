@@ -137,6 +137,18 @@ describe("autoLayout", () => {
     expect(sections.map((s) => s.nodeIds)).toEqual([["db", "db2"]]);
   });
 
+  it("opens a lane for an edge that skips a column", () => {
+    // a --> c skips the column b is in. The placeholder that keeps it in the
+    // ordering now takes a row as well, so b moves out of the line's way ·
+    // before this the edge was drawn straight through b, and arrived at c
+    // alongside b --> c as one thick line.
+    const nodes = ["a", "b", "c"].map((id) => node(id, "lambda"));
+    const edges = [edge("a", "b"), edge("b", "c"), edge("a", "c")];
+    const { positions } = autoLayout(nodes, edges, [], OPTS);
+    expect(positions.a.y).toBe(positions.c.y);
+    expect(positions.b.y).toBeGreaterThan(positions.a.y);
+  });
+
   it("keeps depth for a path that leaves a frame", () => {
     // p and q are both outside, both fed by the frame, and there is no edge
     // between them · to this scope they look identical. They are not: q is a

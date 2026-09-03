@@ -184,18 +184,22 @@ function medianKey(neighbours: number[], current: number): number {
 
 /** Order the rows of every column so as few edges cross as possible.
  *  `layers` is mutated into the best order found; the count is returned. */
-function reduceCrossings(layers: string[][], segsBetween: Seg[][]): number {
+function reduceCrossings(layers: string[][], segsBetween: Seg[][], boxIds: Set<string>): number {
   const posOf = (layer: string[]) => new Map(layer.map((k, i) => [k, i]));
   const total = (ls: string[][]) => {
     const pos = ls.map(posOf);
     return segsBetween.reduce((sum, segs, i) => sum + crossingsBetween(segs, pos[i], pos[i + 1]), 0);
   };
 
-  let best = layers.map((l) => [...l]);
-  let bestCount = total(best);
+  // One ordering pass always runs, even on a drawing that already crosses
+  // nothing · the pass is what puts a lane where its line goes, and a lane
+  // that is never ordered is a lane that bought nothing. Sweeping stops as
+  // soon as there is nothing left to gain.
   const work = layers.map((l) => [...l]);
+  let best: string[][] | null = null;
+  let bestCount = Infinity;
 
-  for (let sweep = 0; sweep < SWEEPS && bestCount > 0; sweep++) {
+  for (let sweep = 0; sweep < SWEEPS; sweep++) {
     const down = sweep % 2 === 0;
     const order = down
       ? work.map((_, i) => i).slice(1)
@@ -212,16 +216,29 @@ function reduceCrossings(layers: string[][], segsBetween: Seg[][]): number {
           .filter((p) => p !== undefined);
         keys.set(k, medianKey(near, here.get(k)!));
       }
-      // Stable on the current order, so a tie never churns the drawing.
-      work[i] = [...work[i]].sort((x, y) => keys.get(x)! - keys.get(y)! || here.get(x)! - here.get(y)!);
+      // Stable on the current order, so a tie never churns the drawing ·
+      // except that a placeholder wins a tie, because a tie means the two
+      // orders cross the same number of edges and the lane is the one that
+      // has to be where its line actually runs. Without this, `a --> b --> c`
+      // plus `a --> c` left the lane *under* b (both medians 0, stable order
+      // keeps b first) and the skip edge went straight through b anyway ·
+      // the lane existed and bought nothing.
+      const lane = (k: string) => !boxIds.has(k);
+      work[i] = [...work[i]].sort(
+        (x, y) =>
+          keys.get(x)! - keys.get(y)! ||
+          (lane(x) === lane(y) ? here.get(x)! - here.get(y)! : lane(x) ? -1 : 1),
+      );
     }
     const count = total(work);
     if (count < bestCount) {
       bestCount = count;
       best = work.map((l) => [...l]);
     }
+    if (bestCount === 0) break;
   }
-  layers.forEach((_, i) => (layers[i] = best[i]));
+  const chosen = best ?? work;
+  layers.forEach((_, i) => (layers[i] = chosen[i]));
   return bestCount;
 }
 
@@ -331,11 +348,31 @@ function place(
     }
     segsBetween[b - 1].push({ a: prev, b: to });
   }
-  reduceCrossings(layers, segsBetween);
-  // Placeholders decided the order; they never take a row.
-  const byId = new Map(boxes.map((b) => [b.id, b]));
+  reduceCrossings(layers, segsBetween, ids);
+  // A placeholder **takes a row**, as an empty box one node tall.
+  //
+  // It used to decide the order and then be dropped, which left the edge it
+  // stands for with no lane: the line was still drawn straight from its
+  // source to its target, so in refund-approval the edge from "Approve
+  // automatically" to "Issue the refund" ran clean through the "Approved?"
+  // diamond sitting between them, and arrived alongside the other edge into
+  // that node as one thick line. Ordering was never the whole job · the
+  // point of a dummy vertex is that the real nodes move out of the way.
+  //
+  // Zero height would not do it either: the lane has to be a row tall, or it
+  // does not line up with the rows its edge leaves and enters, and the node
+  // below it lands back under the line.
+  const real = new Map(boxes.map((b) => [b.id, b]));
+  const laneH = Math.min(...boxes.filter((b) => !b.frame).map((b) => b.h), 80);
+  const byId = new Map(real);
   columns.forEach((_, ci) => {
-    columns[ci] = layers[ci].map((k) => byId.get(k)).filter((b): b is Box => !!b);
+    columns[ci] = layers[ci].map((k) => {
+      const box = real.get(k);
+      if (box) return box;
+      const lane: Box = { id: k, w: 0, h: laneH, hitW: 0, hitH: laneH };
+      byId.set(k, lane);
+      return lane;
+    });
   });
 
   const colOf = new Map<string, number>();
