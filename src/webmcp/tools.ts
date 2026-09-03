@@ -21,6 +21,7 @@ import {
   type ExportFormat,
 } from "@/engine/exporters";
 import { toMoney, type EdgeKind } from "@/engine/model";
+import { applyPatch, describeChanges, type StatePatch } from "@/engine/patch";
 import {
   CONTAINER_KINDS,
   breadcrumb,
@@ -30,6 +31,7 @@ import {
 } from "@/engine/containers";
 import { importCloudFormation } from "@/engine/iac/cloudformation";
 import { importOverheadState } from "@/engine/iac/import";
+import { packedLinkFor } from "@/engine/iac/share";
 import {
   applyReconciliation,
   placeNewNodes,
@@ -972,6 +974,133 @@ export function coreTools(): ToolSpec[] {
           return errorResult("bad_index", `index must be 0..${total - 1}.`, { chunks: total });
         // raw chunk, not JSON-wrapped · the agent concatenates chunks verbatim
         return { content: [{ type: "text", text: chunkOf(content, i) }] };
+      },
+    },
+    {
+      // The document, as the Code panel shows it · the agent and the human
+      // read and write the same object, so what one can do the other can.
+      name: "get_state",
+      description:
+        "The drawing as an editable JSON document (nodes, edges, containers, sections, traffic) · the same document the Code panel shows. Pass ids for just those objects; without ids the whole document, or a chunk pointer if it is large.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          ids: {
+            type: "array",
+            items: { type: "string" },
+            description: "Resource, connection, container or section ids · omit for the whole document",
+          },
+        },
+        additionalProperties: false,
+      },
+      readOnly: true,
+      execute: ({ ids }) => {
+        const s = useStore.getState();
+        const snap = snapshotOf(s);
+        if (Array.isArray(ids) && ids.length) {
+          const want = new Set(ids.map(String));
+          const picked = {
+            nodes: snap.nodes.filter((n) => want.has(n.id)),
+            edges: snap.edges.filter((e) => want.has(e.id)),
+            containers: snap.containers.filter((c) => want.has(c.id)),
+            sections: snap.sections.filter((x) => want.has(x.id)),
+          };
+          const found = new Set([
+            ...picked.nodes.map((n) => n.id),
+            ...picked.edges.map((e) => e.id),
+            ...picked.containers.map((c) => c.id),
+            ...picked.sections.map((x) => x.id),
+          ]);
+          const missing = [...want].filter((id) => !found.has(id));
+          if (missing.length) return errorResult("no_such_node", `Not here: ${missing.join(", ")}.`);
+          return text(picked);
+        }
+        const body = JSON.stringify(snap);
+        // The cap is real · a big drawing goes out through the same chunking
+        // the exports use, rather than being silently truncated.
+        if (body.length > 1400) {
+          const content = exportAs("json", snap, pricingOf(s), s.drawingName);
+          return text({
+            nodes: snap.nodes.length,
+            edges: snap.edges.length,
+            chars: body.length,
+            chunks: chunkCount(content),
+            note: `Too large for one message. Either pass ids for the parts you need, or walk get_export_chunk(format "json", index 0..${chunkCount(content) - 1}).`,
+          });
+        }
+        return text(snap);
+      },
+    },
+    {
+      // Spot editing. import_state replaces everything, and the semantic
+      // tools each change one thing · this is the middle: say what differs,
+      // by id, and nothing else moves.
+      name: "patch_state",
+      description:
+        "Edit the drawing by id: partial objects merge into what is there (settings merge one level deep), an unknown id creates, and remove deletes. Nothing is applied unless all of it validates. Returns what changed and the new total.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          nodes: {
+            type: "array",
+            items: { type: "object" },
+            description: "Partial resources by id, e.g. { id: 'fn', settings: { memoryMb: 1024 } }",
+          },
+          edges: {
+            type: "array",
+            items: { type: "object" },
+            description: "Partial connections by id, or { from, to, kind } to add one",
+          },
+          containers: { type: "array", items: { type: "object" }, description: "Partial frames by id" },
+          sections: { type: "array", items: { type: "object" }, description: "Partial sections by id" },
+          traffic: { type: "object", description: "requestsPerMonth and/or avgPayloadKb" },
+          remove: { type: "array", items: { type: "string" }, description: "Ids to delete" },
+        },
+        additionalProperties: false,
+      },
+      execute: (args) => {
+        const s = useStore.getState();
+        const result = applyPatch(snapshotOf(s), args as StatePatch);
+        if (!result.ok)
+          return errorResult(result.code, result.message, {
+            ...(result.at ? { at: result.at } : {}),
+            ...(result.allowed ? { allowed: result.allowed } : {}),
+          });
+        useStore.getState().loadSnapshot(result.snapshot);
+        const after = useStore.getState();
+        return text({
+          changes: result.changes.length,
+          summary: describeChanges(result.changes),
+          // Ten is enough to see what happened without blowing the cap.
+          applied: result.changes.slice(0, 10).map((c) => `${c.kind} ${c.type} ${c.id}${c.fields.length ? ` (${c.fields.join(", ")})` : ""}`),
+          monthlyTotal: money(monthlyTotal(snapshotOf(after), pricingOf(after))),
+        });
+      },
+    },
+    {
+      // The other half of the link: an agent that has built something here
+      // can hand the person a URL for it, and a coding agent that has your
+      // repo can hand you one it built · same encoding, no backend either way.
+      name: "share_link",
+      description:
+        "A URL that opens this drawing on this page (the whole document rides in the link's fragment · nothing is uploaded). Anyone can build one the same way: base64url the document and put it after #doc=.",
+      inputSchema: { type: "object", properties: {}, additionalProperties: false },
+      readOnly: true,
+      execute: async () => {
+        const s = useStore.getState();
+        const origin = typeof window === "undefined" ? "https://overhead-ecru.vercel.app" : window.location.origin;
+        // Deflated · a real drawing is a 1K link instead of a 5K one, which
+        // is the difference between pasting it in a chat and it being mangled.
+        const url = await packedLinkFor(
+          JSON.stringify(snapshotOf(s)),
+          origin,
+        );
+        if (url.length > 1400)
+          return text({
+            chars: url.length,
+            note: "This drawing makes a link too long for one message. Use export (json) and build the link as `#doc=` + base64url of that document.",
+          });
+        return text({ url, note: "Opens the Import dialog with this drawing loaded · the diff shows before anything is replaced." });
       },
     },
     {

@@ -7,11 +7,12 @@
 import { useEffect } from "react";
 import { ReactFlowProvider } from "@xyflow/react";
 import type { StateSnapshot, CardShow, CostDisplay } from "@/engine/model";
-import { autoLayout } from "@/engine/layout";
 import { useStore } from "@/store/useStore";
+import { readImportLink } from "@/engine/iac/share";
 import { Sprite } from "./Sprite";
 import { Canvas } from "./Canvas";
 import { Inspector } from "./Inspector";
+import { CodePanel } from "./CodePanel";
 import { PaletteFloat } from "./Palette";
 import { ScenarioBanner } from "./ScenarioBanner";
 import { ExportPanel } from "./ExportPanel";
@@ -84,19 +85,88 @@ function LeftDock() {
 function RightDock() {
   const open = useStore((s) => s.rightDock);
   const setOpen = useStore((s) => s.setRightDock);
+  // Two views of the same object: the form for the selected thing, and the
+  // whole drawing as a document. Tabs rather than a second dock · the code
+  // view wants the Inspector's width, and you read one at a time.
+  const tab = useStore((s) => s.rightTab);
+  const setTab = useStore((s) => s.setRightTab);
   return (
     <div className="oh-right relative flex min-h-0">
       <Dock
         side="right"
-        width={300}
+        width={tab === "code" ? 360 : 300}
         collapsed={!open}
         onToggle={() => setOpen(!open)}
-        title="Inspector"
+        title={tab === "code" ? "Code" : "Inspector"}
+        tabs={[
+          { id: "inspector", label: "Inspector" },
+          { id: "code", label: "Code" },
+        ]}
+        activeTab={tab}
+        onTab={(id) => setTab(id as "inspector" | "code")}
       >
-        <Inspector />
+        {tab === "code" ? <CodePanel /> : <Inspector />}
       </Dock>
     </div>
   );
+}
+
+/** A drawing handed over as a link · `#doc=` or `#template=` (`iac/share.ts`).
+ *
+ *  This is the "visualise my architecture" path without a file: your coding
+ *  agent has the repo, synthesises a template and hands you a URL. It opens
+ *  the **Import dialog** with the document loaded rather than replacing what
+ *  is on your canvas · a link from somebody else is exactly the case the
+ *  diff-before-anything-happens rule exists for. The hash is cleared once
+ *  read, so a refresh does not re-open it. */
+function LinkImport() {
+  const setImportPanel = useStore((s) => s.setImportPanel);
+  const notify = useStore((s) => s.notify);
+
+  useEffect(() => {
+    let cancelled = false;
+    void readImportLink(window.location.href).then((link) => {
+      if (!link || cancelled) return;
+      history.replaceState(
+        null,
+        "",
+        window.location.pathname + window.location.search.replace(/[?&](doc|p|template)=[^&]*/g, ""),
+      );
+      if (link.kind === "error") {
+        notify(link.message, "bad");
+        return;
+      }
+      if (link.kind === "doc") {
+        setImportPanel({ fileName: "from a link", template: link.text });
+        return;
+      }
+      if (link.kind !== "template") return;
+      const where = new URL(link.url).host;
+      setImportPanel({ fileName: `${where} · fetching`, template: "" });
+      void fetch(link.url)
+        .then(async (r) => {
+          if (!r.ok) throw new Error(`${r.status}`);
+          const text = await r.text();
+          if (text.length > 512 * 1024) throw new Error("too large");
+          if (!cancelled) setImportPanel({ fileName: link.url.split("/").pop() || where, template: text });
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setImportPanel(null);
+          // The browser does the fetching, so the host has to allow a
+          // cross-origin read · and with no backend there is nothing to proxy
+          // it through. Naming hosts that work turns a dead end into a step.
+          notify(
+            `Could not read that template from ${where} · it has to be served cross-origin. GitHub raw, Gist raw and dpaste.org are; pastebin.com is not.`,
+            "bad",
+          );
+        });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [setImportPanel, notify]);
+  return null;
 }
 
 export function App() {
@@ -129,14 +199,14 @@ export function App() {
       // corrupt autosave · fall through to the seed
     }
     if (!restored) {
+      // The samples are arranged on disk (`npm run layout-samples`), so the
+      // seed just loads one. It used to re-run auto-layout here, which is
+      // why the app's copy of event-driven and the one you imported were two
+      // different drawings · the sample was the sketch and only this path
+      // ever tidied it.
       const snap = SAMPLES["event-driven"];
       loadSnapshot({ ...snap, nodes: snap.nodes.map((n) => ({ ...n })) });
       useStore.getState().setDrawingName("event-driven");
-      const st = useStore.getState();
-      const { positions } = autoLayout(st.nodes, st.edges, st.containers);
-      for (const [id, p] of Object.entries(positions)) {
-        useStore.getState().moveNode(id, p.x, p.y);
-      }
     }
   }, [loadSnapshot]);
 
@@ -172,6 +242,7 @@ export function App() {
       <Sprite />
       <Autosave />
       <Keyboard />
+      <LinkImport />
     </ReactFlowProvider>
   );
 }

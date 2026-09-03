@@ -14,6 +14,7 @@ import {
 import { monthlyTotal } from "@/engine/cost";
 import { toMoney } from "@/engine/model";
 import { Icon } from "../Icon";
+import { LivePill } from "./LivePill";
 import { openScenarioFromUi } from "@/webmcp/scenario";
 
 export function TopBar() {
@@ -120,6 +121,7 @@ export function TopBar() {
           Scenario
         </button>
       )}
+      <LivePill />
       {/* One door in · the seeded templates are a source inside it, because
           a template is an import too: our JSON instead of your YAML. */}
       <button

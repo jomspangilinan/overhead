@@ -9,9 +9,13 @@
     "lint": "eslint",
     "test": "vitest run",
     "fetch-pricing": "node --experimental-strip-types scripts/fetch-pricing.ts",
-    "synth": "node --experimental-strip-types scripts/synth-samples.ts"
+    "synth": "node --experimental-strip-types scripts/synth-samples.ts",
+    "layout-samples": "LAYOUT_SAMPLES=1 vitest run tests/sample-layout.test.ts",
+    "dev:room": "tsx scripts/dev-room.ts",
+    "dev:live": "NEXT_PUBLIC_ROOM_WS=ws://localhost:3001 next dev"
   },
   "dependencies": {
+    "@vercel/functions": "^3.9.5",
     "@xyflow/react": "^12.11.6",
     "html-to-image": "^1.11.13",
     "next": "15.5.25",
@@ -27,6 +31,7 @@
     "@types/papaparse": "^5.5.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/ws": "^8.18.1",
     "aws-cdk": "^2.1139.0",
     "aws-cdk-lib": "^2.267.0",
     "constructs": "^10.8.1",
@@ -36,6 +41,7 @@
     "tailwindcss": "^4",
     "tsx": "^4.23.13",
     "typescript": "^5",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.11",
+    "ws": "^8.21.3"
   }
 }

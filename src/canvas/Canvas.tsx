@@ -24,6 +24,9 @@ import { ContainerFrames } from "./ContainerFrames";
 import { SectionFrames } from "./SectionFrames";
 import { outermostCollapsedAncestor } from "@/engine/containers";
 import { frameBoxes, hitContainer, movedNodeIds, sectionsAfterDrop } from "@/engine/frames";
+import { useFitDrawing } from "./fitDrawing";
+import { PeerCursors } from "./PeerCursors";
+import { sendCursor } from "@/net/room";
 
 const nodeTypes: NodeTypes = { aws: AwsNode, frame: FrameCard };
 const edgeTypes: EdgeTypes = { typed: TypedEdge };
@@ -66,7 +69,7 @@ export function Canvas() {
   const setPendingConnection = useStore((s) => s.setPendingConnection);
   const setPalette = useStore((s) => s.setPalette);
   const setLabelEditing = useStore((s) => s.setLabelEditing);
-  const { screenToFlowPosition, fitView, getInternalNode } = useReactFlow();
+  const { screenToFlowPosition, getInternalNode } = useReactFlow();
   const selectedId = useStore((s) => s.selectedId);
   const selectedIds = useStore((s) => s.selectedIds);
   const setSelectedIds = useStore((s) => s.setSelectedIds);
@@ -243,7 +246,9 @@ export function Canvas() {
         type: "frame",
         position: { x: centre.x - CARD_W / 2, y: centre.y - CARD_H / 2 },
         data: { frameKind: kind, frameId: id },
-        selected: selectedId === id,
+        // A card stands in for its frame, so it is selected when the frame is ·
+        // primary or part of the multi-selection (⌘A).
+        selected: selectedId === id || selectedIds.includes(id),
         className: `oh-frame-card${litKeys?.has(key) ? " lit" : ""}`,
         draggable: false,
         width: CARD_W,
@@ -368,6 +373,8 @@ export function Canvas() {
   );
 
   const addNode = useStore((s) => s.addNode);
+  const fitDrawing = useFitDrawing();
+  const inRoom = useStore((s) => !!s.room);
 
   // The seed lands after mount, so the built-in fitView fires too early ·
   // and useNodesInitialized never flips in a controlled flow without
@@ -388,9 +395,9 @@ export function Canvas() {
         (n) => getInternalNode(n.id)?.measured?.width,
       );
       if (allMeasured) {
-        fitView({ maxZoom: 1, padding: 0.15 }).then((applied) => {
-          if (!cancelled && applied) didFit.current = true;
-        });
+        // The whole drawing, frames included · fitView alone clips a frame
+        // that reaches past its contents (fitDrawing.ts).
+        if (fitDrawing()) didFit.current = true;
         return;
       }
       if (++tries < 60) requestAnimationFrame(attempt);
@@ -399,7 +406,7 @@ export function Canvas() {
     return () => {
       cancelled = true;
     };
-  }, [nodes, fitView, getInternalNode]);
+  }, [nodes, fitDrawing, getInternalNode]);
 
   const onDrop = useCallback(
     (e: React.DragEvent) => {
@@ -472,7 +479,16 @@ export function Canvas() {
       ref={wrapper}
       className={`overhead-canvas ${hoveredId || traceIds?.length ? "hovering" : ""} ${cardMode ? "cards" : ""} ${tool === "connect" || connecting ? "connecting" : ""} ${marquee ? "marquee" : ""} ${tool === "section" ? "drawing" : ""} ${tool === "trace" ? "tracing" : ""}`}
       onPointerDownCapture={onDrawDown}
-      onPointerMove={onDrawMove}
+      onPointerMove={(e) => {
+        onDrawMove(e);
+        // In a room, my pointer is worth sending · in canvas coordinates, so
+        // it lands on the same resource whatever anybody's zoom is. Outside
+        // a room this is a no-op and nothing is connected to send it to.
+        if (inRoom) {
+          const p = screenToFlowPosition({ x: e.clientX, y: e.clientY });
+          sendCursor(p.x, p.y);
+        }
+      }}
       onPointerUp={onDrawUp}
       onPointerCancel={() => {
         drawRef.current = null;
@@ -638,6 +654,7 @@ export function Canvas() {
         ) : null}
         <ContainerFrames />
         <SectionFrames />
+        <PeerCursors />
       </ReactFlow>
     </div>
   );

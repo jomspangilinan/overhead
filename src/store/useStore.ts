@@ -21,6 +21,8 @@ import type {
 import { DEFAULT_TRAFFIC, DEFAULT_CARD_SHOW, DEFAULT_COST_DISPLAY } from "@/engine/model";
 import type { PricingTable } from "@/engine/pricing";
 import type { BillSummary } from "@/engine/bill";
+import type { ImportFormat } from "@/engine/iac/import";
+import type { Peer } from "@/net/protocol";
 import { autoLayoutWithSections, roleOf, placeInRole } from "@/engine/layout";
 import {
   wouldCycle,
@@ -28,6 +30,7 @@ import {
   type PlacementError,
 } from "@/engine/containers";
 import { migrateSnapshot } from "@/engine/migrate";
+import { removeObjects } from "@/engine/remove";
 import { sectionMembersDeep } from "@/engine/layers";
 import { defaultSettings } from "@/engine/defineService";
 import { getService } from "@/engine/services";
@@ -108,13 +111,24 @@ export interface OverheadState {
   importPanel: {
     fileName: string;
     template: string;
-    format?: "cloudformation" | "overhead";
+    format?: ImportFormat;
     /** The entry lit in the dialog's list · a format, or `sample:<name>`. */
     source?: string;
     /** The drawing name to adopt on replace (a sample brings its own). */
     drawingName?: string;
   } | null;
   bill: BillSummary | null;
+  /** A live room · null unless the URL carries one (`net/room.ts`). Nothing
+   *  contacts a server until this is set. */
+  room: {
+    id: string;
+    me?: string;
+    peers: Peer[];
+    /** I opened this room · leaving closes it for everyone. */
+    host?: boolean;
+    status: "connecting" | "live" | "reconnecting";
+  } | null;
+  setRoom: (patch: Partial<NonNullable<OverheadState["room"]>> | null) => void;
 
   // mutations (synchronous — tools depend on it)
   loadSnapshot: (snap: StateSnapshot) => void;
@@ -132,6 +146,9 @@ export interface OverheadState {
   // shell
   leftDock: boolean;
   rightDock: boolean;
+  /** Which view the right dock shows · the form, or the document. */
+  rightTab: "inspector" | "code";
+  setRightTab: (tab: "inspector" | "code") => void;
   setLeftDock: (open: boolean) => void;
   setRightDock: (open: boolean) => void;
   /** The floating Add palette (services + container kinds). */
@@ -255,6 +272,10 @@ export interface OverheadState {
   /** Multi-selection on the canvas (marquee, shift-click, a selected
    *  section's members). `selectedId` stays the primary selection. */
   selectedIds: string[];
+  /** ⌘A · everything in the drawing. */
+  selectAll: () => void;
+  /** Delete · everything selected, in one undo step. */
+  removeSelection: () => void;
   setSelectedIds: (ids: string[]) => void;
   openScenario: (name: string) => void;
   /** Rename the open fork · the banner's name is an input, not a prompt. */
@@ -288,6 +309,11 @@ export const useStore = create<OverheadState>((set, get) => ({
   exportPanel: null,
   importPanel: null,
   bill: null,
+  room: null,
+  setRoom: (patch) =>
+    set((st) => ({
+      room: patch === null ? null : st.room ? { ...st.room, ...patch } : ({ id: "", peers: [], status: "connecting", ...patch } as OverheadState["room"]),
+    })),
 
   loadSnapshot: (raw) =>
     set(((): Partial<OverheadState> => {
@@ -329,6 +355,8 @@ export const useStore = create<OverheadState>((set, get) => ({
 
   leftDock: true,
   rightDock: true,
+  rightTab: "inspector",
+  setRightTab: (rightTab) => set({ rightTab }),
   setLeftDock: (open) => set({ leftDock: open }),
   setRightDock: (open) => set({ rightDock: open }),
   palette: false,
@@ -513,6 +541,48 @@ export const useStore = create<OverheadState>((set, get) => ({
     }),
   selectedIds: [],
   setSelectedIds: (ids) => set({ selectedIds: ids }),
+
+  /** ⌘A · every object in the drawing, resources and frames alike, so the
+   *  next Delete clears it. `selectedId` goes to null: there is no primary
+   *  object in "everything", and the Inspector should not claim one. */
+  selectAll: () =>
+    set((s) => ({
+      selectedId: null,
+      selectedEdgeId: null,
+      selectedWaypoint: null,
+      selectedIds: [
+        ...s.nodes.map((n) => n.id),
+        ...s.containers.map((c) => c.id),
+        ...s.sections.map((x) => x.id),
+      ],
+    })),
+
+  /** Delete · the whole selection, whatever it is made of, in one step.
+   *  Deleting used to read `selectedId` alone, so a marquee over five nodes
+   *  removed one of them. The selection is `selectedIds` plus the primary
+   *  object, and one `set` keeps it one undo. Removing a frame still only
+   *  removes the frame: its contents re-parent upward, exactly as
+   *  `removeContainer` does, because nothing inside it was selected. */
+  removeSelection: () =>
+    set((s) => {
+      const ids = new Set(s.selectedIds);
+      if (s.selectedId) ids.add(s.selectedId);
+      if (!ids.size && !s.selectedEdgeId) return {};
+      const { nodes, edges, containers, sections } = removeObjects(snapshotOf(s), {
+        ids,
+        edgeId: s.selectedEdgeId,
+      });
+      return {
+        nodes,
+        edges,
+        containers,
+        sections,
+        selectedId: null,
+        selectedEdgeId: null,
+        selectedWaypoint: null,
+        selectedIds: [],
+      };
+    }),
   setNodeCard: (id, patch) =>
     set((s) => ({
       nodes: s.nodes.map((n) => {
