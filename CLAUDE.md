@@ -13,8 +13,8 @@
 
 | | |
 |---|---|
-| Live app | https://overhead-ecru.vercel.app (Vercel project `overhead`, team scope `joms3`) · deployed from `multiplayer` |
-| Repo | https://github.com/jomspangilinan/overhead — **still private; flip to public before submitting** |
+| Live app | https://overhead-ecru.vercel.app (Vercel project `overhead`, team scope `joms3`) |
+| Repo | https://github.com/jomspangilinan/overhead — public, MIT, **one branch: `main`** |
 | App mock (visual reference, now superseded on layout — see §7) | https://claude.ai/code/artifact/950995d4-6bba-4566-92c7-3ee0330c32bc = `reference/overhead-mock.html` |
 | Diagram-language walkthrough | https://claude.ai/code/artifact/a02ba1aa-3893-4fdd-af39-8bf7058c82f3 |
 | Visual directions (Instrument chosen) | https://claude.ai/code/artifact/839f9ec4-06e4-4756-a54b-ff9f880a4cad |
@@ -91,7 +91,7 @@ Phases 0–9 (§15) are done under the current spec; what remains is **video, RE
   are painted through a `ViewportPortal`, so a VPC reaching below its lowest resource was cut off at 100%.
   The rectangle is node bounds ∪ every stored frame rectangle · the same union the picture exporters use.
 - 39 tools live, 43 while a scenario is open (§9).
-- Tests: 261 across 24 vitest files (on `multiplayer`).
+- Tests: 299 across 27 vitest files.
 
 **Workflow the user asked for:** keep `npm run dev` running; the user reviews every change on
 `localhost:3000` **before** anything is deployed. Deploy only when they say "deploy" (`npx vercel deploy
@@ -113,6 +113,9 @@ Phases 0–9 (§15) are done under the current spec; what remains is **video, RE
 - Read tools carry `readOnlyHint: true`; anything returning parsed bill content carries
   `untrustedContentHint: true`. Outputs ≤ ~1.5K chars (`text()` in `toolRegistry.ts` errors past that). Names
   ≤ 30, descriptions ≤ 500, param descriptions ≤ 150.
+- **One branch, `main`** (2026-09-04). `multiplayer` existed to keep `main` a static export while
+  the relay was built; the relay is shipped and deployed, so the split was protecting nothing and
+  the public repo was showing a default branch 39 commits stale. Merged (fast-forward) and deleted.
 - No auth, no accounts, no database. **One server route**: `app/api/room/route.ts`, the WebSocket
   relay that makes Live rooms work · which is why the build is not a static export. That is the
   shipped shape, deployed 2026-09-04, and the docs say so rather than hedging. The relay **stores
@@ -791,7 +794,7 @@ still resolve pending cleanup):
 Type: **Archivo** 400–700 (`--font-archivo`) for UI, **JetBrains Mono** 400–600 (`--font-mono-jb`) for every
 number, code and log line. Uppercase only for 9.5 px labels at `.14em` tracking. Dark only.
 
-## 7b. Live rooms (`src/net/`, `multiplayer` branch)
+## 7b. Live rooms (`src/net/`)
 
 **Press Live and the URL is the invite** · Kahoot-shaped: a room id anyone can hold and nobody can
 guess, in the address bar. `LivePill.tsx` in the top bar starts one, copies the link, shows who is
@@ -1242,12 +1245,21 @@ table below is the original outline; where they differ, `SCRIPT.md` wins.
 
 ## 18. Submission checklist
 
-- [ ] Live URL, no login, works in the ChatGPT desktop app **and** Chrome with the flag
-- [ ] **Repo public**, MIT visible in About, README with run instructions and the renamed tools
-- [ ] Raw `document.modelContext.registerTool({ name, description, inputSchema, execute })` visible in `src/webmcp/register.ts`
-- [ ] Pricing data with `generatedAt` + source URLs; findings with verified doc links
-- [ ] `npm run synth` passes
+Checked 2026-09-04 · what is ticked was verified, not assumed.
+
+- [ ] Live URL works in the ChatGPT desktop app **and** Chrome with the flag · **the one thing that
+      cannot be checked from here**. Deployed and serving (`/` 200, no login), but the tool readout
+      needs a browser with WebMCP: confirm the bottom bar says **39 tools live · +4 in a scenario**,
+      which is what every doc now claims.
+- [x] **Repo public**, one branch (`main`), MIT in About (`licenseInfo.key` reads `mit` · it read
+      `other` until the AWS-icons note was moved out of `LICENSE`), description and homepage set,
+      README with run instructions
+- [x] Raw `document.modelContext.registerTool({ name, description, inputSchema, execute })` ·
+      `src/webmcp/register.ts:54`
+- [x] Pricing data with `generatedAt` + source URLs · both regions, **40 entries each carrying a
+      `sourceUrl`**; all **nine** finding doc links fetched and returning 200
+- [x] `npm run synth` passes · six stacks
 - [ ] YouTube video public, < 3:00, with audio
 - [ ] Write-up answers all four prompts and includes the "open web" line
-- [ ] Commit history inside the submission window
+- [x] Commit history inside the submission window
 - [ ] Submitted by **03:00 Thu 4 Sep, Manila**
