@@ -69,8 +69,8 @@ export async function GET(request: Request) {
     const member = relay.join(room, newId(), (message) => {
       try {
         ws.send(JSON.stringify(message));
-      } catch {
-        // a socket that has gone away is cleaned up on close
+      } catch (err) {
+        console.error("[room] send failed", message.t, String(err).slice(0, 200));
       }
     });
     if (!member) {

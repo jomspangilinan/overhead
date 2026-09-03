@@ -17,11 +17,13 @@
   "dependencies": {
     "@vercel/functions": "^3.9.5",
     "@xyflow/react": "^12.11.6",
+    "bufferutil": "^4.1.0",
     "html-to-image": "^1.11.13",
     "next": "15.5.25",
     "papaparse": "^5.7.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "ws": "^8.21.3",
     "zustand": "^5.0.15"
   },
   "devDependencies": {
@@ -41,7 +43,6 @@
     "tailwindcss": "^4",
     "tsx": "^4.23.13",
     "typescript": "^5",
-    "vitest": "^4.1.11",
-    "ws": "^8.21.3"
+    "vitest": "^4.1.11"
   }
 }
