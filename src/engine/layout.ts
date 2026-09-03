@@ -458,6 +458,11 @@ export function autoLayoutWithSections(
   const byColumn = new Map<number, ArchNode[]>();
   for (const n of nodes) {
     if (n.container && containers.some((c) => c.id === n.container)) continue;
+    // An auto section is a *role* grouping ("Ingress", "Data"), and a role is
+    // an AWS idea · a flow shape has none, so a decision and a start marker
+    // in the same column are not "Data" and must not be boxed as if they
+    // were. They keep every other part of the layout.
+    if ((getService(n.service)?.family ?? "aws") !== "aws") continue;
     const x = positions[n.id]?.x ?? 0;
     byColumn.set(x, [...(byColumn.get(x) ?? []), n]);
   }

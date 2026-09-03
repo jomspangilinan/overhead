@@ -200,7 +200,10 @@ export const AwsNode = memo(function AwsNode({ data, selected }: NodeProps<AwsNo
 
   const merged = { ...defaultSettings(def), ...node.settings };
   const badge = securityOn && (node.card?.badge ?? cardShow.badge) ? def.badge?.(merged) ?? null : null;
-  const showCost = node.card?.cost ?? cardShow.cost;
+  // A flow shape has no SKU behind it, so it shows no figure at all · a
+  // node reading "$0.00" claims something the price list never said.
+  const priced = (def.family ?? "aws") === "aws";
+  const showCost = (node.card?.cost ?? cardShow.cost) && priced;
   const showSettings = node.card?.lines ? node.card.lines.length > 0 : cardShow.settings;
   const lines = node.card?.lines ?? [...def.cardLines];
   const openGear = (e: React.MouseEvent) => {

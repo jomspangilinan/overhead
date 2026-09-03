@@ -9,7 +9,7 @@ import {
   PRICING_TABLES,
   type Layer,
 } from "@/store/useStore";
-import { SERVICES, getService } from "@/engine/services";
+import { SERVICES, getService, servicesInFamily } from "@/engine/services";
 import { validateSetting, defaultSettings } from "@/engine/defineService";
 import { allCosts, monthlyTotal, nodeCost } from "@/engine/cost";
 import { allFindings } from "@/engine/findings";
@@ -20,7 +20,7 @@ import {
   EXPORT_FORMATS,
   type ExportFormat,
 } from "@/engine/exporters";
-import { toMoney, type EdgeKind } from "@/engine/model";
+import { toMoney, type EdgeKind, type ServiceId } from "@/engine/model";
 import { applyPatch, describeChanges, type StatePatch } from "@/engine/patch";
 import {
   CONTAINER_KINDS,
@@ -30,6 +30,7 @@ import {
   type ContainerKind,
 } from "@/engine/containers";
 import { importCloudFormation } from "@/engine/iac/cloudformation";
+import { importMermaid } from "@/engine/iac/mermaid";
 import { importOverheadState } from "@/engine/iac/import";
 import { packedLinkFor } from "@/engine/iac/share";
 import {
@@ -192,7 +193,7 @@ export function coreTools(): ToolSpec[] {
     {
       name: "list_services",
       description:
-        "Every supported AWS service with its setting names and price drivers. Call before add_service or set_property.",
+        "Every service id this canvas knows: AWS services with their price drivers, and the unpriced flow shapes (step, decision, actor, store, external, terminal). Call before add_service or set_property.",
       inputSchema: {
         type: "object",
         properties: {
@@ -230,14 +231,20 @@ export function coreTools(): ToolSpec[] {
             ),
           });
         }
+        // One line per service rather than an object each · the full list in
+        // the old shape was 1713 chars and `text()` refused it, so the tool
+        // returned an error instead of the vocabulary. The flow shapes are a
+        // second, shorter list: they carry no settings and no price.
+        const line = (def: (typeof SERVICES)[ServiceId]) => {
+          const drivers = Object.entries(def.settings)
+            .filter(([, v]) => v.driver)
+            .map(([k]) => k);
+          return `${def.id} · ${def.term}${drivers.length ? ` · ${drivers.join(", ")}` : ""}`;
+        };
         return text({
-          services: Object.values(SERVICES).map((def) => ({
-            id: def.id,
-            term: def.term,
-            drivers: Object.entries(def.settings)
-              .filter(([, v]) => v.driver)
-              .map(([k]) => k),
-          })),
+          aws: servicesInFamily("aws").map(line),
+          flow: servicesInFamily("flow").map((d) => d.id),
+          note: "aws: id · term · price drivers. flow shapes are unpriced, have no settings, and are for the parts of a design AWS does not bill for.",
         });
       },
     },
@@ -1193,6 +1200,47 @@ export function coreTools(): ToolSpec[] {
           containers: after.containers.length,
           applied: diff.counts,
           skipped: parsed.report.skipped.slice(0, 5),
+          monthlyTotal: money(monthlyTotal(snapshotOf(after), pricingOf(after))),
+          note: parsed.report.notes[0],
+        });
+      },
+    },
+    {
+      // The other direction of `export mermaid`, and the one place an agent
+      // can hand over a diagram it did not build here. A flowchart is what
+      // every model already writes when asked to draw an architecture · this
+      // turns that into a priced design instead of a picture.
+      name: "import_mermaid",
+      description:
+        "Turn a Mermaid flowchart into the drawing, priced. Labels are matched against the service vocabulary (`fn[Lambda worker]` becomes a priced Lambda); a label that names no service keeps its shape and no price. A subgraph titled VPC or a region becomes that container, any other becomes a section. Mode replace or merge.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          mermaid: { type: "string", description: "A Mermaid flowchart · `flowchart LR` and its statements" },
+          mode: { type: "string", enum: ["replace", "merge"], description: "Default replace" },
+        },
+        required: ["mermaid"],
+        additionalProperties: false,
+      },
+      execute: ({ mermaid, mode }) => {
+        const s = useStore.getState();
+        const parsed = importMermaid(String(mermaid));
+        if (!parsed.ok) return errorResult(parsed.code, parsed.message);
+        const how: MergeMode = mode === "merge" ? "merge" : "replace";
+        const current = snapshotOf(s);
+        const diff = reconcile(current, parsed.snapshot, parsed.stated);
+        const applied = applyReconciliation(current, parsed.snapshot, diff, how, parsed.stated);
+        const addedIds = diff.nodes.filter((n) => n.kind === "added").map((n) => diff.matched[n.id] ?? n.id);
+        useStore.getState().loadSnapshot(how === "merge" ? placeNewNodes(applied, addedIds) : applied);
+        // Mermaid holds no positions at all, so a wholesale import is laid out.
+        if (how === "replace") useStore.getState().applyAutoLayout();
+        const after = useStore.getState();
+        return text({
+          mode: how,
+          nodes: after.nodes.length,
+          edges: after.edges.length,
+          containers: after.containers.length,
+          priced: after.nodes.filter((n) => (getService(n.service)?.family ?? "aws") === "aws").length,
           monthlyTotal: money(monthlyTotal(snapshotOf(after), pricingOf(after))),
           note: parsed.report.notes[0],
         });

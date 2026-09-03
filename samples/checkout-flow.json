@@ -1,0 +1,234 @@
+{
+  "nodes": [
+    {
+      "id": "shopper",
+      "service": "actor",
+      "name": "Shopper",
+      "settings": {},
+      "position": {
+        "x": 180,
+        "y": 130
+      }
+    },
+    {
+      "id": "checkout-api",
+      "service": "apigateway",
+      "name": "checkout-api",
+      "settings": {
+        "apiType": "HTTP"
+      },
+      "position": {
+        "x": 466,
+        "y": 248
+      },
+      "container": "region"
+    },
+    {
+      "id": "validate",
+      "service": "lambda",
+      "name": "validate-cart",
+      "settings": {
+        "architecture": "arm64",
+        "memoryMb": 512,
+        "avgDurationMs": 180
+      },
+      "position": {
+        "x": 604,
+        "y": 248
+      },
+      "container": "region"
+    },
+    {
+      "id": "in-stock",
+      "service": "decision",
+      "name": "In stock?",
+      "settings": {},
+      "position": {
+        "x": 732.5,
+        "y": 248
+      },
+      "container": "region"
+    },
+    {
+      "id": "carts",
+      "service": "dynamodb",
+      "name": "carts",
+      "settings": {
+        "capacityMode": "on-demand",
+        "itemSizeKb": 2,
+        "storageGb": 12
+      },
+      "position": {
+        "x": 732.5,
+        "y": 368
+      },
+      "container": "region"
+    },
+    {
+      "id": "psp",
+      "service": "external",
+      "name": "Payment provider",
+      "settings": {},
+      "position": {
+        "x": 1040,
+        "y": 130
+      }
+    },
+    {
+      "id": "orders-queue",
+      "service": "sqs",
+      "name": "orders-queue",
+      "settings": {
+        "queueType": "standard",
+        "batchSize": 10
+      },
+      "position": {
+        "x": 466,
+        "y": 368
+      },
+      "container": "region"
+    },
+    {
+      "id": "fulfil",
+      "service": "lambda",
+      "name": "fulfil-order",
+      "settings": {
+        "architecture": "arm64",
+        "memoryMb": 1024,
+        "avgDurationMs": 420
+      },
+      "position": {
+        "x": 604,
+        "y": 368
+      },
+      "container": "region"
+    },
+    {
+      "id": "warehouse",
+      "service": "store",
+      "name": "Warehouse ledger",
+      "settings": {},
+      "position": {
+        "x": 1040,
+        "y": 250
+      }
+    },
+    {
+      "id": "backorder",
+      "service": "step",
+      "name": "Email a backorder notice",
+      "settings": {},
+      "position": {
+        "x": 1040,
+        "y": 370
+      }
+    },
+    {
+      "id": "done",
+      "service": "terminal",
+      "name": "Order placed",
+      "settings": {},
+      "position": {
+        "x": 1040,
+        "y": 490
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "from": "shopper",
+      "to": "checkout-api",
+      "kind": "sync",
+      "label": "checkout"
+    },
+    {
+      "id": "e2",
+      "from": "checkout-api",
+      "to": "validate",
+      "kind": "sync"
+    },
+    {
+      "id": "e3",
+      "from": "validate",
+      "to": "carts",
+      "kind": "data"
+    },
+    {
+      "id": "e4",
+      "from": "validate",
+      "to": "in-stock",
+      "kind": "sync"
+    },
+    {
+      "id": "e5",
+      "from": "in-stock",
+      "to": "psp",
+      "kind": "sync",
+      "label": "yes"
+    },
+    {
+      "id": "e6",
+      "from": "in-stock",
+      "to": "backorder",
+      "kind": "sync",
+      "label": "no"
+    },
+    {
+      "id": "e7",
+      "from": "psp",
+      "to": "orders-queue",
+      "kind": "async"
+    },
+    {
+      "id": "e8",
+      "from": "orders-queue",
+      "to": "fulfil",
+      "kind": "async"
+    },
+    {
+      "id": "e9",
+      "from": "fulfil",
+      "to": "warehouse",
+      "kind": "data"
+    },
+    {
+      "id": "e10",
+      "from": "fulfil",
+      "to": "done",
+      "kind": "sync"
+    }
+  ],
+  "traffic": {
+    "requestsPerMonth": 2000000,
+    "avgPayloadKb": 6
+  },
+  "containers": [
+    {
+      "id": "cloud",
+      "kind": "cloud",
+      "name": "AWS Cloud",
+      "collapsed": false,
+      "bounds": {
+        "x": 286,
+        "y": 90,
+        "w": 626.5,
+        "h": 408
+      }
+    },
+    {
+      "id": "region",
+      "kind": "region",
+      "name": "ap-southeast-1",
+      "parent": "cloud",
+      "collapsed": false,
+      "bounds": {
+        "x": 332,
+        "y": 150,
+        "w": 534.5,
+        "h": 302
+      }
+    }
+  ],
+  "sections": []
+}

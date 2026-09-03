@@ -50,6 +50,11 @@ export type ImportResult =
        *  applies only these · everything else (traffic, durations, storage)
        *  has no CloudFormation home and must not be reset to a default. */
       stated: Record<string, string[]>;
+      /** Node ids whose *service* the document actually named, rather than
+       *  fell back to. Only Mermaid populates it: a label that matches no
+       *  service becomes a shape, and a live edit must not then overwrite
+       *  the service a node already had (`iac/mermaid.ts` applyMermaid). */
+      statedServices?: string[];
     }
   | { ok: false; code: "invalid_json" | "not_a_template" | "cdk_source"; message: string };
 

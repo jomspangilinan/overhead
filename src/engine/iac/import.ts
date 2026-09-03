@@ -23,13 +23,15 @@ import { getService, SERVICES } from "../services";
 import { defaultSettings } from "../defineService";
 import { cdkStateFrom } from "../exporters/overheadState";
 import { fromOverheadBlock, importCloudFormation, type ImportResult, type OverheadBlock } from "./cloudformation";
+import { importMermaid, looksLikeMermaid } from "./mermaid";
 
-export type ImportFormat = "cloudformation" | "overhead" | "cdk";
+export type ImportFormat = "cloudformation" | "overhead" | "cdk" | "mermaid";
 
 export const FORMAT_LABEL: Record<ImportFormat, string> = {
   cloudformation: "CloudFormation",
   overhead: "Overhead file",
   cdk: "CDK stack",
+  mermaid: "Mermaid flowchart",
 };
 
 /** TypeScript that builds AWS infrastructure · ours or anyone's. */
@@ -108,6 +110,8 @@ export function detectFormat(raw: string): ImportFormat | null {
   const text = raw.trim();
   if (!text) return null;
   if (looksLikeCdk(text) || cdkStateFrom(text)) return "cdk";
+  // Cheap and unambiguous · a flowchart says so on its first line.
+  if (looksLikeMermaid(text)) return "mermaid";
   if (text.startsWith("{")) {
     try {
       const parsed = JSON.parse(text) as Record<string, unknown>;
@@ -204,6 +208,8 @@ export function importAny(
       ? importOverheadState(raw)
       : format === "cdk"
         ? importCdkStack(raw)
-        : importCloudFormation(raw, opts);
+        : format === "mermaid"
+          ? importMermaid(raw)
+          : importCloudFormation(raw, opts);
   return { ...result, format };
 }

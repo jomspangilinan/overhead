@@ -147,8 +147,8 @@ export interface OverheadState {
   leftDock: boolean;
   rightDock: boolean;
   /** Which view the right dock shows · the form, or the document. */
-  rightTab: "inspector" | "code";
-  setRightTab: (tab: "inspector" | "code") => void;
+  rightTab: "inspector" | "code" | "mermaid";
+  setRightTab: (tab: "inspector" | "code" | "mermaid") => void;
   setLeftDock: (open: boolean) => void;
   setRightDock: (open: boolean) => void;
   /** The floating Add palette (services + container kinds). */

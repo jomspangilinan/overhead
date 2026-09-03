@@ -135,6 +135,15 @@ describe("autoLayout", () => {
     expect(sections.map((s) => s.nodeIds)).toEqual([["db", "db2"]]);
   });
 
+  it("never boxes flow shapes in a role section", () => {
+    // An auto section is named after a role ("Data", "Ingress"), and a flow
+    // shape has no role · a decision and a start marker sharing a column are
+    // not "Data" and a box saying so is worse than no box.
+    const nodes = [node("ok", "decision"), node("done", "terminal"), node("db", "dynamodb"), node("db2", "dynamodb")];
+    const { sections } = autoLayoutWithSections(nodes, [], [], OPTS);
+    expect(sections.flatMap((s) => s.nodeIds).sort()).toEqual(["db", "db2"]);
+  });
+
   it("never boxes a lone resource in a section", () => {
     const nodes = [node("api", "apigateway"), node("fn", "lambda"), node("db", "dynamodb")];
     const { sections } = autoLayoutWithSections(nodes, [edge("api", "fn"), edge("fn", "db")], [], OPTS);

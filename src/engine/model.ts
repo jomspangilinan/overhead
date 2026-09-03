@@ -33,7 +33,14 @@ export type ServiceId =
   | "kms"
   | "secretsmanager"
   | "ssmparameter"
-  | "cloudwatchlogs";
+  | "cloudwatchlogs"
+  // The flow vocabulary · shapes, not services. Same spine, no price.
+  | "step"
+  | "decision"
+  | "terminal"
+  | "actor"
+  | "store"
+  | "external";
 
 export interface ArchNode {
   id: string;

@@ -13,6 +13,7 @@ import { Sprite } from "./Sprite";
 import { Canvas } from "./Canvas";
 import { Inspector } from "./Inspector";
 import { CodePanel } from "./CodePanel";
+import { MermaidPanel } from "./MermaidPanel";
 import { PaletteFloat } from "./Palette";
 import { ScenarioBanner } from "./ScenarioBanner";
 import { ExportPanel } from "./ExportPanel";
@@ -32,11 +33,13 @@ import { LayersPanel } from "./chrome/LayersPanel";
 import apiBackend from "../../samples/api-backend.json";
 import mediaPipeline from "../../samples/media-pipeline.json";
 import eventDriven from "../../samples/event-driven.json";
+import checkoutFlow from "../../samples/checkout-flow.json";
 
 export const SAMPLES: Record<string, StateSnapshot> = {
   "api-backend": apiBackend as unknown as StateSnapshot,
   "media-pipeline": mediaPipeline as unknown as StateSnapshot,
   "event-driven": eventDriven as unknown as StateSnapshot,
+  "checkout-flow": checkoutFlow as unknown as StateSnapshot,
 };
 
 const AUTOSAVE_KEY = "overhead-state-v2";
@@ -85,27 +88,30 @@ function LeftDock() {
 function RightDock() {
   const open = useStore((s) => s.rightDock);
   const setOpen = useStore((s) => s.setRightDock);
-  // Two views of the same object: the form for the selected thing, and the
-  // whole drawing as a document. Tabs rather than a second dock · the code
-  // view wants the Inspector's width, and you read one at a time.
+  // Three views of the same object: the form for the selected thing, and the
+  // whole drawing as a document twice over · as JSON, and as the flowchart
+  // notation people already write architecture in. Tabs rather than a second
+  // dock · a document view wants the Inspector's width, and you read one at
+  // a time.
   const tab = useStore((s) => s.rightTab);
   const setTab = useStore((s) => s.setRightTab);
   return (
     <div className="oh-right relative flex min-h-0">
       <Dock
         side="right"
-        width={tab === "code" ? 360 : 300}
+        width={tab === "inspector" ? 300 : 360}
         collapsed={!open}
         onToggle={() => setOpen(!open)}
-        title={tab === "code" ? "Code" : "Inspector"}
+        title={tab === "code" ? "Code" : tab === "mermaid" ? "Mermaid" : "Inspector"}
         tabs={[
           { id: "inspector", label: "Inspector" },
           { id: "code", label: "Code" },
+          { id: "mermaid", label: "Mermaid" },
         ]}
         activeTab={tab}
-        onTab={(id) => setTab(id as "inspector" | "code")}
+        onTab={(id) => setTab(id as "inspector" | "code" | "mermaid")}
       >
-        {tab === "code" ? <CodePanel /> : <Inspector />}
+        {tab === "code" ? <CodePanel /> : tab === "mermaid" ? <MermaidPanel /> : <Inspector />}
       </Dock>
     </div>
   );

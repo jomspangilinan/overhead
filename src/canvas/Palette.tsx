@@ -7,7 +7,7 @@
 // selection is.
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { SERVICES } from "@/engine/services";
+import { servicesInFamily } from "@/engine/services";
 import { useStore } from "@/store/useStore";
 import {
   KIND_META,
@@ -100,9 +100,13 @@ export function PaletteFloat() {
     else setQuery("");
   }, [open]);
 
-  const services = Object.values(SERVICES).filter((def) =>
-    query ? def.term.toLowerCase().includes(query.toLowerCase()) || def.id.includes(query.toLowerCase()) : true,
-  );
+  const matches = (def: { term: string; id: string }) =>
+    query ? def.term.toLowerCase().includes(query.toLowerCase()) || def.id.includes(query.toLowerCase()) : true;
+  const awsServices = servicesInFamily("aws").filter(matches);
+  // The second vocabulary · a step, a decision, an actor. Same grid, same
+  // click-or-drag, no price (services/flow.ts).
+  const flowShapes = servicesInFamily("flow").filter(matches);
+  const services = [...awsServices, ...flowShapes];
 
   // Where a new container lands · nothing is ever refused, this only picks
   // a sensible default: the selected frame (or the selected node's) when
@@ -133,15 +137,15 @@ export function PaletteFloat() {
       }
     : { left: "50%", bottom: 64, transform: "translateX(-50%)" };
 
-  const serviceGrid = (
+  const grid = (caption: string, defs: typeof awsServices, empty: boolean) => (
     <>
-      <Caption>Services</Caption>
-      {services.length === 0 ? (
+      <Caption>{caption}</Caption>
+      {empty ? (
         <div className="col-span-full px-1 pb-2 text-[11px]" style={{ color: "var(--ink-4)" }}>
           No service matches “{query}”.
         </div>
       ) : null}
-      {services.map((def) => (
+      {defs.map((def) => (
         <button
           key={def.id}
           title={`${def.term} · click to add, or drag onto the canvas`}
@@ -161,6 +165,13 @@ export function PaletteFloat() {
           </span>
         </button>
       ))}
+    </>
+  );
+
+  const serviceGrid = (
+    <>
+      {grid("AWS services", awsServices, services.length === 0)}
+      {flowShapes.length ? grid("Flow shapes · no price", flowShapes, false) : null}
     </>
   );
 

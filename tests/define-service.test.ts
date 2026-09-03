@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SERVICES } from "../src/engine/services";
+import { SERVICES, servicesInFamily } from "../src/engine/services";
 import {
   defaultSettings,
   settingJsonSchema,
@@ -8,7 +8,7 @@ import {
 
 describe("the spine", () => {
   it("defines every service, keyed by its own id", () => {
-    expect(Object.keys(SERVICES).sort()).toEqual(
+    expect(servicesInFamily("aws").map((d) => d.id).sort()).toEqual(
       [
         "apigateway",
         "cloudfront",
@@ -31,8 +31,40 @@ describe("the spine", () => {
     for (const [key, def] of Object.entries(SERVICES)) expect(def.id).toBe(key);
   });
 
+  // The flow vocabulary goes through the same spine and is deliberately the
+  // opposite of a service: no settings, no card lines, no price. The test
+  // says so, so "no price" reads as a decision rather than an omission.
+  it("defines the flow shapes as unpriced, settingless nodes", () => {
+    expect(servicesInFamily("flow").map((d) => d.id).sort()).toEqual(
+      ["actor", "decision", "external", "step", "store", "terminal"].sort(),
+    );
+    for (const def of servicesInFamily("flow")) {
+      expect(Object.keys(def.settings), def.id).toEqual([]);
+      expect(def.cardLines, def.id).toEqual([]);
+      expect(def.cfn, def.id).toBeUndefined();
+      expect(def.cdk, def.id).toBeUndefined();
+    }
+  });
+
+  // The list every agent reads first. It has to fit the tool budget in one
+  // message · it did not, and the tool was answering with an error.
+  it("list_services fits the 1.5K tool budget with every service in it", () => {
+    const line = (def: (typeof SERVICES)[keyof typeof SERVICES]) => {
+      const drivers = Object.entries(def.settings)
+        .filter(([, v]) => v.driver)
+        .map(([k]) => k);
+      return `${def.id} · ${def.term}${drivers.length ? ` · ${drivers.join(", ")}` : ""}`;
+    };
+    const body = JSON.stringify({
+      aws: servicesInFamily("aws").map(line),
+      flow: servicesInFamily("flow").map((d) => d.id),
+      note: "aws: id · term · price drivers. flow shapes are unpriced, have no settings, and are for the parts of a design AWS does not bill for.",
+    });
+    expect(body.length).toBeLessThan(1500);
+  });
+
   it("every cardLine is a real setting and every default validates", () => {
-    for (const def of Object.values(SERVICES)) {
+    for (const def of servicesInFamily("aws")) {
       expect(def.cardLines.length).toBeGreaterThan(0);
       expect(def.cardLines.length).toBeLessThanOrEqual(3);
       for (const [key, value] of Object.entries(defaultSettings(def))) {
@@ -42,7 +74,7 @@ describe("the spine", () => {
   });
 
   it("every service has security settings that drive a badge and validate", () => {
-    for (const def of Object.values(SERVICES)) {
+    for (const def of servicesInFamily("aws")) {
       const sec = Object.entries(def.settings).filter(([, s]) => s.group === "security");
       expect(sec.length, def.id).toBeGreaterThan(0);
       const badge = def.badge?.(defaultSettings(def));

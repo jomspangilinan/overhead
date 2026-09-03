@@ -7,7 +7,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { monthlyTotal, allCosts } from "../src/engine/cost";
 import { DEFAULT_TRAFFIC, toMoney, type StateSnapshot } from "../src/engine/model";
-import { SERVICES } from "../src/engine/services";
+import { SERVICES, servicesInFamily } from "../src/engine/services";
 import { defaultSettings } from "../src/engine/defineService";
 import type { PricingTable } from "../src/engine/pricing";
 
@@ -39,7 +39,10 @@ const GOLDEN: Record<keyof typeof samples, [number, number]> = {
 const FREE_AT_DEFAULTS = new Set(["ssmparameter"]);
 
 describe("every service prices at its defaults", () => {
-  for (const [id, def] of Object.entries(SERVICES)) {
+  // The flow shapes (services/flow.ts) have no SKU behind them by design ·
+  // `services/index` splits them out, and define-service.test asserts it.
+  for (const def of servicesInFamily("aws")) {
+    const id = def.id;
     it(id, () => {
       const settings = defaultSettings(def);
       for (const table of [use1, aps1]) {

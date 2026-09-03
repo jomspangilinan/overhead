@@ -61,8 +61,17 @@ export interface CfnCtx {
   resourceName: string;
 }
 
+/** What kind of thing this definition describes. `aws` is a real service
+ *  with a SKU behind it; `flow` is a plain shape (a step, a decision, an
+ *  actor) that carries no price and no CloudFormation. The split drives the
+ *  palette's two groups and list_services; everything else is identical,
+ *  which is why a flow node can sit in a VPC and be exported like any other. */
+export type ServiceFamily = "aws" | "flow";
+
 export interface ServiceDef {
   id: ServiceId;
+  /** Default "aws" · see ServiceFamily. */
+  family?: ServiceFamily;
   /** The service's name as AWS writes it, e.g. "AWS Lambda". */
   term: string;
   /** Sprite symbol id in public/icons/aws sprite, e.g. "aws-lambda". */

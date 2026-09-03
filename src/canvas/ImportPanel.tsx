@@ -37,7 +37,7 @@ import { toMoney } from "@/engine/model";
 // A template is an import too · it is just our own JSON instead of
 // somebody's CloudFormation, so the seeded architectures are a source in
 // this list rather than a second dialog of their own.
-type Group = "Build" | "Project" | "Samples";
+type Group = "Diagram" | "Build" | "Project" | "Samples";
 interface Common {
   id: string;
   label: string;
@@ -63,9 +63,21 @@ const BLURB: Record<string, string> = {
   "api-backend": "HTTP API → Lambda → DynamoDB. The smallest thing that's real.",
   "media-pipeline": "CloudFront in front of S3, SQS-fed thumbnail worker.",
   "event-driven": "Cognito, EventBridge, Step Functions, SNS fan-out, VPC-attached workers.",
+  "checkout-flow": "A business flow and the AWS behind it, on one canvas · the shapes carry no price.",
 };
 
 const FILE_SOURCES: FileSource[] = [
+  {
+    id: "mermaid",
+    from: "file",
+    kind: "mermaid",
+    label: "Mermaid flowchart",
+    accept: ".mmd,.mermaid,.md,.txt",
+    group: "Diagram",
+    blurb: "A flowchart anybody wrote · read for what it says, and priced.",
+    where:
+      "From a README, a wiki, mermaid.live, or an agent that writes Mermaid. Labels are matched against the service vocabulary, so `[Lambda worker]` arrives as a priced AWS Lambda; a label that names no service keeps its shape (a diamond is a decision, a cylinder a store) and carries no price. A subgraph titled VPC or a region becomes that container; any other subgraph becomes a section. Mermaid holds no positions, so the drawing is laid out on arrival.",
+  },
   {
     id: "cdk",
     from: "file",
@@ -99,7 +111,7 @@ const FILE_SOURCES: FileSource[] = [
   },
 ];
 
-const GROUPS: Group[] = ["Samples", "Build", "Project"];
+const GROUPS: Group[] = ["Samples", "Diagram", "Build", "Project"];
 
 const TONE: Record<string, string> = {
   added: "var(--good)",

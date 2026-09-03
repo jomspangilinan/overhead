@@ -21,7 +21,7 @@ import { migrateSnapshot } from "../src/engine/migrate";
 import { NODE_W, NODE_H, ICON_DRAW_W, ICON_DRAW_H } from "../src/canvas/nodeMetrics";
 import type { StateSnapshot } from "../src/engine/model";
 
-const SAMPLES = ["api-backend", "media-pipeline", "event-driven"];
+const SAMPLES = ["api-backend", "media-pipeline", "event-driven", "checkout-flow"];
 const dir = join(__dirname, "..", "samples");
 const write = process.env.LAYOUT_SAMPLES;
 
