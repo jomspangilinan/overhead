@@ -16,7 +16,7 @@ import {
 import { useStore, cardModeOf, pricingOf, snapshotOf, type Layer } from "@/store/useStore";
 import { computeDelta } from "@/engine/delta";
 import { arrowModeOf, type EdgeKind, type Side } from "@/engine/model";
-import { pickSides, shapeAt, type Side4 } from "./edgeGeometry";
+import { fanSlots, pickSides, shapeAt, type Side4 } from "./edgeGeometry";
 import { AwsNode, NODE_W, NODE_H } from "./AwsNode";
 import { FrameCard, CARD_W, CARD_H } from "./FrameCard";
 import { TypedEdge } from "./TypedEdge";
@@ -340,21 +340,39 @@ export function Canvas() {
       const outwardK = (s.cx + t.cx) / 2 >= graphCx ? (1 as const) : (-1 as const);
       sidesOf.set(e.id, pickSides(s, t, { from: rerouted ? undefined : e.anchors?.from, to: rerouted ? undefined : e.anchors?.to, outwardK }));
     }
-    const outs = new Map<string, string[]>();
-    const ins = new Map<string, string[]>();
+    // Which edges share a side of a node, and in what order they take its
+    // slots · `fanSlots` sorts them by where the other end sits, so a side's
+    // slots run the same way the edges do and a fan never crosses itself at
+    // the node. Declaration order used to decide it, which is why the two
+    // routes out of one resource could leave as a single line.
+    const outs = new Map<string, { id: string; other: { cx: number; cy: number } }[]>();
+    const ins = new Map<string, { id: string; other: { cx: number; cy: number } }[]>();
     for (const { e, from, to } of resolved) {
       if (!layers[KIND_LAYER[e.kind]]) continue;
+      const s = shapes.get(from);
+      const t = shapes.get(to);
+      if (!s || !t) continue;
       const sd = sidesOf.get(e.id);
       const ko = `${from}:${sd?.from ?? "right"}`;
       const ki = `${to}:${sd?.to ?? "left"}`;
-      outs.set(ko, [...(outs.get(ko) ?? []), e.id]);
-      ins.set(ki, [...(ins.get(ki) ?? []), e.id]);
+      outs.set(ko, [...(outs.get(ko) ?? []), { id: e.id, other: t }]);
+      ins.set(ki, [...(ins.get(ki) ?? []), { id: e.id, other: s }]);
     }
+    const ordered = (m: Map<string, { id: string; other: { cx: number; cy: number } }[]>) => {
+      const out = new Map<string, string[]>();
+      for (const [key, members] of m) {
+        const side = key.slice(key.lastIndexOf(":") + 1) as Side4;
+        out.set(key, fanSlots(members, side));
+      }
+      return out;
+    };
+    const outSlots = ordered(outs);
+    const inSlots = ordered(ins);
     const out: Edge[] = [];
     for (const { e, from, to, rerouted } of resolved) {
       const sd = sidesOf.get(e.id);
-      const sList = outs.get(`${from}:${sd?.from ?? "right"}`) ?? [e.id];
-      const tList = ins.get(`${to}:${sd?.to ?? "left"}`) ?? [e.id];
+      const sList = outSlots.get(`${from}:${sd?.from ?? "right"}`) ?? [e.id];
+      const tList = inSlots.get(`${to}:${sd?.to ?? "left"}`) ?? [e.id];
       const fan = {
         sIdx: Math.max(0, sList.indexOf(e.id)),
         sCount: sList.length,

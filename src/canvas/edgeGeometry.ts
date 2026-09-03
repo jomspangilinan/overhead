@@ -66,6 +66,34 @@ export const NORMAL: Record<Side4, P> = {
 };
 const isHorizontal = (s: Side4) => s === "left" || s === "right";
 
+/**
+ * The order the edges on one side of one node take their fan slots.
+ *
+ * It used to be the order they happened to be declared in, which is to say
+ * no order at all: two edges leaving the same side got slots by chance, and
+ * whenever the one heading *up* drew the lower slot the pair crossed within a
+ * few pixels of the node and read as one line. On saas-platform that is the
+ * two routes out of Customer.
+ *
+ * The rule is the obvious one once stated: **a side's slots run in the same
+ * direction as the things they point at**. A left or right side spreads
+ * vertically, so its edges are sorted by where the other end sits on `cy`; a
+ * top or bottom side spreads horizontally, so by `cx`. Two edges from one
+ * side then cannot cross each other at the node, whatever the drawing · it is
+ * a rule about the geometry rather than a number tuned to one picture.
+ *
+ * Ties break on the id so the order is stable across renders.
+ */
+export function fanSlots(
+  members: { id: string; other: { cx: number; cy: number } }[],
+  side: Side4,
+): string[] {
+  const axis = side === "left" || side === "right" ? "cy" : "cx";
+  return [...members]
+    .sort((a, b) => a.other[axis] - b.other[axis] || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+    .map((m) => m.id);
+}
+
 /** The anchor point on a side; `offset` runs along the side (fan slots). */
 export function anchorPoint(s: Shape, side: Side4, offset = 0): P {
   switch (side) {

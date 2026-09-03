@@ -476,7 +476,15 @@ carrying its members, `az` dissolves upward, `subnet` → `subnetpub`, `node.gro
    because a write-back two columns to the left used to run its line and its label straight through
    whatever was in between; `bracket` only when shapes overlap;
    `edge.anchors` pins a side per end. **Sides are picked in `Canvas.tsx`** so fans (`fan`) are keyed per
-   node *and* side. A path runs through `[p0, ...waypoints, p3]` as a curve (cubic segments, end tangents
+   node *and* side, and **a side's slots run in the same direction as the things they point at**
+   (`fanSlots`, 2026-09-04). They ran in *declaration order* before, which is no order at all: two
+   edges leaving one side took slots by chance, and whenever the one heading up drew the lower slot
+   the pair crossed within a few pixels of the node and read as a single line · which is what
+   "there's 2 routes but one gone missing" was, on Customer in saas-platform. A left or right side
+   spreads vertically so its edges sort by the other end's `cy`; a top or bottom side spreads
+   horizontally so they sort by `cx`. A fan then cannot cross itself at the node in **any** drawing:
+   it is a rule about the geometry, not a constant fitted to one picture. Ties break on the id, so
+   the order is stable across renders. A path runs through `[p0, ...waypoints, p3]` as a curve (cubic segments, end tangents
    along the side normals), straight polyline, or axis-aligned steps (`style.shape`); self-loops draw
    `loopPath`. Selected, an edge shows its waypoints (drag; double-click or Delete removes), a dashed "+"
    per segment (`geo.mids`) that adds one, a floating **styling toolbar** (`EdgeStylePicker`) and a

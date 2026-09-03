@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { edgeGeometry, shapeOf, pickSides } from "../src/canvas/edgeGeometry";
+import { edgeGeometry, shapeOf, pickSides, fanSlots } from "../src/canvas/edgeGeometry";
 
 const icon = (x: number, y: number) => shapeOf({ x, y }, 200, 100, false);
 const card = (x: number, y: number) => shapeOf({ x, y }, 200, 100, true);
@@ -197,5 +197,29 @@ describe("waypoints and shapes", () => {
     expect(geo.p0.x).toBe(134);
     expect(geo.p3.y).toBe(39 - 34);
     expect(geo.mids).toHaveLength(1);
+  });
+});
+
+describe("fan slot order", () => {
+  const m = (id: string, cx: number, cy: number) => ({ id, other: { cx, cy } });
+
+  it("orders a vertical side by where the edges are heading", () => {
+    // Two routes out of one resource: one level, one climbing. Declaration
+    // order used to decide the slots, so the climbing one could take the
+    // lower slot and the pair crossed within a few pixels of the node and
+    // read as a single line.
+    expect(fanSlots([m("level", 800, 0), m("up", 300, -400)], "right")).toEqual(["up", "level"]);
+    expect(fanSlots([m("up", 300, -400), m("level", 800, 0)], "right")).toEqual(["up", "level"]);
+    // Entering from the left is the same axis, same rule.
+    expect(fanSlots([m("down", 0, 500), m("up", 0, -500)], "left")).toEqual(["up", "down"]);
+  });
+
+  it("orders a horizontal side by x, because that is the way it spreads", () => {
+    expect(fanSlots([m("right", 900, 400), m("left", 100, 400)], "bottom")).toEqual(["left", "right"]);
+    expect(fanSlots([m("right", 900, -400), m("left", 100, -400)], "top")).toEqual(["left", "right"]);
+  });
+
+  it("is stable when two edges head to the same place", () => {
+    expect(fanSlots([m("b", 500, 0), m("a", 500, 0)], "right")).toEqual(["a", "b"]);
   });
 });
